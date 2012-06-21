@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="amendments">Amendments</string>
+    <string name="app_name">OpenHDS</string>
+    <string name="changePassword">Change Password</string>
+    <string name="changeServer">Change Server</string>
+    <string name="changeUsername">Change Username</string>
+    <string name="configuration">Configuration</string>
+    <string name="configureDatabase">Configure Database</string>
+    <string name="databaseSync">Sync with OpenHDS Database</string>
+    <string name="default_openhdsserver">http://rcg.usm.maine.edu/openhds/api/rest/corewebservice</string>
+    <string name="hello">Hello, Android!</string>
+    <string name="openhdswebservice">OpenHDS Web Service</string>
+    <string name="password">Password</string>
+	<string name="syncDatabase">Sync Database</string>
+	<string name="syncDatabaseMessage">This procedure will attempt to download OpenHDS entities onto the device. Please be patient while the download is in progress.</string>
+	<string name="sync_entities_failure">Failed to Collect OpenHDS Entities</string>
+	<string name="sync_entities_successful">OpenHDS Entities Collected Successfully</string>
+    <string name="sync_interrupted">Collecting OpenHDS Entities has been interrupted</string>
+    <string name="url_error">Sorry, invalid URL!</string>
+    <string name="username">Username</string>
+    
+</resources>
