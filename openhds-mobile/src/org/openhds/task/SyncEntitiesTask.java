@@ -26,7 +26,6 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
-import android.os.Looper;
 
 /**
  * An AsyncTask to upload all OpenHDS data from the web service configured in ServerPreferences.
@@ -70,9 +69,14 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 		 
 		 try {
 			entity = "individual";
-			processUrl(baseurl + "/individual");
+			processUrl(baseurl + "/individual");	
+			resetDialogParams();
+			
+			entity = "location";
+			processUrl(baseurl + "/location");
 		 } 
 		 catch (Exception e) {
+			e.printStackTrace();
 			return false;
 		 }
 		 return true;
@@ -114,6 +118,7 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	private void setupDB() {	
 		databaseAdapter.open();
 		databaseAdapter.getDatabase().delete("individual", null, null);
+		databaseAdapter.getDatabase().delete("location", null, null);
 		databaseAdapter.close();
 	}
 	
@@ -143,13 +148,14 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
                     	dialog.setMax(count);
                     	parser.nextTag();
                     }
-                    
-                    if (name.equalsIgnoreCase("individual")) {
+                    else if (name.equalsIgnoreCase("individual") && entity.equals("individual")) {
                     	processIndividualParams(parser);
                     	activity.runOnUiThread(changeMessageIndividual);
                     }
-                     
-       
+                    else if (name.equalsIgnoreCase("location") && entity.equals("location")) {
+                    	processLocationParams(parser);
+                    	activity.runOnUiThread(changeMessageLocation);
+                    }
                     break;
             }
             eventType = parser.next();
@@ -161,7 +167,41 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	        dialog.setMessage("Downloading Individuals");
 	    }
 	};
+	
+	private Runnable changeMessageLocation = new Runnable() {
+	    public void run() {
+	        dialog.setMessage("Downloading Locations");
+	    }
+	};
 
+	private void processLocationParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+		String name = "";
+		Map<String, String> paramMap = new HashMap<String, String>();
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("extId", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("hierarchy", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("latitude", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("longitude", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("name", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("uuid", parser.nextText());
+        parser.nextTag();
+        
+        saveLocationToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("name"), 
+        		paramMap.get("latitude"), paramMap.get("longitude"), paramMap.get("hierarchy"));
+        
+        dialog.incrementProgressBy(1);
+	}
 	
 	private void processIndividualParams(XmlPullParser parser) throws XmlPullParserException, IOException {
 		String name = "";
@@ -199,6 +239,11 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         dialog.incrementProgressBy(1);
 	}
 	
+	private void resetDialogParams() {
+		dialog.setProgress(0);
+		dialog.setMax(0);
+	}
+	
 	protected void onPostExecute(final Boolean result) {
 		dialog.setProgress(0);
 	    listener.collectionComplete(result);
@@ -207,6 +252,12 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	public void saveIndividualToDB(String uuid, String extId, String firstName, String lastName, String gender, String dob, String mother, String father) {
 	    databaseAdapter.open();
 	    databaseAdapter.createIndividual(uuid, extId, firstName, lastName, dob, gender, mother, father);
+	    databaseAdapter.close();
+	}
+	
+	public void saveLocationToDB(String uuid, String extId, String name, String latitude, String longitude, String hierarchy) {
+	    databaseAdapter.open();
+	    databaseAdapter.createLocation(uuid, extId, name, latitude, longitude, hierarchy);
 	    databaseAdapter.close();
 	}
 }
