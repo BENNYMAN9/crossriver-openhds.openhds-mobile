@@ -18,12 +18,12 @@ public final class R {
         public static final int openhds_tab=0x7f020004;
     }
     public static final class id {
-        public static final int openhdspassword=0x7f050002;
-        public static final int openhdsserver=0x7f050000;
-        public static final int openhdsusername=0x7f050001;
+        public static final int openhdspassword=0x7f050003;
+        public static final int openhdsserver=0x7f050001;
+        public static final int openhdsusername=0x7f050002;
         public static final int syncButton=0x7f050004;
         public static final int textView1=0x7f050005;
-        public static final int title=0x7f050003;
+        public static final int title=0x7f050000;
     }
     public static final class layout {
         public static final int main=0x7f030000;
@@ -48,7 +48,8 @@ public final class R {
         public static final int sync_entities_failure=0x7f04000e;
         public static final int sync_entities_successful=0x7f04000f;
         public static final int sync_interrupted=0x7f040010;
+        public static final int update=0x7f040012;
         public static final int url_error=0x7f040011;
-        public static final int username=0x7f040012;
+        public static final int username=0x7f040013;
     }
 }
