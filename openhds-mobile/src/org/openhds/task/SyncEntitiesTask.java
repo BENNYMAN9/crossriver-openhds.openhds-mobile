@@ -31,7 +31,7 @@ import android.os.AsyncTask;
  * An AsyncTask to upload all OpenHDS data from the web service configured in ServerPreferences.
  */
 public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
-	
+		
 	private CollectEntitiesListener listener;
 	private SyncDatabaseActivity activity;
 	private DatabaseAdapter databaseAdapter;
@@ -71,6 +71,9 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 			entity = "individual";
 			processUrl(baseurl + "/individual");	
 			resetDialogParams();
+			
+			entity = "hierarchy";
+			processUrl(baseurl + "/locationhierarchy");
 			
 			entity = "location";
 			processUrl(baseurl + "/location");
@@ -156,6 +159,10 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
                     	processLocationParams(parser);
                     	activity.runOnUiThread(changeMessageLocation);
                     }
+                    else if (name.equalsIgnoreCase("hierarchy") && entity.equals("hierarchy")) {
+                    	processHierarchyParams(parser);
+                    	activity.runOnUiThread(changeMessageLocation);
+                    }
                     break;
             }
             eventType = parser.next();
@@ -173,6 +180,38 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	        dialog.setMessage("Downloading Locations");
 	    }
 	};
+	
+	private Runnable changeMessageHierarchy = new Runnable() {
+	    public void run() {
+	        dialog.setMessage("Downloading Hierarchy");
+	    }
+	};
+	
+	private void processHierarchyParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+		String name = "";
+		Map<String, String> paramMap = new HashMap<String, String>();
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("extId", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("level", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("name", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("parent", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("uuid", parser.nextText());
+        parser.nextTag();
+        
+        saveHierarchyToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("name"), 
+        		paramMap.get("parent"), paramMap.get("level"));
+        
+        dialog.incrementProgressBy(1);
+	}
 
 	private void processLocationParams(XmlPullParser parser) throws XmlPullParserException, IOException {
 		String name = "";
@@ -206,6 +245,9 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	private void processIndividualParams(XmlPullParser parser) throws XmlPullParserException, IOException {
 		String name = "";
 		Map<String, String> paramMap = new HashMap<String, String>();
+		parser.nextTag();
+		name = parser.getName();
+		paramMap.put("currentResidence", parser.nextText());
         parser.nextTag();
         name = parser.getName();
         paramMap.put("dob", parser.nextText());
@@ -258,6 +300,12 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	public void saveLocationToDB(String uuid, String extId, String name, String latitude, String longitude, String hierarchy) {
 	    databaseAdapter.open();
 	    databaseAdapter.createLocation(uuid, extId, name, latitude, longitude, hierarchy);
+	    databaseAdapter.close();
+	}
+	
+	public void saveHierarchyToDB(String uuid, String extId, String name, String parent, String level) {
+	    databaseAdapter.open();
+	    databaseAdapter.createHierarchy(uuid, extId, name, parent, level);
 	    databaseAdapter.close();
 	}
 }

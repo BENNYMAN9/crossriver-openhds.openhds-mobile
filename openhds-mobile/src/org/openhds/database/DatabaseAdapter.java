@@ -22,6 +22,7 @@ public class DatabaseAdapter {
 	private static final String INDIVIDUAL_GENDER = "gender";
 	private static final String INDIVIDUAL_MOTHER = "mother";  
 	private static final String INDIVIDUAL_FATHER = "father";  
+	private static final String INDIVIDUAL_RESIDENCE = "currentResidence";  
 	
 	private static final String DATABASE_TABLE_LOCATION = "location";
 	private static final String LOCATION_UUID = "uuid";  
@@ -30,11 +31,17 @@ public class DatabaseAdapter {
 	private static final String LOCATION_LATITUDE = "latitude";  
 	private static final String LOCATION_LONGITUDE = "longitude";  
 	private static final String LOCATION_HIERARCHY = "hierarchy";	
+	
+	private static final String DATABASE_TABLE_HIERARCHY = "hierarchy";
+	private static final String HIERARCHY_UUID = "uuid";  
+	private static final String HIERARCHY_EXTID = "extId";  
+	private static final String HIERARCHY_NAME = "name";  
+	private static final String HIERARCHY_PARENT = "parent";  
+	private static final String HIERARCHY_LEVEL = "level";  
 
 	private static final String DATABASE_TABLE_SOCIALGROUP = "socialgroup";
 	private static final String DATABASE_TABLE_VISIT = "visit";
 	private static final String DATABASE_TABLE_RESIDENCY = "residency";
-	private static final String DATABASE_TABLE_HIERARCHY = "hierarchy";
 	private static final String DATABASE_TABLE_HIERARCHYLEVEL = "hierarchyLevel";
 	 
 	private static final int DATABASE_VERSION = 1;
@@ -43,13 +50,20 @@ public class DatabaseAdapter {
 	        "create table individual (uuid text primary key, " + 
 	        "extId text not null, firstname text not null, lastname text not null, " +
 	        "dob text not null, gender text not null, mother text not null, " +
-	        "father text not null, foreign key(mother) references individual(uuid), " +
-	        "foreign key(father) references individual(uuid));";
+	        "father text not null, currentResidence text not null, " +
+	        "foreign key(mother) references individual(uuid), " +
+	        "foreign key(father) references individual(uuid), " +
+	        "foreign key(currentResidence) references location(uuid));";
 	
 	private static final String LOCATION_CREATE =
         "create table location (uuid text primary key, " + 
         "extId text not null, name text not null, latitude text, " +
         "longitude text, hierarchy text not null);";
+	
+	private static final String HIERARCHY_CREATE =
+	        "create table hierarchy (uuid text primary key, " + 
+	        "extId text not null, name text not null, parent text not null, " +
+	        "level text not null, foreign key(parent) references hierarchy(uuid));";
 	 
 	 private DatabaseHelper dbHelper;
 	 private SQLiteDatabase database;
@@ -97,6 +111,19 @@ public class DatabaseAdapter {
 		 Log.i(TAG, "inserting into location with extId " + extId);
 		 return database.insert(DATABASE_TABLE_LOCATION, null, values);
 	 }
+	 
+	 public long createHierarchy(String uuid, String extId, String name, String parent, 
+			 String level) {
+		 
+		 ContentValues values = new ContentValues();
+		 values.put(HIERARCHY_UUID, uuid);
+		 values.put(HIERARCHY_EXTID, extId);
+		 values.put(HIERARCHY_NAME, name);
+		 values.put(HIERARCHY_PARENT, parent);
+		 values.put(HIERARCHY_LEVEL, level);
+		 Log.i(TAG, "inserting into hierarchy with extId " + extId);
+		 return database.insert(DATABASE_TABLE_HIERARCHY, null, values);
+	 }
 	 	 
 	 public SQLiteDatabase getDatabase() {
 		 return database;
@@ -116,12 +143,14 @@ public class DatabaseAdapter {
 		 public void onCreate(SQLiteDatabase db) {
 			 db.execSQL(INDIVIDUAL_CREATE);
 			 db.execSQL(LOCATION_CREATE);
+			 db.execSQL(HIERARCHY_CREATE);
 		 }
 	
 		 @Override
 		 public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_INDIVIDUAL);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_LOCATION);
+			 db.execSQL("drop table if exists " + DATABASE_TABLE_HIERARCHY);
 		     onCreate(db);
 		 }
 	 }
