@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:id="@+id/regionBtn"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="20dp"
+        android:text="Select Region" />
+
+    <TextView
+        android:id="@+id/regionText"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+        android:layout_margin="25dp"
+        android:inputType="text"
+        android:textAppearance="?android:attr/textAppearanceLarge"  />
+    
+    <Button
+        android:id="@+id/subRegionBtn"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:text="Select SubRegion"
+        android:enabled="false" />
+    
+    <TextView
+        android:id="@+id/subRegionText"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+        android:layout_margin="25dp"
+        android:inputType="text" 
+        android:textAppearance="?android:attr/textAppearanceLarge"  />
+    
+    <Button
+        android:id="@+id/villageBtn"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:text="Select Village"
+        android:enabled="false" />
+    
+    <TextView
+        android:id="@+id/villageText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="25dp"
+        android:textAppearance="?android:attr/textAppearanceLarge" 
+        android:inputType="text" />
+    
+     <Button
+        android:id="@+id/resetBtn"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:text="Reset"
+        android:enabled="false"  />
+
+</LinearLayout>

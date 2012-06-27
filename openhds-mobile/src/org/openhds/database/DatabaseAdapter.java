@@ -1,7 +1,15 @@
 package org.openhds.database;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -12,6 +20,7 @@ public class DatabaseAdapter {
 	private static final String TAG = "DatabaseAdapter";
 		
 	private static final String DATABASE_NAME = "entityData";
+	private static final String DATABASE_PATH = "/data/data/org.openhds.activity/databases/";
 	
 	private static final String DATABASE_TABLE_INDIVIDUAL = "individual";
 	private static final String INDIVIDUAL_UUID = "uuid";  
@@ -65,25 +74,27 @@ public class DatabaseAdapter {
 	        "extId text not null, name text not null, parent text not null, " +
 	        "level text not null, foreign key(parent) references hierarchy(uuid));";
 	 
-	 private DatabaseHelper dbHelper;
-	 private SQLiteDatabase database;
+	private DatabaseHelper dbHelper;
+	private SQLiteDatabase database;
+	private Context context;
 	 
-	 public DatabaseAdapter(Context context) {
-		 dbHelper = new DatabaseHelper(context);
-	 }
+	public DatabaseAdapter(Context context) {
+		this.context = context;
+		dbHelper = new DatabaseHelper(context);
+	}
 	
-	 public DatabaseAdapter open() throws SQLException {
-	     database = dbHelper.getWritableDatabase();
-	     return this;
-	 }
+	public DatabaseAdapter open() throws SQLException {
+	    database = dbHelper.getWritableDatabase();
+	    return this;
+	}
 
-	 public void close() {
-		 dbHelper.close();
-	     database.close();
-	 }
+	public void close() {
+		dbHelper.close();
+	    database.close();
+	}
 	 
-	 public long createIndividual(String uuid, String extId, String firstName, 
-				String lastName, String dob, String gender, String mother, String father) {
+	public long createIndividual(String uuid, String extId, String firstName, 
+				String lastName, String dob, String gender, String mother, String father, String residence) {
 		 		
 		 ContentValues values = new ContentValues();
 		 values.put(INDIVIDUAL_UUID, uuid);
@@ -94,11 +105,12 @@ public class DatabaseAdapter {
 		 values.put(INDIVIDUAL_GENDER, gender);
 		 values.put(INDIVIDUAL_MOTHER, mother);
 		 values.put(INDIVIDUAL_FATHER, father);
+		 values.put(INDIVIDUAL_RESIDENCE, residence);
 		 Log.i(TAG, "inserting into individual with extId " + extId);
 		 return database.insert(DATABASE_TABLE_INDIVIDUAL, null, values);	
 	}
 	 
-	 public long createLocation(String uuid, String extId, String name, String latitude, 
+	public long createLocation(String uuid, String extId, String name, String latitude, 
 			 String longitude, String hierarchy) {
 		 
 		 ContentValues values = new ContentValues();
@@ -124,6 +136,23 @@ public class DatabaseAdapter {
 		 Log.i(TAG, "inserting into hierarchy with extId " + extId);
 		 return database.insert(DATABASE_TABLE_HIERARCHY, null, values);
 	 }
+	 
+	 public List<String> getAllRegions(String levelName) {
+		 open();
+		 List<String> regions = new ArrayList<String>();
+		 
+		 String query = "select * from hierarchy where level = '" + levelName + "';";
+		 Cursor cursor = database.rawQuery(query, null);
+		 
+		 if (cursor.moveToFirst()) {
+			 do {
+				 regions.add(cursor.getString(2));
+			 } while (cursor.moveToNext());
+		 }
+		 cursor.close();
+		 close();
+		 return regions;
+	 } 	 
 	 	 
 	 public SQLiteDatabase getDatabase() {
 		 return database;

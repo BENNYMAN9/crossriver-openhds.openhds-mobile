@@ -161,7 +161,7 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
                     }
                     else if (name.equalsIgnoreCase("hierarchy") && entity.equals("hierarchy")) {
                     	processHierarchyParams(parser);
-                    	activity.runOnUiThread(changeMessageLocation);
+                    	activity.runOnUiThread(changeMessageHierarchy);
                     }
                     break;
             }
@@ -276,7 +276,7 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         
         saveIndividualToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("firstName"), 
         		paramMap.get("lastName"), paramMap.get("gender"), paramMap.get("dob"), paramMap.get("mother"),
-        		paramMap.get("father"));
+        		paramMap.get("father"), paramMap.get("currentResidence"));
         
         dialog.incrementProgressBy(1);
 	}
@@ -291,9 +291,9 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	    listener.collectionComplete(result);
 	}
 	
-	public void saveIndividualToDB(String uuid, String extId, String firstName, String lastName, String gender, String dob, String mother, String father) {
+	public void saveIndividualToDB(String uuid, String extId, String firstName, String lastName, String gender, String dob, String mother, String father, String residence) {
 	    databaseAdapter.open();
-	    databaseAdapter.createIndividual(uuid, extId, firstName, lastName, dob, gender, mother, father);
+	    databaseAdapter.createIndividual(uuid, extId, firstName, lastName, dob, gender, mother, father, residence);
 	    databaseAdapter.close();
 	}
 	

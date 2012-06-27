@@ -9,7 +9,6 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.os.AsyncTask.Status;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -35,8 +34,7 @@ public class SyncDatabaseActivity extends Activity implements CollectEntitiesLis
 		 super.onCreate(savedInstanceState);
 		 setTitle(getString(R.string.app_name) + " > " + getString(R.string.syncDatabase));
 		 setContentView(R.layout.sync_database);
-	     setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-	     	     
+	   	     	     
 	     initializeProgressDialog();
  
 		 settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
