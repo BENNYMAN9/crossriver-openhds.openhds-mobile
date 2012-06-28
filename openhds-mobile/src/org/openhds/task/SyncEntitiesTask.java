@@ -44,7 +44,6 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	private String baseurl;
 	private String username;
 	private String password;
-	private String entity;
 	
 	public SyncEntitiesTask(String url, String username, String password, ProgressDialog dialog,
 			Context context, CollectEntitiesListener listener) {
@@ -67,16 +66,21 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 		 HttpConnectionParams.setSoTimeout(httpParameters, 100000);
 		 client = new DefaultHttpClient(httpParameters);
 		 
-		 try {
-			entity = "individual";
+		 try {	 
+			setupDB();
+						 
 			processUrl(baseurl + "/individual");	
 			resetDialogParams();
-			
-			entity = "hierarchy";
+			 
 			processUrl(baseurl + "/locationhierarchy");
-			
-			entity = "location";
+			resetDialogParams();
+
 			processUrl(baseurl + "/location");
+			resetDialogParams();
+			
+			processUrl(baseurl + "/round");
+			resetDialogParams();
+
 		 } 
 		 catch (Exception e) {
 			e.printStackTrace();
@@ -102,9 +106,7 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	private void processResponse() throws Exception {
 		InputStream inputStream = getResponse();
         if (inputStream != null)
-            setupDB();
-
-        processXMLDocument(inputStream);
+        	processXMLDocument(inputStream);
 	}
 	
     private InputStream getResponse() throws AuthenticationException, ClientProtocolException, IOException {
@@ -122,6 +124,8 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 		databaseAdapter.open();
 		databaseAdapter.getDatabase().delete("individual", null, null);
 		databaseAdapter.getDatabase().delete("location", null, null);
+		databaseAdapter.getDatabase().delete("hierarchy", null, null);
+		databaseAdapter.getDatabase().delete("round", null, null);
 		databaseAdapter.close();
 	}
 	
@@ -151,17 +155,21 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
                     	dialog.setMax(count);
                     	parser.nextTag();
                     }
-                    else if (name.equalsIgnoreCase("individual") && entity.equals("individual")) {
+                    else if (name.equalsIgnoreCase("individual")) {
                     	processIndividualParams(parser);
                     	activity.runOnUiThread(changeMessageIndividual);
                     }
-                    else if (name.equalsIgnoreCase("location") && entity.equals("location")) {
+                    else if (name.equalsIgnoreCase("location")) {
                     	processLocationParams(parser);
                     	activity.runOnUiThread(changeMessageLocation);
                     }
-                    else if (name.equalsIgnoreCase("hierarchy") && entity.equals("hierarchy")) {
+                    else if (name.equalsIgnoreCase("hierarchy")) {
                     	processHierarchyParams(parser);
                     	activity.runOnUiThread(changeMessageHierarchy);
+                    }
+                    else if (name.equalsIgnoreCase("round")) {
+                    	processRoundParams(parser);
+                    	activity.runOnUiThread(changeMessageRound);
                     }
                     break;
             }
@@ -184,6 +192,12 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	private Runnable changeMessageHierarchy = new Runnable() {
 	    public void run() {
 	        dialog.setMessage("Downloading Hierarchy");
+	    }
+	};
+	
+	private Runnable changeMessageRound = new Runnable() {
+	    public void run() {
+	        dialog.setMessage("Downloading Rounds");
 	    }
 	};
 	
@@ -281,6 +295,32 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         dialog.incrementProgressBy(1);
 	}
 	
+	private void processRoundParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+		String name = "";
+		Map<String, String> paramMap = new HashMap<String, String>();
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("endDate", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("remarks", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("roundNumber", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("startDate", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("uuid", parser.nextText());
+        parser.nextTag();
+          
+        saveRoundToDB(paramMap.get("uuid"), paramMap.get("startDate"), paramMap.get("endDate"), 
+        		paramMap.get("roundNumber"), paramMap.get("remarks"));
+        
+        dialog.incrementProgressBy(1);
+	}
+	
 	private void resetDialogParams() {
 		dialog.setProgress(0);
 		dialog.setMax(0);
@@ -306,6 +346,12 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	public void saveHierarchyToDB(String uuid, String extId, String name, String parent, String level) {
 	    databaseAdapter.open();
 	    databaseAdapter.createHierarchy(uuid, extId, name, parent, level);
+	    databaseAdapter.close();
+	}
+	
+	public void saveRoundToDB(String uuid, String startDate, String endDate, String roundNumber, String remarks) {
+	    databaseAdapter.open();
+	    databaseAdapter.createRound(uuid, startDate, endDate, roundNumber, remarks);
 	    databaseAdapter.close();
 	}
 }

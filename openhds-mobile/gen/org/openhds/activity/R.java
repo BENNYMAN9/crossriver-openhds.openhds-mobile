@@ -17,27 +17,35 @@ public final class R {
         public static final int ic_tab_artists_white=0x7f020003;
     }
     public static final class id {
-        public static final int configure_server=0x7f060013;
-        public static final int eventFragment=0x7f060004;
-        public static final int fragment_container=0x7f060001;
-        public static final int listView=0x7f060012;
-        public static final int openhdspassword=0x7f060007;
-        public static final int openhdsserver=0x7f060005;
-        public static final int openhdsusername=0x7f060006;
-        public static final int regionBtn=0x7f060008;
-        public static final int regionText=0x7f060009;
-        public static final int resetBtn=0x7f06000e;
-        public static final int selectionFragment=0x7f060002;
-        public static final int subRegionBtn=0x7f06000a;
-        public static final int subRegionText=0x7f06000b;
-        public static final int syncButton=0x7f060010;
-        public static final int sync_database=0x7f060014;
-        public static final int textValue=0x7f060011;
+        public static final int clearLocationBtn=0x7f060002;
+        public static final int configure_server=0x7f06001b;
+        public static final int createVisitBtn=0x7f060001;
+        public static final int eventFragment=0x7f060006;
+        public static final int fragment_container=0x7f060003;
+        public static final int individualBtn=0x7f060014;
+        public static final int individualText=0x7f060015;
+        public static final int listView=0x7f06001a;
+        public static final int locationBtn=0x7f060012;
+        public static final int locationText=0x7f060013;
+        public static final int openhdspassword=0x7f060009;
+        public static final int openhdsserver=0x7f060007;
+        public static final int openhdsusername=0x7f060008;
+        public static final int regionBtn=0x7f06000a;
+        public static final int regionText=0x7f06000b;
+        public static final int resetBtn=0x7f060016;
+        public static final int roundBtn=0x7f060010;
+        public static final int roundText=0x7f060011;
+        public static final int selectionFragment=0x7f060004;
+        public static final int subRegionBtn=0x7f06000c;
+        public static final int subRegionText=0x7f06000d;
+        public static final int syncButton=0x7f060018;
+        public static final int sync_database=0x7f06001c;
+        public static final int textValue=0x7f060019;
         public static final int textView1=0x7f060000;
-        public static final int title=0x7f06000f;
-        public static final int valueFragment=0x7f060003;
-        public static final int villageBtn=0x7f06000c;
-        public static final int villageText=0x7f06000d;
+        public static final int title=0x7f060017;
+        public static final int valueFragment=0x7f060005;
+        public static final int villageBtn=0x7f06000e;
+        public static final int villageText=0x7f06000f;
     }
     public static final class layout {
         public static final int event=0x7f030000;

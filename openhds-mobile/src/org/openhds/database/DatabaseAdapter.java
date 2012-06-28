@@ -1,11 +1,11 @@
 package org.openhds.database;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.openhds.model.Individual;
+import org.openhds.model.Location;
+import org.openhds.model.LocationHierarchy;
+import org.openhds.model.Round;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -18,9 +18,7 @@ import android.util.Log;
 public class DatabaseAdapter {
 	
 	private static final String TAG = "DatabaseAdapter";
-		
 	private static final String DATABASE_NAME = "entityData";
-	private static final String DATABASE_PATH = "/data/data/org.openhds.activity/databases/";
 	
 	private static final String DATABASE_TABLE_INDIVIDUAL = "individual";
 	private static final String INDIVIDUAL_UUID = "uuid";  
@@ -46,14 +44,21 @@ public class DatabaseAdapter {
 	private static final String HIERARCHY_EXTID = "extId";  
 	private static final String HIERARCHY_NAME = "name";  
 	private static final String HIERARCHY_PARENT = "parent";  
-	private static final String HIERARCHY_LEVEL = "level";  
+	private static final String HIERARCHY_LEVEL = "level";
+	
+	private static final String DATABASE_TABLE_ROUND = "round";
+	private static final String ROUND_UUID = "uuid";  
+	private static final String ROUND_STARTDATE = "startDate";  
+	private static final String ROUND_ENDDATE = "endDate";  
+	private static final String ROUND_NUMBER = "roundNumber";  
+	private static final String ROUND_REMARKS = "remarks"; 
 
 	private static final String DATABASE_TABLE_SOCIALGROUP = "socialgroup";
 	private static final String DATABASE_TABLE_VISIT = "visit";
 	private static final String DATABASE_TABLE_RESIDENCY = "residency";
 	private static final String DATABASE_TABLE_HIERARCHYLEVEL = "hierarchyLevel";
 	 
-	private static final int DATABASE_VERSION = 1;
+	private static final int DATABASE_VERSION = 2;
 	 
 	private static final String INDIVIDUAL_CREATE =
 	        "create table individual (uuid text primary key, " + 
@@ -73,6 +78,11 @@ public class DatabaseAdapter {
 	        "create table hierarchy (uuid text primary key, " + 
 	        "extId text not null, name text not null, parent text not null, " +
 	        "level text not null, foreign key(parent) references hierarchy(uuid));";
+	
+	private static final String ROUND_CREATE =
+	        "create table round (uuid text primary key, " + 
+	        "startDate text not null, endDate text not null, roundNumber text not null, " +
+	        "remarks text not null);";
 	 
 	private DatabaseHelper dbHelper;
 	private SQLiteDatabase database;
@@ -137,23 +147,139 @@ public class DatabaseAdapter {
 		 return database.insert(DATABASE_TABLE_HIERARCHY, null, values);
 	 }
 	 
-	 public List<String> getAllRegions(String levelName) {
+	 public long createRound(String uuid, String startDate, String endDate, String roundNumber, 
+			 String remarks) {
+		 
+		 ContentValues values = new ContentValues();
+		 values.put(ROUND_UUID, uuid);
+		 values.put(ROUND_STARTDATE, startDate);
+		 values.put(ROUND_ENDDATE, endDate);
+		 values.put(ROUND_NUMBER, roundNumber);
+		 values.put(ROUND_REMARKS, remarks);
+		 Log.i(TAG, "inserting into round with roundNumber " + roundNumber);
+		 return database.insert(DATABASE_TABLE_ROUND, null, values);
+	 }
+	 
+	 public List<LocationHierarchy> getAllRegions(String levelName) {
 		 open();
-		 List<String> regions = new ArrayList<String>();
+		 List<LocationHierarchy> regions = new ArrayList<LocationHierarchy>();
 		 
 		 String query = "select * from hierarchy where level = '" + levelName + "';";
 		 Cursor cursor = database.rawQuery(query, null);
 		 
 		 if (cursor.moveToFirst()) {
 			 do {
-				 regions.add(cursor.getString(2));
+				 LocationHierarchy region = new LocationHierarchy();
+				 region.setUuid(cursor.getString(0));
+				 region.setExtId(cursor.getString(1));
+				 region.setName(cursor.getString(2));
+				 region.setParent(cursor.getString(3));
+				 region.setLevel(cursor.getString(4));
+				 regions.add(region);
 			 } while (cursor.moveToNext());
 		 }
 		 cursor.close();
 		 close();
 		 return regions;
 	 } 	 
-	 	 
+	 
+	 public List<LocationHierarchy> getAllSubRegionsOfRegion(LocationHierarchy region) {
+		 open();
+		 List<LocationHierarchy> subRegions = new ArrayList<LocationHierarchy>();
+		 
+		 String query = "select * from hierarchy where parent = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {region.getUuid()});
+		 
+		 if (cursor.moveToFirst()) {
+			 do {
+				 LocationHierarchy subRegion = new LocationHierarchy();
+				 subRegion.setUuid(cursor.getString(0));
+				 subRegion.setExtId(cursor.getString(1));
+				 subRegion.setName(cursor.getString(2));
+				 subRegion.setParent(cursor.getString(3));
+				 subRegion.setLevel(cursor.getString(4));
+				 subRegions.add(subRegion);
+			 } while (cursor.moveToNext());
+		 }
+		 cursor.close();
+		 close();
+		 return subRegions;
+	 } 	 
+	 
+	 public List<Location> getAllLocationsOfVillage(LocationHierarchy village) {
+		 open();
+		 List<Location> locations = new ArrayList<Location>();
+		 
+		 String query = "select * from location where hierarchy = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {village.getUuid()});
+		 
+		 if (cursor.moveToFirst()) {
+			 do {
+				 Location loc = new Location();
+				 loc.setUuid(cursor.getString(0));
+				 loc.setExtId(cursor.getString(1));
+				 loc.setName(cursor.getString(2));
+				 loc.setLatitude(cursor.getString(3));
+				 loc.setLongitude(cursor.getString(4));
+				 loc.setHierarchy(cursor.getString(5));
+				 locations.add(loc);
+			 } while (cursor.moveToNext());
+		 }
+		 cursor.close();
+		 close();
+		 return locations;
+	 } 	 
+	  
+	 public List<Individual> getIndividualsAtLocation(Location location) {
+		 open();
+		 List<Individual> individuals = new ArrayList<Individual>();
+		 
+		 String query = "select * from individual where currentResidence = ?;"; 
+		 Cursor cursor = database.rawQuery(query, new String[] {location.getUuid()});
+		 
+		 if (cursor.moveToFirst()) {
+			 do {
+				 Individual individual = new Individual();
+				 individual.setUuid(cursor.getString(0));
+				 individual.setExtId(cursor.getString(1));
+				 individual.setFirstName(cursor.getString(2));
+				 individual.setLastName(cursor.getString(3));
+				 individual.setGender(cursor.getString(4));
+				 individual.setDob(cursor.getString(5));
+				 individual.setMother(cursor.getString(6));
+				 individual.setFather(cursor.getString(7));
+				 individual.setCurrentResidence(cursor.getString(8));
+				 individuals.add(individual);
+			 } while (cursor.moveToNext());
+		 }
+		 cursor.close();
+		 close(); 
+		 return individuals;
+	 }
+	 
+	 public List<Round> getAllRounds() {
+		 open();
+		 List<Round> rounds = new ArrayList<Round>();
+		 
+		 String query = "select * from round;";
+		 Cursor cursor = database.rawQuery(query, null);
+		 
+		 if (cursor.moveToFirst()) {
+			 do {
+				 Round round = new Round();
+				 round.setUuid(cursor.getString(0));
+				 round.setStartDate(cursor.getString(1));
+				 round.setEndDate(cursor.getString(2));
+				 round.setRoundNumber(cursor.getString(3));
+				 round.setRemarks(cursor.getString(4));
+				 rounds.add(round);
+			 } while (cursor.moveToNext());
+		 }
+		 cursor.close();
+		 close(); 
+		 return rounds;
+	 }
+	 	 	 	 
 	 public SQLiteDatabase getDatabase() {
 		 return database;
 	 }
@@ -173,13 +299,15 @@ public class DatabaseAdapter {
 			 db.execSQL(INDIVIDUAL_CREATE);
 			 db.execSQL(LOCATION_CREATE);
 			 db.execSQL(HIERARCHY_CREATE);
+			 db.execSQL(ROUND_CREATE);
 		 }
-	
+		 	
 		 @Override
 		 public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_INDIVIDUAL);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_LOCATION);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_HIERARCHY);
+			 db.execSQL("drop table if exists " + DATABASE_TABLE_ROUND);
 		     onCreate(db);
 		 }
 	 }

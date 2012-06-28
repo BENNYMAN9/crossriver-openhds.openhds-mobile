@@ -52,6 +52,54 @@
         android:textAppearance="?android:attr/textAppearanceLarge" 
         android:inputType="text" />
     
+    <Button
+        android:id="@+id/roundBtn"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:text="Select Round"
+        android:enabled="false" />
+    
+    <TextView
+        android:id="@+id/roundText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="25dp"
+        android:textAppearance="?android:attr/textAppearanceLarge" 
+        android:inputType="text" />
+    
+     <Button
+        android:id="@+id/locationBtn"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:text="Select Location"
+        android:enabled="false" />
+    
+    <TextView
+        android:id="@+id/locationText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="25dp"
+        android:textAppearance="?android:attr/textAppearanceLarge" 
+        android:inputType="text" />
+    
+    <Button
+        android:id="@+id/individualBtn"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:text="Select Individual"
+        android:enabled="false" />
+    
+    <TextView
+        android:id="@+id/individualText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="25dp"
+        android:textAppearance="?android:attr/textAppearanceLarge" 
+        android:inputType="text" />
+    
      <Button
         android:id="@+id/resetBtn"
         android:layout_width="150dp"

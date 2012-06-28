@@ -37,7 +37,7 @@ public class ValueFragment extends ListFragment {
 	@Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         // Send the event to the host activity
-        mCallback.onValueSelected(items.get(position));
+        mCallback.onValueSelected(position);
         this.setListAdapter(new ArrayAdapter<String>(getActivity(), R.layout.value, R.id.textValue, new String[0]));	
     }
 	
