@@ -7,13 +7,18 @@ import org.openhds.cell.ValueFragmentCell;
 import org.openhds.database.DatabaseAdapter;
 import org.openhds.fragment.EventFragment;
 import org.openhds.fragment.ValueFragment;
+import org.openhds.listener.OdkFormLoadListener;
 import org.openhds.listener.ValueSelectedListener;
 import org.openhds.model.Individual;
 import org.openhds.model.Location;
 import org.openhds.model.LocationHierarchy;
+import org.openhds.model.Record;
 import org.openhds.model.Round;
+import org.openhds.task.OdkFormLoadTask;
+
 import android.app.ActionBar;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,7 +29,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.support.v4.app.FragmentActivity;
 
-public class UpdateActivity extends FragmentActivity implements OnClickListener, ValueSelectedListener {
+public class UpdateActivity extends FragmentActivity implements OnClickListener, ValueSelectedListener, OdkFormLoadListener {
 	
 	private DatabaseAdapter databaseAdapter;
 	
@@ -34,7 +39,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					 roundNumberText, roundStartDateText, roundEndDateText, roundNumber, roundStartDate, roundEndDate, 
 					 locationNameText, locationExtIdText, locationLatitudeText, locationLongitudeText, locationName, locationExtId, locationLatitude, locationLongitude,
 					 individualFirstNameText, individualLastNameText, individualExtIdText, individualDobText, individualFirstName, individualLastName, individualExtId, individualDob;	
-	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, createVisitBtn, individualBtn, resetBtn, clearLocationBtn;
+	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, individualBtn, 
+	 			   createVisitBtn, clearLocationBtn, resetBtn, deathBtn;
 	
 	ValueFragment valueFragment;
 	EventFragment eventFragment;
@@ -82,6 +88,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         
         createVisitBtn = (Button) findViewById(R.id.createVisitBtn);
         createVisitBtn.setOnClickListener(this);
+        
+        deathBtn = (Button) findViewById(R.id.deathBtn);
+        deathBtn.setOnClickListener(this);
 
         regionBtn = (Button) findViewById(R.id.regionBtn);
         regionBtn.setOnClickListener(this);
@@ -280,6 +289,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				break;
 			case R.id.resetBtn:
 				reset();
+				break;
+			case R.id.deathBtn:
+				Record record = new Record(village, location, round, individual);
+				new OdkFormLoadTask(this, getContentResolver(), record).execute();
 		}	
 	}
 	
@@ -427,10 +440,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			INDIVIDUAL_PHASE = false;
 			FINISH_PHASE = false;
 			
-			regionBtn.setEnabled(true);
 			resetBtn.setEnabled(false);
 			createVisitBtn.setEnabled(false);
 			clearLocationBtn.setEnabled(false);
+			deathBtn.setEnabled(false);
+			regionBtn.setEnabled(true);
 			subRegionBtn.setEnabled(false);
 			villageBtn.setEnabled(false);
 			roundBtn.setEnabled(false);
@@ -461,10 +475,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			INDIVIDUAL_PHASE = false;
 			FINISH_PHASE = false;
 			
-			regionBtn.setEnabled(false);
 			resetBtn.setEnabled(true);
 			createVisitBtn.setEnabled(false);
 			clearLocationBtn.setEnabled(false);
+			deathBtn.setEnabled(false);
+			regionBtn.setEnabled(false);
 			subRegionBtn.setEnabled(true);
 			villageBtn.setEnabled(false);
 			roundBtn.setEnabled(false);
@@ -492,11 +507,12 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			VISIT_PHASE = false;
 			INDIVIDUAL_PHASE = false;
 			FINISH_PHASE = false;
-			
-			regionBtn.setEnabled(false);
+
 			resetBtn.setEnabled(true);
 			createVisitBtn.setEnabled(false);
 			clearLocationBtn.setEnabled(false);
+			deathBtn.setEnabled(false);
+			regionBtn.setEnabled(false);
 			subRegionBtn.setEnabled(false);
 			villageBtn.setEnabled(true);
 			roundBtn.setEnabled(false);
@@ -523,10 +539,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			INDIVIDUAL_PHASE = false;
 			FINISH_PHASE = false;
 			
-			regionBtn.setEnabled(false);
 			resetBtn.setEnabled(true);
 			createVisitBtn.setEnabled(false);
 			clearLocationBtn.setEnabled(false);
+			deathBtn.setEnabled(false);
+			regionBtn.setEnabled(false);
 			subRegionBtn.setEnabled(false);
 			villageBtn.setEnabled(false);
 			roundBtn.setEnabled(true);
@@ -551,10 +568,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			INDIVIDUAL_PHASE = false;
 			FINISH_PHASE = false;
 			
-			regionBtn.setEnabled(false);
 			resetBtn.setEnabled(true);
 			createVisitBtn.setEnabled(false);
 			clearLocationBtn.setEnabled(false);
+			deathBtn.setEnabled(false);
+			regionBtn.setEnabled(false);
 			subRegionBtn.setEnabled(false);
 			villageBtn.setEnabled(false);
 			roundBtn.setEnabled(false);
@@ -577,10 +595,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			INDIVIDUAL_PHASE = false;
 			FINISH_PHASE = false;
 			
-			regionBtn.setEnabled(false);
 			resetBtn.setEnabled(true);
 			createVisitBtn.setEnabled(true);
 			clearLocationBtn.setEnabled(true);
+			deathBtn.setEnabled(false);
+			regionBtn.setEnabled(false);
 			subRegionBtn.setEnabled(false);
 			villageBtn.setEnabled(false);
 			roundBtn.setEnabled(false);
@@ -601,10 +620,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			INDIVIDUAL_PHASE = true;
 			FINISH_PHASE = false;
 			
-			regionBtn.setEnabled(false);
 			resetBtn.setEnabled(true);
 			createVisitBtn.setEnabled(false);
 			clearLocationBtn.setEnabled(true);
+			deathBtn.setEnabled(false);
+			regionBtn.setEnabled(false);
 			subRegionBtn.setEnabled(false);
 			villageBtn.setEnabled(false);
 			roundBtn.setEnabled(false);
@@ -634,6 +654,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			roundBtn.setEnabled(false);
 			locationBtn.setEnabled(false);
 			individualBtn.setEnabled(false);
+			deathBtn.setEnabled(true);
 		}
+	}
+
+	public void onSuccess(Uri contentUri) {
+		startActivity(new Intent(Intent.ACTION_EDIT, contentUri));
 	}
 }
