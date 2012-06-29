@@ -104,7 +104,7 @@ public class DatabaseAdapter {
 	}
 	 
 	public long createIndividual(String uuid, String extId, String firstName, 
-				String lastName, String dob, String gender, String mother, String father, String residence) {
+				String lastName, String gender, String dob, String mother, String father, String residence) {
 		 		
 		 ContentValues values = new ContentValues();
 		 values.put(INDIVIDUAL_UUID, uuid);
@@ -244,8 +244,8 @@ public class DatabaseAdapter {
 				 individual.setExtId(cursor.getString(1));
 				 individual.setFirstName(cursor.getString(2));
 				 individual.setLastName(cursor.getString(3));
-				 individual.setGender(cursor.getString(4));
-				 individual.setDob(cursor.getString(5));
+				 individual.setDob(cursor.getString(4));
+				 individual.setGender(cursor.getString(5));
 				 individual.setMother(cursor.getString(6));
 				 individual.setFather(cursor.getString(7));
 				 individual.setCurrentResidence(cursor.getString(8));

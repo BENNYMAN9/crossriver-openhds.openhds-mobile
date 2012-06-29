@@ -3,6 +3,7 @@ package org.openhds.activity;
 import java.util.ArrayList;
 import java.util.List;
 import org.openhds.activity.R;
+import org.openhds.cell.ValueFragmentCell;
 import org.openhds.database.DatabaseAdapter;
 import org.openhds.fragment.EventFragment;
 import org.openhds.fragment.ValueFragment;
@@ -11,7 +12,6 @@ import org.openhds.model.Individual;
 import org.openhds.model.Location;
 import org.openhds.model.LocationHierarchy;
 import org.openhds.model.Round;
-
 import android.app.ActionBar;
 import android.content.Intent;
 import android.os.Bundle;
@@ -28,7 +28,12 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 	private DatabaseAdapter databaseAdapter;
 	
-	private TextView regionText, subRegionText, villageText, roundText, locationText, individualText;	
+	private TextView regionNameText, regionExtIdText, regionName, regionExtId, 
+					 subRegionNameText, subRegionExtIdText, subRegionName, subRegionExtId,
+					 villageNameText, villageExtIdText, villageName, villageExtId,
+					 roundNumberText, roundStartDateText, roundEndDateText, roundNumber, roundStartDate, roundEndDate, 
+					 locationNameText, locationExtIdText, locationLatitudeText, locationLongitudeText, locationName, locationExtId, locationLatitude, locationLongitude,
+					 individualFirstNameText, individualLastNameText, individualExtIdText, individualDobText, individualFirstName, individualLastName, individualExtId, individualDob;	
 	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, createVisitBtn, individualBtn, resetBtn, clearLocationBtn;
 	
 	ValueFragment valueFragment;
@@ -80,27 +85,55 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 
         regionBtn = (Button) findViewById(R.id.regionBtn);
         regionBtn.setOnClickListener(this);
-        regionText = (TextView) findViewById(R.id.regionText);
+        regionNameText = (TextView) findViewById(R.id.regionNameText);
+        regionExtIdText = (TextView) findViewById(R.id.regionExtIdText);
+        regionName = (TextView) findViewById(R.id.regionName);
+        regionExtId = (TextView) findViewById(R.id.regionExtId);
 	    
         subRegionBtn = (Button) findViewById(R.id.subRegionBtn);
         subRegionBtn.setOnClickListener(this);
-        subRegionText = (TextView) findViewById(R.id.subRegionText);
+        subRegionNameText = (TextView) findViewById(R.id.subRegionNameText);
+        subRegionExtIdText = (TextView) findViewById(R.id.subRegionExtIdText);
+        subRegionName = (TextView) findViewById(R.id.subRegionName);
+        subRegionExtId = (TextView) findViewById(R.id.subRegionExtId);
 	    
         villageBtn = (Button) findViewById(R.id.villageBtn);
         villageBtn.setOnClickListener(this);
-        villageText = (TextView) findViewById(R.id.villageText);
+        villageNameText = (TextView) findViewById(R.id.villageNameText);
+        villageExtIdText = (TextView) findViewById(R.id.villageExtIdText);
+        villageName = (TextView) findViewById(R.id.villageName);
+        villageExtId = (TextView) findViewById(R.id.villageExtId);
         
         roundBtn = (Button) findViewById(R.id.roundBtn);
         roundBtn.setOnClickListener(this);
-        roundText = (TextView) findViewById(R.id.roundText);
+        roundNumberText = (TextView) findViewById(R.id.roundNumberText);
+        roundStartDateText = (TextView) findViewById(R.id.roundStartDateText);
+        roundEndDateText = (TextView) findViewById(R.id.roundEndDateText);
+        roundNumber = (TextView) findViewById(R.id.roundNumber);
+        roundStartDate = (TextView) findViewById(R.id.roundStartDate);
+        roundEndDate = (TextView) findViewById(R.id.roundEndDate);
         
         locationBtn = (Button) findViewById(R.id.locationBtn);
         locationBtn.setOnClickListener(this);
-        locationText = (TextView) findViewById(R.id.locationText);
+        locationNameText = (TextView) findViewById(R.id.locationNameText);
+        locationExtIdText = (TextView) findViewById(R.id.locationExtIdText);
+        locationLatitudeText = (TextView) findViewById(R.id.locationLatitudeText);
+        locationLongitudeText = (TextView) findViewById(R.id.locationLongitudeText);
+        locationName = (TextView) findViewById(R.id.locationName);
+        locationExtId = (TextView) findViewById(R.id.locationExtId);
+        locationLatitude = (TextView) findViewById(R.id.locationLatitude);
+        locationLongitude = (TextView) findViewById(R.id.locationLongitude);
         
         individualBtn = (Button) findViewById(R.id.individualBtn);
         individualBtn.setOnClickListener(this);
-        individualText = (TextView) findViewById(R.id.individualText);
+        individualExtIdText = (TextView) findViewById(R.id.individualExtIdText);
+        individualFirstNameText = (TextView) findViewById(R.id.individualFirstNameText);
+        individualLastNameText = (TextView) findViewById(R.id.individualLastNameText);
+        individualDobText = (TextView) findViewById(R.id.individualDobText);
+        individualExtId = (TextView) findViewById(R.id.individualExtId);
+        individualFirstName = (TextView) findViewById(R.id.individualFirstName);
+        individualLastName = (TextView) findViewById(R.id.individualLastName);
+        individualDob = (TextView) findViewById(R.id.individualDob);
         
 		valueFragment = (ValueFragment)getSupportFragmentManager().findFragmentById(R.id.valueFragment);
 		eventFragment = (EventFragment)getSupportFragmentManager().findFragmentById(R.id.eventFragment);
@@ -150,9 +183,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     private void loadRegionValueData() {
     	regions = databaseAdapter.getAllRegions("LGA");
     	if (valueFragment != null) {
-    		List<String> list = new ArrayList<String>();
+    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (LocationHierarchy item : regions) {
-    			list.add(item.getName());
+    			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
+    			list.add(cell);
     		}
     		valueFragment.setContent(list);
     	}
@@ -161,9 +195,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     private void loadSubRegionValueData() {
       	subRegions = databaseAdapter.getAllSubRegionsOfRegion(region);
     	if (valueFragment != null) {
-    		List<String> list = new ArrayList<String>();
+    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (LocationHierarchy item : subRegions) {
-    			list.add(item.getName());
+    			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
+    			list.add(cell);
     		}
     		valueFragment.setContent(list);
     	}
@@ -172,9 +207,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     private void loadVillageValueData() {
       	villages = databaseAdapter.getAllSubRegionsOfRegion(subRegion);
     	if (valueFragment != null) {
-    		List<String> list = new ArrayList<String>();
+    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (LocationHierarchy item : villages) {
-    			list.add(item.getName());
+    			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
+    			list.add(cell);
     		}
     		valueFragment.setContent(list);
     	}
@@ -183,9 +219,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     private void loadRoundValueData() {
       	rounds = databaseAdapter.getAllRounds();
     	if (valueFragment != null) {
-    		List<String> list = new ArrayList<String>();
+    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (Round item : rounds) {
-    			list.add(item.getRoundNumber());
+    			ValueFragmentCell cell = new ValueFragmentCell("Round: " + item.getRoundNumber(), "");
+    			list.add(cell);
     		}
     		valueFragment.setContent(list);
     	}
@@ -194,9 +231,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     private void loadLocationValueData() {
       	locations = databaseAdapter.getAllLocationsOfVillage(village);
     	if (valueFragment != null) {
-    		List<String> list = new ArrayList<String>();
+    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (Location item : locations) {
-    			list.add(item.getName());
+    			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
+    			list.add(cell);
     		}
     		valueFragment.setContent(list);
     	}
@@ -205,9 +243,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     private void loadIndividualValueData() {
       	individuals = databaseAdapter.getIndividualsAtLocation(location);
     	if (valueFragment != null) {
-    		List<String> list = new ArrayList<String>();
+    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (Individual item : individuals) {
-    			list.add(item.getExtId());
+    			ValueFragmentCell cell = new ValueFragmentCell(item.getFirstName() + " " + item.getLastName(), item.getExtId());
+    			list.add(cell);
     		}
     		valueFragment.setContent(list);
     	}
@@ -267,34 +306,114 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		String phase = getPhase();
 		if (phase.equals("REGION")) {
 			region = regions.get(position);
-			regionText.setText(region.getName());
+			regionName.setVisibility(View.VISIBLE);
+			regionExtId.setVisibility(View.VISIBLE);
+			regionNameText.setText(region.getName());
+			regionExtIdText.setText(region.getExtId());
 			setPhase("SUB_REGION");
 		}
 		else if (phase.equals("SUB_REGION")) {
 			subRegion = subRegions.get(position);
-			subRegionText.setText(subRegion.getName());
+			subRegionName.setVisibility(View.VISIBLE);
+			subRegionExtId.setVisibility(View.VISIBLE);
+			subRegionNameText.setText(subRegion.getName());
+			subRegionExtIdText.setText(subRegion.getExtId());
 			setPhase("VILLAGE");
 		}
 		else if (phase.equals("VILLAGE")) {
 			village = villages.get(position);
-			villageText.setText(village.getName());
+			villageName.setVisibility(View.VISIBLE);
+			villageExtId.setVisibility(View.VISIBLE);
+			villageNameText.setText(village.getName());
+			villageExtIdText.setText(village.getExtId());
 			setPhase("ROUND");
 		}
 		else if (phase.equals("ROUND")) {
 			round = rounds.get(position);
-			roundText.setText(round.getRoundNumber());
+			roundNumber.setVisibility(View.VISIBLE);
+			roundStartDate.setVisibility(View.VISIBLE);
+			roundEndDate.setVisibility(View.VISIBLE);
+			roundNumberText.setText(round.getRoundNumber());
+			roundStartDateText.setText(round.getStartDate());
+			roundEndDateText.setText(round.getEndDate());
 			setPhase("LOCATION");
 		}
 		else if (phase.equals("LOCATION")) {
 			location = locations.get(position);
-			locationText.setText(location.getName());
+			locationName.setVisibility(View.VISIBLE);
+			locationExtId.setVisibility(View.VISIBLE);
+			locationLatitude.setVisibility(View.VISIBLE);
+			locationLongitude.setVisibility(View.VISIBLE);
+			locationNameText.setText(location.getName());
+			locationExtIdText.setText(location.getExtId());
+			locationLatitudeText.setText(location.getLatitude());
+			locationLongitudeText.setText(location.getLongitude());
 			setPhase("VISIT");
 		}
 		else if (phase.equals("INDIVIDUAL")) {
 			individual = individuals.get(position);
-			individualText.setText(individual.getExtId());
+			individualExtId.setVisibility(View.VISIBLE);
+			individualFirstName.setVisibility(View.VISIBLE);
+			individualLastName.setVisibility(View.VISIBLE);
+			individualDob.setVisibility(View.VISIBLE);
+			individualExtIdText.setText(individual.getExtId());
+			individualFirstNameText.setText(individual.getFirstName());
+			individualLastNameText.setText(individual.getLastName());
+			individualDobText.setText(individual.getDob());
 			setPhase("FINISH");
 		}
+	}
+	
+	private void clearRegionTextFields() {
+		regionNameText.setText("");
+		regionExtIdText.setText("");
+		regionName.setVisibility(View.INVISIBLE);
+		regionExtId.setVisibility(View.INVISIBLE);
+	}
+	
+	private void clearSubRegionTextFields() {
+		subRegionNameText.setText("");
+		subRegionExtIdText.setText("");
+		subRegionName.setVisibility(View.INVISIBLE);
+		subRegionExtId.setVisibility(View.INVISIBLE);
+	}
+	
+	private void clearVillageTextFields() {
+		villageNameText.setText("");
+		villageExtIdText.setText("");
+		villageName.setVisibility(View.INVISIBLE);
+		villageExtId.setVisibility(View.INVISIBLE);
+	}
+	
+	private void clearRoundTextFields() {
+		roundNumberText.setText("");
+		roundStartDateText.setText("");
+		roundEndDateText.setText("");
+		roundNumber.setVisibility(View.INVISIBLE);
+		roundStartDate.setVisibility(View.INVISIBLE);
+		roundEndDate.setVisibility(View.INVISIBLE);
+	}
+	
+	private void clearLocationTextFields() {
+		locationNameText.setText("");
+		locationExtIdText.setText("");
+		locationLatitudeText.setText("");
+		locationLongitudeText.setText("");
+		locationName.setVisibility(View.INVISIBLE);
+		locationExtId.setVisibility(View.INVISIBLE);
+		locationLatitude.setVisibility(View.INVISIBLE);
+		locationLongitude.setVisibility(View.INVISIBLE);
+	}
+	
+	private void clearIndividualTextFields() {
+		individualExtIdText.setText("");
+		individualFirstNameText.setText("");
+		individualLastNameText.setText("");
+		individualDobText.setText("");
+		individualExtId.setVisibility(View.INVISIBLE);
+		individualFirstName.setVisibility(View.INVISIBLE);
+		individualLastName.setVisibility(View.INVISIBLE);
+		individualDob.setVisibility(View.INVISIBLE);
 	}
 	
 	private void setPhase(String phase) {
@@ -318,13 +437,13 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			locationBtn.setEnabled(false);
 			individualBtn.setEnabled(false);
 			
-			regionText.setText("");
-			subRegionText.setText("");
-			villageText.setText("");
-			roundText.setText("");
-			locationText.setText("");
-			individualText.setText("");
-			
+			clearRegionTextFields();
+			clearSubRegionTextFields();
+			clearVillageTextFields();
+			clearRoundTextFields();
+			clearLocationTextFields();
+			clearIndividualTextFields();
+		
 			region = new LocationHierarchy();
 		    subRegion = new LocationHierarchy();
 		    village = new LocationHierarchy();
@@ -352,11 +471,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			locationBtn.setEnabled(false);
 			individualBtn.setEnabled(false);
 			
-			subRegionText.setText("");
-			villageText.setText("");
-			roundText.setText("");
-			locationText.setText("");
-			individualText.setText("");
+			clearSubRegionTextFields();
+			clearVillageTextFields();
+			clearRoundTextFields();
+			clearLocationTextFields();
+			clearIndividualTextFields();
 			
 		    subRegion = new LocationHierarchy();
 		    village = new LocationHierarchy();
@@ -384,10 +503,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			locationBtn.setEnabled(false);
 			individualBtn.setEnabled(false);
 			
-			villageText.setText("");
-			roundText.setText("");
-			locationText.setText("");
-			individualText.setText("");
+			clearVillageTextFields();
+			clearRoundTextFields();
+			clearLocationTextFields();
+			clearIndividualTextFields();
 			
 		    village = new LocationHierarchy();
 		    round = new Round();
@@ -414,9 +533,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			locationBtn.setEnabled(false);
 			individualBtn.setEnabled(false);
 			
-			roundText.setText("");
-			locationText.setText("");
-			individualText.setText("");
+			clearRoundTextFields();
+			clearLocationTextFields();
+			clearIndividualTextFields();
 			
 			round = new Round();
 		    location = new Location();
@@ -442,8 +561,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			locationBtn.setEnabled(true);
 			individualBtn.setEnabled(false);
 			
-			locationText.setText("");
-			individualText.setText("");
+			clearLocationTextFields();
+			clearIndividualTextFields();
 			
 			location = new Location();
 		    individual = new Individual();
@@ -468,7 +587,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			locationBtn.setEnabled(false);
 			individualBtn.setEnabled(false);
 			
-			individualText.setText("");
+			clearIndividualTextFields();
+			
+		    individual = new Individual();
 		}
 		else if (phase.equals("INDIVIDUAL")) {
 			REGION_PHASE = false;
@@ -490,7 +611,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			locationBtn.setEnabled(false);
 			individualBtn.setEnabled(true);
 			
-			individualText.setText("");
+			clearIndividualTextFields();
 			
 		    individual = new Individual();
 		}

@@ -333,7 +333,7 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	
 	public void saveIndividualToDB(String uuid, String extId, String firstName, String lastName, String gender, String dob, String mother, String father, String residence) {
 	    databaseAdapter.open();
-	    databaseAdapter.createIndividual(uuid, extId, firstName, lastName, dob, gender, mother, father, residence);
+	    databaseAdapter.createIndividual(uuid, extId, firstName, lastName, gender, dob, mother, father, residence);
 	    databaseAdapter.close();
 	}
 	
