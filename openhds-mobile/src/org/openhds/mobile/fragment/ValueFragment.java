@@ -1,11 +1,9 @@
 package org.openhds.mobile.fragment;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.openhds.mobile.R;
 import org.openhds.mobile.cell.ValueFragmentCell;
 import org.openhds.mobile.listener.ValueSelectedListener;
-
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;

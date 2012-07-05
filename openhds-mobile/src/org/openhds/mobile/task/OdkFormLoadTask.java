@@ -10,9 +10,11 @@ import java.util.TimeZone;
 import org.openhds.mobile.InstanceProviderAPI;
 import org.openhds.mobile.listener.OdkFormLoadListener;
 import org.openhds.mobile.model.Record;
+import org.openhds.mobile.model.UpdateEvent;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
@@ -23,35 +25,69 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 	private ContentResolver resolver;
 	private Uri odkUri;
 	private Record record;
+	private String event;
 	
-	public OdkFormLoadTask(OdkFormLoadListener listener, ContentResolver resolver, Record record) {
+	public OdkFormLoadTask(OdkFormLoadListener listener, ContentResolver resolver, Record record, String event) {
 		this.listener = listener;
 		this.resolver = resolver;
 		this.record = record;
+		this.event = event;
 	}
 
 	@Override
 	protected Boolean doInBackground(Void... params) {
 		
-		String xml = "<data id=\"death_registration_v4\">" + "\r\n";
-		xml += "<basicInformation>" + "\r\n";
-		xml += "<fieldWorker>" + "FWEK1" + "</fieldWorker>" + "\r\n";
-		xml += "<dateOfInterview />" + "\r\n";
-		xml += "<permanentId />" + "\r\n";
-		xml += "<houseId>" + record.getLocation().getExtId() + "</houseId>" + "\r\n";
-		xml += "<householdName />" + "\r\n";
-		xml += "<householdId />" + "\r\n";
-		xml += "<dateOfDeath />" + "\r\n";
-		xml += "<deceasedName>" + record.getIndividual().getFirstName() + " " + record.getIndividual().getLastName() + "</deceasedName>" + "\r\n";
-		xml += "<sex>" + record.getIndividual().getGender() + "</sex>" + "\r\n";
-		xml += "<placeOfDeath />" + "\r\n";
-		xml += "<placeOfDeathOther />" + "\r\n";
-		xml += "</basicInformation>" + "\r\n";
-		xml += "<sourceOfInformation>" + "\r\n";
-		xml += "<reportedBy />" + "\r\n";
-		xml += "</sourceOfInformation>" + "\r\n";
-		xml += "</data>" + "\r\n";
-
+		String xml = "";
+		if (event == UpdateEvent.VISIT) {
+			
+			xml = "<data id=\"visit_registration_v2\">" + "\r\n";
+			xml += "<visitId>" + record.getVisit().getExtId() + "</visitId>" + "\r\n";
+			xml += "<fieldWorkerId>" + "FWEK1" + "</fieldWorkerId>" + "\r\n";
+			xml += "<locationId>" + record.getLocation().getExtId() + "</locationId>" + "\r\n";
+			xml += "<visitDate>" + record.getVisit().getDate() + "</visitDate>" + "\r\n";
+			xml += "<roundNumber>" + record.getRound().getRoundNumber() + "</roundNumber>" + "\r\n";
+			xml += "<derivedFromUri />" + "\r\n";
+			xml += "<supervisorStatus />" + "\r\n";
+			xml += "<processedByMirth />" + "\r\n";
+			xml += "<validationFailed>" + "0" + "</validationFailed>" + "\r\n";
+			xml += "</data>" + "\r\n";
+			
+			File targetFile = saveFile(xml);
+			if (targetFile != null) {
+				return writeContent(targetFile, "visit", "visit_registration_v2");
+			}
+			
+		}
+		else if (event == UpdateEvent.DEATH) {
+		
+			xml = "<data id=\"death_registration_v4\">" + "\r\n";
+			xml += "<basicInformation>" + "\r\n";
+			xml += "<fieldWorker>" + "FWEK1" + "</fieldWorker>" + "\r\n";
+			xml += "<dateOfInterview />" + "\r\n";
+			xml += "<permanentId />" + "\r\n";
+			xml += "<houseId>" + record.getLocation().getExtId() + "</houseId>" + "\r\n";
+			xml += "<householdName />" + "\r\n";
+			xml += "<householdId />" + "\r\n";
+			xml += "<dateOfDeath />" + "\r\n";
+			xml += "<deceasedName>" + record.getIndividual().getFirstName() + " " + record.getIndividual().getLastName() + "</deceasedName>" + "\r\n";
+			xml += "<sex>" + record.getIndividual().getGender() + "</sex>" + "\r\n";
+			xml += "<placeOfDeath />" + "\r\n";
+			xml += "<placeOfDeathOther />" + "\r\n";
+			xml += "</basicInformation>" + "\r\n";
+			xml += "<sourceOfInformation>" + "\r\n";
+			xml += "<reportedBy />" + "\r\n";
+			xml += "</sourceOfInformation>" + "\r\n";
+			xml += "</data>" + "\r\n";
+			
+			File targetFile = saveFile(xml);
+			if (targetFile != null) {
+				return writeContent(targetFile, "death", "death_registration_v4");
+			}
+		}
+		return false;
+	}
+		
+	private File saveFile(String xml) {
 		File root = Environment.getExternalStorageDirectory();
         String destinationPath = root.getAbsolutePath() + File.separator
                         + "Android" + File.separator + "data" + File.separator
@@ -61,12 +97,12 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
         if (!baseDir.exists()) {
             boolean created = baseDir.mkdirs();
             if (!created) {
-                return false;
+                return null;
             }
         }
 
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd_hh:mm:ss");  
-        df.setTimeZone(TimeZone.getTimeZone("EST"));  
+        df.setTimeZone(TimeZone.getDefault());  
         String date = df.format(new Date());
         
         destinationPath += File.separator + date + ".xml";
@@ -77,20 +113,23 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 	            writer.write(xml);
 	            writer.close();
 	        } catch (IOException e) {
-	                return false;
+	        	return null;
 	        }
         }
-        
+        return targetFile;
+	}
+	
+	private boolean writeContent(File targetFile, String displayName, String formId) {
+		
         ContentValues values = new ContentValues();
         values.put(InstanceProviderAPI.InstanceColumns.INSTANCE_FILE_PATH, targetFile.getAbsolutePath());
-        values.put(InstanceProviderAPI.InstanceColumns.DISPLAY_NAME, "death");
-        values.put(InstanceProviderAPI.InstanceColumns.JR_FORM_ID, "death_registration_v4");
+        values.put(InstanceProviderAPI.InstanceColumns.DISPLAY_NAME, displayName);
+        values.put(InstanceProviderAPI.InstanceColumns.JR_FORM_ID, formId);
         odkUri = resolver.insert(InstanceProviderAPI.InstanceColumns.CONTENT_URI, values);
         if (odkUri == null) {
         	return false;
         }
-
-		return true;
+        return true;
 	}
 	
 	@Override

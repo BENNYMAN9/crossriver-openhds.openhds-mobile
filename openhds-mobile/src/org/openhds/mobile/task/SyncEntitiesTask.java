@@ -26,6 +26,8 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 
 /**
  * An AsyncTask to upload all OpenHDS data from the web service configured in ServerPreferences.
@@ -66,7 +68,12 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 		 HttpConnectionParams.setSoTimeout(httpParameters, 100000);
 		 client = new DefaultHttpClient(httpParameters);
 		 
-		 try {	 
+		 try {	
+			 
+			PowerManager pm = (PowerManager) activity.getSystemService(Context.POWER_SERVICE);
+			WakeLock wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "DoNotDimScreen");
+			wl.acquire();
+			 
 			setupDB();
 						 
 			processUrl(baseurl + "/individual");	
@@ -80,7 +87,11 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 			
 			processUrl(baseurl + "/round");
 			resetDialogParams();
-
+			
+			processUrl(baseurl + "/visit");
+			resetDialogParams();
+			
+			wl.release();
 		 } 
 		 catch (Exception e) {
 			e.printStackTrace();
@@ -126,6 +137,7 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 		databaseAdapter.getDatabase().delete("location", null, null);
 		databaseAdapter.getDatabase().delete("hierarchy", null, null);
 		databaseAdapter.getDatabase().delete("round", null, null);
+		databaseAdapter.getDatabase().delete("visit", null, null);
 		databaseAdapter.close();
 	}
 	
@@ -171,6 +183,10 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
                     	processRoundParams(parser);
                     	activity.runOnUiThread(changeMessageRound);
                     }
+                    else if (name.equalsIgnoreCase("visit")) {
+                    	processVisitParams(parser);
+                    	activity.runOnUiThread(changeMessageVisit);
+                    }
                     break;
             }
             eventType = parser.next();
@@ -198,6 +214,12 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	private Runnable changeMessageRound = new Runnable() {
 	    public void run() {
 	        dialog.setMessage("Downloading Rounds");
+	    }
+	};
+	
+	private Runnable changeMessageVisit = new Runnable() {
+	    public void run() {
+	        dialog.setMessage("Downloading Visits");
 	    }
 	};
 	
@@ -321,6 +343,32 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         dialog.incrementProgressBy(1);
 	}
 	
+	private void processVisitParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+		String name = "";
+		Map<String, String> paramMap = new HashMap<String, String>();
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("extId", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("roundNumber", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("uuid", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("visitDate", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("visitLocation", parser.nextText());
+        parser.nextTag();
+          
+        saveVisitToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("roundNumber"), 
+        		paramMap.get("visitDate"), paramMap.get("visitLocation"));
+        
+        dialog.incrementProgressBy(1);
+	}
+	
 	private void resetDialogParams() {
 		dialog.setProgress(0);
 		dialog.setMax(0);
@@ -352,6 +400,12 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	public void saveRoundToDB(String uuid, String startDate, String endDate, String roundNumber, String remarks) {
 	    databaseAdapter.open();
 	    databaseAdapter.createRound(uuid, startDate, endDate, roundNumber, remarks);
+	    databaseAdapter.close();
+	}
+	
+	public void saveVisitToDB(String uuid, String extId, String roundNumber, String date, String location) {
+	    databaseAdapter.open();
+	    databaseAdapter.createVisit(uuid, extId, roundNumber, date, location);
 	    databaseAdapter.close();
 	}
 }

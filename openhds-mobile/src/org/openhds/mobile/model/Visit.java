@@ -2,10 +2,19 @@ package org.openhds.mobile.model;
 
 public class Visit {
 	
+	String uuid;
 	String extId;
 	String location;
 	String date;
 	String round;
+	
+	public String getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
 	
 	public String getExtId() {
 		return extId;

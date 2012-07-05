@@ -2,10 +2,13 @@ package org.openhds.mobile.activity;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.openhds.mobile.InstanceProviderAPI;
 import org.openhds.mobile.R;
 import org.openhds.mobile.cell.ValueFragmentCell;
 import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.fragment.EventFragment;
+import org.openhds.mobile.fragment.SelectionFragment;
 import org.openhds.mobile.fragment.ValueFragment;
 import org.openhds.mobile.listener.OdkFormLoadListener;
 import org.openhds.mobile.listener.ValueSelectedListener;
@@ -14,10 +17,12 @@ import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.Record;
 import org.openhds.mobile.model.Round;
+import org.openhds.mobile.model.UpdateEvent;
+import org.openhds.mobile.model.Visit;
 import org.openhds.mobile.task.OdkFormLoadTask;
-import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
@@ -29,7 +34,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.support.v4.app.FragmentActivity;
 
-@SuppressLint("NewApi")
 public class UpdateActivity extends FragmentActivity implements OnClickListener, ValueSelectedListener, OdkFormLoadListener {
 	
 	private DatabaseAdapter databaseAdapter;
@@ -43,8 +47,13 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, individualBtn, 
 	 			   createVisitBtn, clearLocationBtn, resetBtn, deathBtn;
 	
+	SelectionFragment selectionFragment;
 	ValueFragment valueFragment;
 	EventFragment eventFragment;
+	
+	private final int SELECTED_XFORM = 1;
+	
+	private Uri contentUri;
 	
 	private boolean REGION_PHASE = true;
 	private boolean SUB_REGION_PHASE = false;
@@ -54,33 +63,13 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	private boolean VISIT_PHASE = false;
 	private boolean INDIVIDUAL_PHASE = false;
 	private boolean FINISH_PHASE = false;
-	
-	private LocationHierarchy region;
-	private LocationHierarchy subRegion;
-	private LocationHierarchy village;
-	private Round round;
-	private Location location;
-	private Individual individual;
-	
-	private List<LocationHierarchy> regions;
-	private List<LocationHierarchy> subRegions;
-	private List<LocationHierarchy> villages;
-	private List<Round> rounds;
-	private List<Location> locations;
-	private List<Individual> individuals;
-	
+				
     @Override
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.main);
 	    
         databaseAdapter = new DatabaseAdapter(getBaseContext());
-        region = new LocationHierarchy();
-        subRegion = new LocationHierarchy();
-        village = new LocationHierarchy();
-        round = new Round();
-        location = new Location();
-        individual = new Individual();
         
         resetBtn = (Button) findViewById(R.id.resetBtn);
         resetBtn.setOnClickListener(this);
@@ -146,6 +135,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         individualLastName = (TextView) findViewById(R.id.individualLastName);
         individualDob = (TextView) findViewById(R.id.individualDob);
         
+    	selectionFragment = (SelectionFragment)getSupportFragmentManager().findFragmentById(R.id.selectionFragment);
 		valueFragment = (ValueFragment)getSupportFragmentManager().findFragmentById(R.id.valueFragment);
 		eventFragment = (EventFragment)getSupportFragmentManager().findFragmentById(R.id.eventFragment);
 	    	       	    
@@ -154,8 +144,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	public void reset() {
-		setPhase("REGION");
-        		
+		setPhase("REGION");	
 		if (valueFragment != null) {
 			valueFragment.reset();
 		}
@@ -192,7 +181,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     }
     
     private void loadRegionValueData() {
-    	regions = databaseAdapter.getAllRegions("LGA");
+    	List<LocationHierarchy> regions = databaseAdapter.getAllRegions("LGA");
+    	selectionFragment.setRegions(regions);
     	if (valueFragment != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (LocationHierarchy item : regions) {
@@ -204,7 +194,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     }
     
     private void loadSubRegionValueData() {
-      	subRegions = databaseAdapter.getAllSubRegionsOfRegion(region);
+    	List<LocationHierarchy> subRegions = databaseAdapter.getAllSubRegionsOfRegion(selectionFragment.getRegion());
+      	selectionFragment.setSubRegions(subRegions);
     	if (valueFragment != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (LocationHierarchy item : subRegions) {
@@ -216,8 +207,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     }
     
     private void loadVillageValueData() {
-      	villages = databaseAdapter.getAllSubRegionsOfRegion(subRegion);
-    	if (valueFragment != null) {
+      	List<LocationHierarchy> villages = databaseAdapter.getAllSubRegionsOfRegion(selectionFragment.getSubRegion());
+    	selectionFragment.setVillages(villages);
+      	if (valueFragment != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (LocationHierarchy item : villages) {
     			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
@@ -228,7 +220,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     }
     
     private void loadRoundValueData() {
-      	rounds = databaseAdapter.getAllRounds();
+    	List<Round> rounds = databaseAdapter.getAllRounds();
+      	selectionFragment.setRounds(rounds);
     	if (valueFragment != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (Round item : rounds) {
@@ -240,7 +233,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     }
     
     private void loadLocationValueData() {
-      	locations = databaseAdapter.getAllLocationsOfVillage(village);
+    	List<Location> locations = databaseAdapter.getAllLocationsOfVillage(selectionFragment.getVillage());
+      	selectionFragment.setLocations(locations);
     	if (valueFragment != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (Location item : locations) {
@@ -252,7 +246,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     }
     
     private void loadIndividualValueData() {
-      	individuals = databaseAdapter.getIndividualsAtLocation(location);
+    	List<Individual> individuals = databaseAdapter.getIndividualsAtLocation(selectionFragment.getLocation());
+      	selectionFragment.setIndividuals(individuals);
     	if (valueFragment != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (Individual item : individuals) {
@@ -265,37 +260,72 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         
 	public void onClick(View view) {
 		switch (view.getId()) {
-			case R.id.regionBtn:
+			case R.id.regionBtn: {
 				loadRegionValueData();
 				break;
-			case R.id.subRegionBtn:
+			}
+			case R.id.subRegionBtn: {
 				loadSubRegionValueData();
 				break;
-			case R.id.villageBtn:
+			}
+			case R.id.villageBtn: {
 				loadVillageValueData();
 				break;
-			case R.id.roundBtn:
+			}
+			case R.id.roundBtn: {
 				loadRoundValueData();
 				break;
-			case R.id.locationBtn:
+			}
+			case R.id.locationBtn: {
 				loadLocationValueData();
 				break;
-			case R.id.createVisitBtn:
-				setPhase("INDIVIDUAL");
+			}
+			case R.id.createVisitBtn: {
+				selectionFragment.createVisit();
+				Record record = new Record(selectionFragment.getVillage(), selectionFragment.getLocation(),
+						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getVisit());
+				new OdkFormLoadTask(this, getContentResolver(), record, UpdateEvent.VISIT).execute();				
 				break;
-			case R.id.individualBtn:
+			}
+			case R.id.individualBtn: {
 				loadIndividualValueData();
 				break;
-			case R.id.clearLocationBtn:
+			}
+			case R.id.clearLocationBtn: {
 				setPhase("LOCATION");
 				break;
-			case R.id.resetBtn:
+			}
+			case R.id.resetBtn: {
 				reset();
 				break;
-			case R.id.deathBtn:
-				Record record = new Record(village, location, round, individual);
-				new OdkFormLoadTask(this, getContentResolver(), record).execute();
+			}
+			case R.id.deathBtn: {
+				Record record = new Record(selectionFragment.getVillage(), selectionFragment.getLocation(),
+						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getVisit());
+				new OdkFormLoadTask(this, getContentResolver(), record, UpdateEvent.DEATH).execute();
+			}
 		}	
+	}
+	
+	public void onSuccess(Uri contentUri) {
+		this.contentUri = contentUri;
+		startActivityForResult(new Intent(Intent.ACTION_EDIT, contentUri), SELECTED_XFORM);
+	}
+	
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		switch(requestCode) {
+			case SELECTED_XFORM: {
+			
+				if (resultCode == RESULT_OK) {
+					Cursor cursor = getContentResolver().query(contentUri, null, 
+							InstanceProviderAPI.InstanceColumns.STATUS + "=?", new String[] {InstanceProviderAPI.STATUS_COMPLETE}, null);
+					if (cursor.moveToNext()) {
+						setPhase("INDIVIDUAL");
+					}
+				}
+			
+			}
+		}
 	}
 	
 	private String getPhase() {
@@ -320,61 +350,61 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	public void onValueSelected(int position) {
 		String phase = getPhase();
 		if (phase.equals("REGION")) {
-			region = regions.get(position);
+			selectionFragment.setRegion(selectionFragment.getRegions().get(position));
 			regionName.setVisibility(View.VISIBLE);
 			regionExtId.setVisibility(View.VISIBLE);
-			regionNameText.setText(region.getName());
-			regionExtIdText.setText(region.getExtId());
+			regionNameText.setText(selectionFragment.getRegion().getName());
+			regionExtIdText.setText(selectionFragment.getRegion().getExtId());
 			setPhase("SUB_REGION");
 		}
 		else if (phase.equals("SUB_REGION")) {
-			subRegion = subRegions.get(position);
+			selectionFragment.setSubRegion(selectionFragment.getSubRegions().get(position));
 			subRegionName.setVisibility(View.VISIBLE);
 			subRegionExtId.setVisibility(View.VISIBLE);
-			subRegionNameText.setText(subRegion.getName());
-			subRegionExtIdText.setText(subRegion.getExtId());
+			subRegionNameText.setText(selectionFragment.getSubRegion().getName());
+			subRegionExtIdText.setText(selectionFragment.getSubRegion().getExtId());
 			setPhase("VILLAGE");
 		}
 		else if (phase.equals("VILLAGE")) {
-			village = villages.get(position);
+			selectionFragment.setVillage(selectionFragment.getVillages().get(position));
 			villageName.setVisibility(View.VISIBLE);
 			villageExtId.setVisibility(View.VISIBLE);
-			villageNameText.setText(village.getName());
-			villageExtIdText.setText(village.getExtId());
+			villageNameText.setText(selectionFragment.getVillage().getName());
+			villageExtIdText.setText(selectionFragment.getVillage().getExtId());
 			setPhase("ROUND");
 		}
 		else if (phase.equals("ROUND")) {
-			round = rounds.get(position);
+			selectionFragment.setRound(selectionFragment.getRounds().get(position));
 			roundNumber.setVisibility(View.VISIBLE);
 			roundStartDate.setVisibility(View.VISIBLE);
 			roundEndDate.setVisibility(View.VISIBLE);
-			roundNumberText.setText(round.getRoundNumber());
-			roundStartDateText.setText(round.getStartDate());
-			roundEndDateText.setText(round.getEndDate());
+			roundNumberText.setText(selectionFragment.getRound().getRoundNumber());
+			roundStartDateText.setText(selectionFragment.getRound().getStartDate());
+			roundEndDateText.setText(selectionFragment.getRound().getEndDate());
 			setPhase("LOCATION");
 		}
 		else if (phase.equals("LOCATION")) {
-			location = locations.get(position);
+			selectionFragment.setLocation(selectionFragment.getLocations().get(position));
 			locationName.setVisibility(View.VISIBLE);
 			locationExtId.setVisibility(View.VISIBLE);
 			locationLatitude.setVisibility(View.VISIBLE);
 			locationLongitude.setVisibility(View.VISIBLE);
-			locationNameText.setText(location.getName());
-			locationExtIdText.setText(location.getExtId());
-			locationLatitudeText.setText(location.getLatitude());
-			locationLongitudeText.setText(location.getLongitude());
+			locationNameText.setText(selectionFragment.getLocation().getName());
+			locationExtIdText.setText(selectionFragment.getLocation().getExtId());
+			locationLatitudeText.setText(selectionFragment.getLocation().getLatitude());
+			locationLongitudeText.setText(selectionFragment.getLocation().getLongitude());
 			setPhase("VISIT");
 		}
 		else if (phase.equals("INDIVIDUAL")) {
-			individual = individuals.get(position);
+			selectionFragment.setIndividual(selectionFragment.getIndividuals().get(position));
 			individualExtId.setVisibility(View.VISIBLE);
 			individualFirstName.setVisibility(View.VISIBLE);
 			individualLastName.setVisibility(View.VISIBLE);
 			individualDob.setVisibility(View.VISIBLE);
-			individualExtIdText.setText(individual.getExtId());
-			individualFirstNameText.setText(individual.getFirstName());
-			individualLastNameText.setText(individual.getLastName());
-			individualDobText.setText(individual.getDob());
+			individualExtIdText.setText(selectionFragment.getIndividual().getExtId());
+			individualFirstNameText.setText(selectionFragment.getIndividual().getFirstName());
+			individualLastNameText.setText(selectionFragment.getIndividual().getLastName());
+			individualDobText.setText(selectionFragment.getIndividual().getDob());
 			setPhase("FINISH");
 		}
 	}
@@ -460,12 +490,12 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearLocationTextFields();
 			clearIndividualTextFields();
 		
-			region = new LocationHierarchy();
-		    subRegion = new LocationHierarchy();
-		    village = new LocationHierarchy();
-		    round = new Round();
-		    location = new Location();
-		    individual = new Individual();
+			selectionFragment.setRegion(new LocationHierarchy());
+			selectionFragment.setSubRegion(new LocationHierarchy());
+			selectionFragment.setVillage(new LocationHierarchy());
+			selectionFragment.setRound(new Round());
+			selectionFragment.setLocation(new Location());
+			selectionFragment.setIndividual(new Individual());
 		}
 		else if (phase.equals("SUB_REGION")) {
 			REGION_PHASE = false;
@@ -494,11 +524,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearLocationTextFields();
 			clearIndividualTextFields();
 			
-		    subRegion = new LocationHierarchy();
-		    village = new LocationHierarchy();
-		    round = new Round();
-		    location = new Location();
-		    individual = new Individual();
+			selectionFragment.setSubRegion(new LocationHierarchy());
+			selectionFragment.setVillage(new LocationHierarchy());
+			selectionFragment.setRound(new Round());
+			selectionFragment.setLocation(new Location());
+			selectionFragment.setIndividual(new Individual());
 		}
 		else if (phase.equals("VILLAGE")) {
 			REGION_PHASE = false;
@@ -526,10 +556,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearLocationTextFields();
 			clearIndividualTextFields();
 			
-		    village = new LocationHierarchy();
-		    round = new Round();
-		    location = new Location();
-		    individual = new Individual();
+			selectionFragment.setVillage(new LocationHierarchy());
+			selectionFragment.setRound(new Round());
+			selectionFragment.setLocation(new Location());
+			selectionFragment.setIndividual(new Individual());
 		}
 		else if (phase.equals("ROUND")) {
 			REGION_PHASE = false;
@@ -556,9 +586,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearLocationTextFields();
 			clearIndividualTextFields();
 			
-			round = new Round();
-		    location = new Location();
-		    individual = new Individual();
+			selectionFragment.setRound(new Round());
+			selectionFragment.setLocation(new Location());
+			selectionFragment.setIndividual(new Individual());
 		}
 		else if (phase.equals("LOCATION")) {
 			REGION_PHASE = false;
@@ -584,8 +614,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearLocationTextFields();
 			clearIndividualTextFields();
 			
-			location = new Location();
-		    individual = new Individual();
+			selectionFragment.setLocation(new Location());
+			selectionFragment.setIndividual(new Individual());
 		}
 		else if (phase.equals("VISIT")) {
 			REGION_PHASE = false;
@@ -610,7 +640,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			
 			clearIndividualTextFields();
 			
-		    individual = new Individual();
+			selectionFragment.setIndividual(new Individual());
 		}
 		else if (phase.equals("INDIVIDUAL")) {
 			REGION_PHASE = false;
@@ -635,7 +665,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			
 			clearIndividualTextFields();
 			
-		    individual = new Individual();
+			selectionFragment.setIndividual(new Individual());
 		}
 		else if (phase.equals("FINISH")) {
 			REGION_PHASE = false;
@@ -658,9 +688,5 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			individualBtn.setEnabled(false);
 			deathBtn.setEnabled(true);
 		}
-	}
-
-	public void onSuccess(Uri contentUri) {
-		startActivity(new Intent(Intent.ACTION_EDIT, contentUri));
 	}
 }

@@ -9,12 +9,14 @@ public class Record {
 	Location location;
 	Individual individual;
 	Round round;
+	Visit visit;
 	
-	public Record(LocationHierarchy village, Location location, Round round, Individual individual) {
+	public Record(LocationHierarchy village, Location location, Round round, Individual individual, Visit visit) {
 		this.village = village;
 		this.location = location;
 		this.individual = individual;
 		this.round = round;
+		this.visit = visit;
 	}
 	
 	public LocationHierarchy getVillage() {
@@ -47,5 +49,13 @@ public class Record {
 	
 	public void setRound(Round round) {
 		this.round = round;
+	}
+	
+	public Visit getVisit() {
+		return visit;
+	}
+
+	public void setVisit(Visit visit) {
+		this.visit = visit;
 	}
 }

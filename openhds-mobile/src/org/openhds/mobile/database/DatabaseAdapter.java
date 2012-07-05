@@ -7,6 +7,7 @@ import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.Round;
+import org.openhds.mobile.model.Visit;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -53,13 +54,15 @@ public class DatabaseAdapter {
 	private static final String ROUND_ENDDATE = "endDate";  
 	private static final String ROUND_NUMBER = "roundNumber";  
 	private static final String ROUND_REMARKS = "remarks"; 
-
-	private static final String DATABASE_TABLE_SOCIALGROUP = "socialgroup";
+	
 	private static final String DATABASE_TABLE_VISIT = "visit";
-	private static final String DATABASE_TABLE_RESIDENCY = "residency";
-	private static final String DATABASE_TABLE_HIERARCHYLEVEL = "hierarchyLevel";
+	private static final String VISIT_UUID = "uuid";  
+	private static final String VISIT_EXTID = "extId";  
+	private static final String VISIT_ROUND = "round";  
+	private static final String VISIT_DATE = "date";  
+	private static final String VISIT_LOCATION = "location"; 
 	 
-	private static final int DATABASE_VERSION = 2;
+	private static final int DATABASE_VERSION = 3;
 	 
 	private static final String INDIVIDUAL_CREATE =
 	        "create table individual (uuid text primary key, " + 
@@ -84,6 +87,11 @@ public class DatabaseAdapter {
 	        "create table round (uuid text primary key, " + 
 	        "startDate text not null, endDate text not null, roundNumber text not null, " +
 	        "remarks text not null);";
+	
+	private static final String VISIT_CREATE =
+	        "create table visit (uuid text primary key, " + 
+	        "extId text not null, date text not null, round text not null, " +
+	        "location text not null, foreign key(location) references location(uuid));";
 	 
 	private DatabaseHelper dbHelper;
 	private SQLiteDatabase database;
@@ -159,6 +167,32 @@ public class DatabaseAdapter {
 		 values.put(ROUND_REMARKS, remarks);
 		 Log.i(TAG, "inserting into round with roundNumber " + roundNumber);
 		 return database.insert(DATABASE_TABLE_ROUND, null, values);
+	 }
+	 
+	 public long createVisit(String uuid, String extId, String roundNumber, String date, 
+			 String location) {
+		 
+		 ContentValues values = new ContentValues();
+		 values.put(VISIT_UUID, uuid);
+		 values.put(VISIT_EXTID, extId);
+		 values.put(VISIT_DATE, date);
+		 values.put(VISIT_ROUND, roundNumber);
+		 values.put(VISIT_LOCATION, location);
+		 Log.i(TAG, "inserting into visit with extId " + extId);
+		 return database.insert(DATABASE_TABLE_VISIT, null, values);
+	 }
+	 
+	 public boolean findVisitByExtId(String extId) {
+		 open();
+		 String query = "select * from visit where extId = '" + extId + "';";
+		 Cursor cursor = database.rawQuery(query, null);
+		 
+		 if (cursor.moveToFirst())
+			 return false;
+		 		 
+		 cursor.close();
+		 close();
+		 return true;
 	 }
 	 
 	 public List<LocationHierarchy> getAllRegions(String levelName) {
@@ -280,6 +314,29 @@ public class DatabaseAdapter {
 		 close(); 
 		 return rounds;
 	 }
+	 
+	 public List<Visit> getAllVisits() {
+		 open();
+		 List<Visit> visits = new ArrayList<Visit>();
+		 
+		 String query = "select * from visit;";
+		 Cursor cursor = database.rawQuery(query, null);
+		 
+		 if (cursor.moveToFirst()) {
+			 do {
+				 Visit visit = new Visit();
+				 visit.setUuid(cursor.getString(0));
+				 visit.setExtId(cursor.getString(1));
+				 visit.setDate(cursor.getString(2));
+				 visit.setRound(cursor.getString(3));
+				 visit.setLocation(cursor.getString(4));
+				 visits.add(visit);
+			 } while (cursor.moveToNext());
+		 }
+		 cursor.close();
+		 close(); 
+		 return visits;
+	 }
 	 	 	 	 
 	 public SQLiteDatabase getDatabase() {
 		 return database;
@@ -301,6 +358,7 @@ public class DatabaseAdapter {
 			 db.execSQL(LOCATION_CREATE);
 			 db.execSQL(HIERARCHY_CREATE);
 			 db.execSQL(ROUND_CREATE);
+			 db.execSQL(VISIT_CREATE);
 		 }
 		 	
 		 @Override
@@ -309,6 +367,7 @@ public class DatabaseAdapter {
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_LOCATION);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_HIERARCHY);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_ROUND);
+			 db.execSQL("drop table if exists " + DATABASE_TABLE_VISIT);
 		     onCreate(db);
 		 }
 	 }
