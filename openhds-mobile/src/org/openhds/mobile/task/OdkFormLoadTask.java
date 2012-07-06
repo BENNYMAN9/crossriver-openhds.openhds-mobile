@@ -42,7 +42,7 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 			
 			xml = "<data id=\"visit_registration_v2\">" + "\r\n";
 			xml += "<visitId>" + record.getVisit().getExtId() + "</visitId>" + "\r\n";
-			xml += "<fieldWorkerId>" + "FWEK1" + "</fieldWorkerId>" + "\r\n";
+			xml += "<fieldWorkerId>" + record.getFieldWorkerId() + "</fieldWorkerId>" + "\r\n";
 			xml += "<locationId>" + record.getLocation().getExtId() + "</locationId>" + "\r\n";
 			xml += "<visitDate>" + record.getVisit().getDate() + "</visitDate>" + "\r\n";
 			xml += "<roundNumber>" + record.getRound().getRoundNumber() + "</roundNumber>" + "\r\n";
@@ -62,7 +62,7 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 		
 			xml = "<data id=\"death_registration_v4\">" + "\r\n";
 			xml += "<basicInformation>" + "\r\n";
-			xml += "<fieldWorker>" + "FWEK1" + "</fieldWorker>" + "\r\n";
+			xml += "<fieldWorker>" + record.getFieldWorkerId() + "</fieldWorker>" + "\r\n";
 			xml += "<dateOfInterview />" + "\r\n";
 			xml += "<permanentId />" + "\r\n";
 			xml += "<houseId>" + record.getLocation().getExtId() + "</houseId>" + "\r\n";
@@ -91,7 +91,7 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 		File root = Environment.getExternalStorageDirectory();
         String destinationPath = root.getAbsolutePath() + File.separator
                         + "Android" + File.separator + "data" + File.separator
-                        + "org.openhds.activity" + File.separator + "files";
+                        + "org.openhds.mobile" + File.separator + "files";
 
         File baseDir = new File(destinationPath);
         if (!baseDir.exists()) {

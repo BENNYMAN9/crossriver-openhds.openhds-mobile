@@ -61,8 +61,12 @@ public class DatabaseAdapter {
 	private static final String VISIT_ROUND = "round";  
 	private static final String VISIT_DATE = "date";  
 	private static final String VISIT_LOCATION = "location"; 
+	
+	private static final String DATABASE_TABLE_FIELDWORKER = "fieldworker";
+	private static final String FIELDWORKER_EXTID = "extId";  
+	private static final String FIELDWORKER_PASSWORD = "password";  
 	 
-	private static final int DATABASE_VERSION = 3;
+	private static final int DATABASE_VERSION = 4;
 	 
 	private static final String INDIVIDUAL_CREATE =
 	        "create table individual (uuid text primary key, " + 
@@ -92,6 +96,10 @@ public class DatabaseAdapter {
 	        "create table visit (uuid text primary key, " + 
 	        "extId text not null, date text not null, round text not null, " +
 	        "location text not null, foreign key(location) references location(uuid));";
+	
+	private static final String FIELDWORKER_CREATE =
+        "create table fieldworker (extId text primary key, " + 
+        "password text not null);";
 	 
 	private DatabaseHelper dbHelper;
 	private SQLiteDatabase database;
@@ -182,10 +190,24 @@ public class DatabaseAdapter {
 		 return database.insert(DATABASE_TABLE_VISIT, null, values);
 	 }
 	 
+	 public boolean createFieldWorker(String extId, String password) {
+		 if (findFieldWorker(extId, password) == false) {
+			 open();
+			 ContentValues values = new ContentValues();
+			 values.put(FIELDWORKER_EXTID, extId);
+			 values.put(FIELDWORKER_PASSWORD, password);
+			 Log.i(TAG, "inserting into fieldworker with extId " + extId + " and password " + password);
+			 long result = database.insert(DATABASE_TABLE_FIELDWORKER, null, values);
+			 close();
+			 return true;
+		 }
+		return false;
+	 }
+	 
 	 public boolean findVisitByExtId(String extId) {
 		 open();
-		 String query = "select * from visit where extId = '" + extId + "';";
-		 Cursor cursor = database.rawQuery(query, null);
+		 String query = "select * from visit where extId = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {extId});
 		 
 		 if (cursor.moveToFirst())
 			 return false;
@@ -195,12 +217,25 @@ public class DatabaseAdapter {
 		 return true;
 	 }
 	 
+	 public boolean findFieldWorker(String extId, String password) {
+		 open();
+		 String query = "select * from fieldworker where extId = ? and password = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {extId, password});
+		 
+		 if (cursor.moveToFirst())
+			 return true;
+		 		 
+		 cursor.close();
+		 close();
+		 return false;
+	 }
+	 	 
 	 public List<LocationHierarchy> getAllRegions(String levelName) {
 		 open();
 		 List<LocationHierarchy> regions = new ArrayList<LocationHierarchy>();
 		 
-		 String query = "select * from hierarchy where level = '" + levelName + "';";
-		 Cursor cursor = database.rawQuery(query, null);
+		 String query = "select * from hierarchy where level = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {levelName});
 		 
 		 if (cursor.moveToFirst()) {
 			 do {
@@ -359,6 +394,7 @@ public class DatabaseAdapter {
 			 db.execSQL(HIERARCHY_CREATE);
 			 db.execSQL(ROUND_CREATE);
 			 db.execSQL(VISIT_CREATE);
+			 db.execSQL(FIELDWORKER_CREATE);
 		 }
 		 	
 		 @Override
@@ -368,6 +404,7 @@ public class DatabaseAdapter {
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_HIERARCHY);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_ROUND);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_VISIT);
+			 db.execSQL("drop table if exists " + DATABASE_TABLE_FIELDWORKER);
 		     onCreate(db);
 		 }
 	 }

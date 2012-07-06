@@ -1,0 +1,5 @@
+package org.openhds.mobile.model;
+
+public enum Result {
+	AUTHENTICATED, BAD_AUTHENTICATION, CREATED_FIELDWORKER_SUCCESS, BAD_XML, FIELDWORKER_ALREADY_EXISTS;
+}

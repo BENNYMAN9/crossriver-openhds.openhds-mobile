@@ -18,7 +18,6 @@ import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.Record;
 import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.UpdateEvent;
-import org.openhds.mobile.model.Visit;
 import org.openhds.mobile.task.OdkFormLoadTask;
 import android.app.ActionBar;
 import android.content.Intent;
@@ -47,6 +46,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, individualBtn, 
 	 			   createVisitBtn, clearLocationBtn, resetBtn, deathBtn;
 	
+	private String loggedInUser;
+	
 	SelectionFragment selectionFragment;
 	ValueFragment valueFragment;
 	EventFragment eventFragment;
@@ -68,7 +69,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.main);
-	    
+	   
+	    loggedInUser = getIntent().getExtras().getString("username");
+
         databaseAdapter = new DatabaseAdapter(getBaseContext());
         
         resetBtn = (Button) findViewById(R.id.resetBtn);
@@ -282,7 +285,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			}
 			case R.id.createVisitBtn: {
 				selectionFragment.createVisit();
-				Record record = new Record(selectionFragment.getVillage(), selectionFragment.getLocation(),
+				Record record = new Record(loggedInUser, selectionFragment.getVillage(), selectionFragment.getLocation(),
 						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getVisit());
 				new OdkFormLoadTask(this, getContentResolver(), record, UpdateEvent.VISIT).execute();				
 				break;
@@ -300,7 +303,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				break;
 			}
 			case R.id.deathBtn: {
-				Record record = new Record(selectionFragment.getVillage(), selectionFragment.getLocation(),
+				Record record = new Record(loggedInUser, selectionFragment.getVillage(), selectionFragment.getLocation(),
 						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getVisit());
 				new OdkFormLoadTask(this, getContentResolver(), record, UpdateEvent.DEATH).execute();
 			}
