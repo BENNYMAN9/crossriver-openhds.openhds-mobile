@@ -3,8 +3,11 @@ package org.openhds.mobile.activity;
 import org.openhds.mobile.R;
 import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.listener.RetrieveFieldWorkersListener;
+import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Result;
 import org.openhds.mobile.task.LoginTask;
+
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -14,6 +17,9 @@ import android.content.DialogInterface.OnCancelListener;
 import android.os.Bundle;
 import android.os.AsyncTask.Status;
 import android.preference.PreferenceManager;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -54,6 +60,27 @@ public class LoginActivity extends Activity implements OnClickListener, Retrieve
 	    
 	    registerChkBox = (CheckBox) findViewById(R.id.registerChkBox);
 	    registerChkBox.setOnClickListener(this);
+	    
+	    ActionBar actionBar = getActionBar();
+	    actionBar.show();
+    }
+	
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {	
+    	MenuInflater inflater = getMenuInflater();
+    	inflater.inflate(R.menu.loginmenu, menu);
+        return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.configure_server:
+                Intent i = new Intent(this, ServerPreferencesActivity.class);
+                startActivity(i);
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 		
 	public void onClick(View view) {
@@ -81,7 +108,8 @@ public class LoginActivity extends Activity implements OnClickListener, Retrieve
 			else {
 				boolean result = databaseAdapter.findFieldWorker(extId, password);
 				if (result) {
-					startUpdateActivity();
+					FieldWorker fieldWorker = databaseAdapter.getFieldWorker(extId, password);
+					startUpdateActivity(fieldWorker);
 				}
 				else {
 					Toast.makeText(getApplicationContext(),	getString(R.string.bad_authentication), Toast.LENGTH_SHORT).show();
@@ -91,10 +119,9 @@ public class LoginActivity extends Activity implements OnClickListener, Retrieve
 		}
 	}
 	
-	private void startUpdateActivity() {
+	private void startUpdateActivity(FieldWorker fieldWorker) {
 		Intent intent = new Intent(getApplicationContext(), UpdateActivity.class);
-        intent.putExtra("username", extIdText.getText().toString());
-        intent.putExtra("password", passwordText.getText().toString());
+        intent.putExtra("fieldWorker", fieldWorker);
         passwordText.setText("");
         startActivity(intent);
 	}
@@ -144,6 +171,9 @@ public class LoginActivity extends Activity implements OnClickListener, Retrieve
 				break;
 			case FIELDWORKER_ALREADY_EXISTS:
 				Toast.makeText(getApplicationContext(),	getString(R.string.field_worker_already_exists), Toast.LENGTH_SHORT).show();
+				break;
+			case UNABLE_TO_CONNECT:
+				Toast.makeText(getApplicationContext(),	getString(R.string.unable_to_connect), Toast.LENGTH_SHORT).show();
 		}
 		dialog.dismiss();
 		loginTask = null;

@@ -5,15 +5,7 @@
     android:orientation="vertical" >
 
     <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="20dp"
-        android:text="@string/app_name"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
-
-    <TextView
-        android:id="@+id/textView1"
+        android:id="@+id/userNameLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="20dp"
@@ -28,7 +20,7 @@
         android:layout_marginRight="20dp" />
 
     <TextView
-        android:id="@+id/textView3"
+        android:id="@+id/passwordLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="20dp"
@@ -56,5 +48,5 @@
         android:layout_marginLeft="20dp"
         android:layout_marginTop="20dp"
         android:text="Login" />
-
+    
 </LinearLayout>

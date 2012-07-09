@@ -3,6 +3,7 @@ package org.openhds.mobile.database;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
@@ -65,8 +66,10 @@ public class DatabaseAdapter {
 	private static final String DATABASE_TABLE_FIELDWORKER = "fieldworker";
 	private static final String FIELDWORKER_EXTID = "extId";  
 	private static final String FIELDWORKER_PASSWORD = "password";  
+	private static final String FIELDWORKER_FIRSTNAME = "firstName";  
+	private static final String FIELDWORKER_LASTNAME = "lastName";  
 	 
-	private static final int DATABASE_VERSION = 4;
+	private static final int DATABASE_VERSION = 5;
 	 
 	private static final String INDIVIDUAL_CREATE =
 	        "create table individual (uuid text primary key, " + 
@@ -99,7 +102,7 @@ public class DatabaseAdapter {
 	
 	private static final String FIELDWORKER_CREATE =
         "create table fieldworker (extId text primary key, " + 
-        "password text not null);";
+        "password text not null, firstName text not null, lastName text not null);";
 	 
 	private DatabaseHelper dbHelper;
 	private SQLiteDatabase database;
@@ -190,12 +193,14 @@ public class DatabaseAdapter {
 		 return database.insert(DATABASE_TABLE_VISIT, null, values);
 	 }
 	 
-	 public boolean createFieldWorker(String extId, String password) {
+	 public boolean createFieldWorker(String extId, String password, String firstName, String lastName) {
 		 if (findFieldWorker(extId, password) == false) {
 			 open();
 			 ContentValues values = new ContentValues();
 			 values.put(FIELDWORKER_EXTID, extId);
 			 values.put(FIELDWORKER_PASSWORD, password);
+			 values.put(FIELDWORKER_FIRSTNAME, firstName);
+			 values.put(FIELDWORKER_LASTNAME, lastName);
 			 Log.i(TAG, "inserting into fieldworker with extId " + extId + " and password " + password);
 			 long result = database.insert(DATABASE_TABLE_FIELDWORKER, null, values);
 			 close();
@@ -229,7 +234,26 @@ public class DatabaseAdapter {
 		 close();
 		 return false;
 	 }
-	 	 
+	 
+	 public FieldWorker getFieldWorker(String extId, String password) {
+		 open();
+		 String query = "select * from fieldworker where extId = ? and password = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {extId, password});
+		 
+		 if (cursor.moveToFirst()) {
+			 FieldWorker fieldWorker = new FieldWorker();
+			 fieldWorker.setExtId(cursor.getString(0));
+			 fieldWorker.setPassword(cursor.getString(1));
+			 fieldWorker.setFirstName(cursor.getString(2));
+			 fieldWorker.setLastName(cursor.getString(3));
+			 return fieldWorker;
+		 }
+		 		 
+		 cursor.close();
+		 close();
+		 return null;
+	 }
+	  	 
 	 public List<LocationHierarchy> getAllRegions(String levelName) {
 		 open();
 		 List<LocationHierarchy> regions = new ArrayList<LocationHierarchy>();

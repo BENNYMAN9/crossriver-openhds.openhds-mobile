@@ -69,9 +69,9 @@ public class LoginTask extends AsyncTask<Boolean, Void, Result> {
 			
 			try {
 				invokeWebService();
-				boolean result = validateFieldWorker();
-				if (result) {
-					if (createFieldWorker())
+				FieldWorker fieldWorker = validateFieldWorker();
+				if (fieldWorker != null) {
+					if (createFieldWorker(fieldWorker))
 						return Result.CREATED_FIELDWORKER_SUCCESS;
 					else
 						return Result.FIELDWORKER_ALREADY_EXISTS;
@@ -83,18 +83,18 @@ public class LoginTask extends AsyncTask<Boolean, Void, Result> {
 			}  catch (XmlPullParserException e) {
 				return Result.BAD_XML;
 			}  catch (IOException e) {
-				return Result.BAD_XML;
+				return Result.UNABLE_TO_CONNECT;
 			}
 		}
 		return Result.BAD_AUTHENTICATION;        
     }
 	
-	private boolean validateFieldWorker() {
+	private FieldWorker validateFieldWorker() {
 		for (FieldWorker fw : list) {
 			if (fw.getExtId().equalsIgnoreCase(extId))
-				return true;
+				return fw;
 		}
-		return false;
+		return null;
 	}
 	
 	private void invokeWebService() throws AuthenticationException, ClientProtocolException, IOException, XmlPullParserException {
@@ -106,8 +106,8 @@ public class LoginTask extends AsyncTask<Boolean, Void, Result> {
 		creds = new UsernamePasswordCredentials(username, password);
 		 
 		HttpParams httpParameters = new BasicHttpParams();
-		HttpConnectionParams.setConnectionTimeout(httpParameters, 100000);
-		HttpConnectionParams.setSoTimeout(httpParameters, 100000);
+		HttpConnectionParams.setConnectionTimeout(httpParameters, 10000);
+		HttpConnectionParams.setSoTimeout(httpParameters, 10000);
 		client = new DefaultHttpClient(httpParameters);
 		 
 		HttpGet httpGet = new HttpGet(url + "/fieldworker");
@@ -199,9 +199,9 @@ public class LoginTask extends AsyncTask<Boolean, Void, Result> {
 		listener.retrieveFieldWorkersComplete(result);
 	}
 	
-	private boolean createFieldWorker() {
+	private boolean createFieldWorker(FieldWorker fieldWorker) {
 		databaseAdapter.open();
-		boolean result = databaseAdapter.createFieldWorker(extId, password);
+		boolean result = databaseAdapter.createFieldWorker(extId, password, fieldWorker.getFirstName(), fieldWorker.getLastName());
 		databaseAdapter.close();
 		return result;
 	}

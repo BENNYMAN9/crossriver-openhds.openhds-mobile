@@ -2,7 +2,6 @@ package org.openhds.mobile.activity;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.openhds.mobile.InstanceProviderAPI;
 import org.openhds.mobile.R;
 import org.openhds.mobile.cell.ValueFragmentCell;
@@ -12,6 +11,7 @@ import org.openhds.mobile.fragment.SelectionFragment;
 import org.openhds.mobile.fragment.ValueFragment;
 import org.openhds.mobile.listener.OdkFormLoadListener;
 import org.openhds.mobile.listener.ValueSelectedListener;
+import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
@@ -21,7 +21,6 @@ import org.openhds.mobile.model.UpdateEvent;
 import org.openhds.mobile.task.OdkFormLoadTask;
 import android.app.ActionBar;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -38,7 +37,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 	private DatabaseAdapter databaseAdapter;
 	
-	private TextView regionNameText, regionExtIdText, regionName, regionExtId, 
+	private TextView loginGreetingText,
+					 regionNameText, regionExtIdText, regionName, regionExtId, 
 					 subRegionNameText, subRegionExtIdText, subRegionName, subRegionExtId,
 					 villageNameText, villageExtIdText, villageName, villageExtId,
 					 roundNumberText, roundStartDateText, roundEndDateText, roundNumber, roundStartDate, roundEndDate, 
@@ -47,7 +47,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, individualBtn, 
 	 			   createVisitBtn, clearLocationBtn, resetBtn, deathBtn;
 	
-	private String loggedInUser;
+	private FieldWorker fieldWorker;
 	
 	SelectionFragment selectionFragment;
 	ValueFragment valueFragment;
@@ -69,12 +69,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     @Override
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
-	    setContentView(R.layout.main);
-	    	   
-	    loggedInUser = getIntent().getExtras().getString("username");
-
+	    setContentView(R.layout.main);    	   
+	    processExtras();
+	   
         databaseAdapter = new DatabaseAdapter(getBaseContext());
-        
+                
         resetBtn = (Button) findViewById(R.id.resetBtn);
         resetBtn.setOnClickListener(this);
         
@@ -148,7 +147,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	    
 	    restoreState(savedInstanceState);
 	}
-			
+    		
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {	
     	MenuInflater inflater = getMenuInflater();
@@ -211,6 +210,12 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	    	restorePhase(state.getString("phase"));
     	}
 	}
+    
+    private void processExtras() {
+   	 	fieldWorker = (FieldWorker) getIntent().getExtras().getSerializable("fieldWorker");
+   	 	loginGreetingText = (TextView) findViewById(R.id.loginGreetingText);
+        loginGreetingText.setText("Hello, " + fieldWorker.getFirstName() + " " + fieldWorker.getLastName());
+   }
         
     private void createPreferencesMenu() {
         Intent i = new Intent(this, ServerPreferencesActivity.class);
@@ -324,7 +329,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			}
 			case R.id.createVisitBtn: {
 				selectionFragment.createVisit();
-				Record record = new Record(loggedInUser, selectionFragment.getVillage(), selectionFragment.getLocation(),
+				Record record = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
 						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getVisit());
 				new OdkFormLoadTask(this, getContentResolver(), record, UpdateEvent.VISIT).execute();				
 				break;
@@ -342,7 +347,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				break;
 			}
 			case R.id.deathBtn: {
-				Record record = new Record(loggedInUser, selectionFragment.getVillage(), selectionFragment.getLocation(),
+				Record record = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
 						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getVisit());
 				new OdkFormLoadTask(this, getContentResolver(), record, UpdateEvent.DEATH).execute();
 			}
