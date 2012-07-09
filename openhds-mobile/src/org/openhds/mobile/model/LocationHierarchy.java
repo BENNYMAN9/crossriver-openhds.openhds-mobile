@@ -1,12 +1,15 @@
 package org.openhds.mobile.model;
 
-public class LocationHierarchy {
+import java.io.Serializable;
 
-	String uuid;
-	String extId;
-	String name;
-	String parent;
-	String level;
+public class LocationHierarchy implements Serializable {
+
+	private static final long serialVersionUID = -6370062790248563906L;
+	private String uuid;
+	private String extId;
+	private String name;
+	private String parent;
+	private String level;
 	
 	public String getUuid() {
 		return uuid;

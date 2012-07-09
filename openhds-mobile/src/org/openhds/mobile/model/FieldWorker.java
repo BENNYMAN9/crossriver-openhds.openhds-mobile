@@ -2,10 +2,10 @@ package org.openhds.mobile.model;
 
 public class FieldWorker {
 	
-	String uuid;
-	String extId;
-	String firstName;
-	String lastName;
+	private String uuid;
+	private String extId;
+	private String firstName;
+	private String lastName;
 	
 	public FieldWorker(String uuid, String extId, String firstName, String lastName) {
 		this.uuid = uuid;

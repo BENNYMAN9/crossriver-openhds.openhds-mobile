@@ -1,12 +1,15 @@
 package org.openhds.mobile.model;
 
-public class Round {
+import java.io.Serializable;
+
+public class Round implements Serializable {
 	
-	String uuid;
-	String roundNumber;
-	String startDate;
-	String endDate;
-	String remarks;
+	private static final long serialVersionUID = -2367646883047152268L;
+	private String uuid;
+	private String roundNumber;
+	private String startDate;
+	private String endDate;
+	private String remarks;
 	
 	public Round() { }
 	

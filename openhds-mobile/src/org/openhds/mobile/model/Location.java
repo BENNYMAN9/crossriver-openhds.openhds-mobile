@@ -1,13 +1,16 @@
 package org.openhds.mobile.model;
 
-public class Location {
-	
-	String uuid;
-	String extId;
-	String name;
-	String latitude;
-	String longitude;
-	String hierarchy;
+import java.io.Serializable;
+
+public class Location implements Serializable {
+
+	private static final long serialVersionUID = -8462273781331229805L;
+	private String uuid;
+	private String extId;
+	private String name;
+	private String latitude;
+	private String longitude;
+	private String hierarchy;
 	
 	public String getUuid() {
 		return uuid;

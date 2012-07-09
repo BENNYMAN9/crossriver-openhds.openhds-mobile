@@ -1,16 +1,19 @@
 package org.openhds.mobile.model;
 
-public class Individual {
+import java.io.Serializable;
 
-	String uuid;
-	String extId;
-	String firstName;
-	String lastName;
-	String gender;
-	String dob;
-	String mother;
-	String father;
-	String currentResidence;
+public class Individual implements Serializable {
+
+	private static final long serialVersionUID = -799404570247633403L;
+	private String uuid;
+	private String extId;
+	private String firstName;
+	private String lastName;
+	private String gender;
+	private String dob;
+	private String mother;
+	private String father;
+	private String currentResidence;
 	
 	public String getUuid() {
 		return uuid;

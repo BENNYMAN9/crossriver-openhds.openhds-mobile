@@ -1,12 +1,15 @@
 package org.openhds.mobile.model;
 
-public class Visit {
+import java.io.Serializable;
+
+public class Visit implements Serializable {
 	
-	String uuid;
-	String extId;
-	String location;
-	String date;
-	String round;
+	private static final long serialVersionUID = -1429712555458116315L;
+	private String uuid;
+	private String extId;
+	private String location;
+	private String date;
+	private String round;
 	
 	public String getUuid() {
 		return uuid;
