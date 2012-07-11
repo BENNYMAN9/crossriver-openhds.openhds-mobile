@@ -15,5 +15,5 @@ public class UpdateEvent {
 	public static final String OUTMIGRATION = "OUTMIGRATION";
 	public static final String PREGNANCYOBSERVATION = "PREGNANCYOBSERVATION";
 	public static final String SOCIALGROUP = "SOCIALGROUP";
-	public static final String FINISH = "FINISH";
+	public static final String XFORMS = "XFORMS";
 }

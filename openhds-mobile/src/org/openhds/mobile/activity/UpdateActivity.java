@@ -66,7 +66,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	private boolean LOCATION_PHASE = false;
 	private boolean VISIT_PHASE = false;
 	private boolean INDIVIDUAL_PHASE = false;
-	private boolean FINISH_PHASE = false;
+	private boolean XFORMS_PHASE = false;
 				
     @Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -312,13 +312,16 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     private void createAlertDialog() {
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 		alertDialogBuilder.setTitle("Warning");
-		alertDialogBuilder.setMessage(getPhase() + " started but not saved. " +
+		alertDialogBuilder.setMessage("Form started but not saved. " +
 				"This form instance will be deleted. What do you want to do?");
 		alertDialogBuilder.setCancelable(true);
 		alertDialogBuilder.setPositiveButton("Delete form", new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
 				getContentResolver().delete(contentUri, 
 						InstanceProviderAPI.InstanceColumns.STATUS + "=?", new String[] {InstanceProviderAPI.STATUS_INCOMPLETE});
+				
+				if (getPhase().equals(UpdateEvent.XFORMS))
+					setPhase(UpdateEvent.INDIVIDUAL);
 			}
 		});	
 		alertDialogBuilder.setNegativeButton("Edit form", new DialogInterface.OnClickListener() {
@@ -359,10 +362,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			case R.id.clearLocationBtn: 
 				setPhase(UpdateEvent.LOCATION);
 				break;
-			case R.id.finishVisitBtn: {
+			case R.id.finishVisitBtn: 
 				reset();
 				break;
-			}
 			case R.id.deathBtn: 
 				Record deathRecord = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
 						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getVisit());
@@ -433,7 +435,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			individualFirstNameText.setText(selectionFragment.getIndividual().getFirstName());
 			individualLastNameText.setText(selectionFragment.getIndividual().getLastName());
 			individualDobText.setText(selectionFragment.getIndividual().getDob());
-			setPhase(UpdateEvent.FINISH);
+			setPhase(UpdateEvent.XFORMS);
 		}
 	}
 	
@@ -445,8 +447,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private String getPhase() {
-		if (FINISH_PHASE)
-			return UpdateEvent.FINISH;
+		if (XFORMS_PHASE)
+			return UpdateEvent.XFORMS;
 		else if (INDIVIDUAL_PHASE)
 			return UpdateEvent.INDIVIDUAL;
 		else if (VISIT_PHASE)
@@ -510,7 +512,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			restoreRoundTextFields();
 			restoreLocationTextFields();
 		}
-		else if (phase.equals(UpdateEvent.FINISH)) {
+		else if (phase.equals(UpdateEvent.XFORMS)) {
 			setStateFinish();
 			
 			restoreRegionTextFields();
@@ -602,7 +604,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			
 			selectionFragment.setIndividual(new Individual());
 		}
-		else if (phase.equals(UpdateEvent.FINISH)) {
+		else if (phase.equals(UpdateEvent.XFORMS)) {
 			setStateFinish();
 		}
 	}
@@ -719,7 +721,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		LOCATION_PHASE = false;
 		VISIT_PHASE = false;
 		INDIVIDUAL_PHASE = false;
-		FINISH_PHASE = false;
+		XFORMS_PHASE = false;
 		
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
@@ -741,7 +743,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		LOCATION_PHASE = false;
 		VISIT_PHASE = false;
 		INDIVIDUAL_PHASE = false;
-		FINISH_PHASE = false;
+		XFORMS_PHASE = false;
 		
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
@@ -763,7 +765,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		LOCATION_PHASE = false;
 		VISIT_PHASE = false;
 		INDIVIDUAL_PHASE = false;
-		FINISH_PHASE = false;
+		XFORMS_PHASE = false;
 
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
@@ -785,7 +787,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		LOCATION_PHASE = false;
 		VISIT_PHASE = false;
 		INDIVIDUAL_PHASE = false;
-		FINISH_PHASE = false;
+		XFORMS_PHASE = false;
 		
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
@@ -807,7 +809,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		LOCATION_PHASE = true;
 		VISIT_PHASE = false;
 		INDIVIDUAL_PHASE = false;
-		FINISH_PHASE = false;
+		XFORMS_PHASE = false;
 		
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
@@ -829,7 +831,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		LOCATION_PHASE = false;
 		VISIT_PHASE = true;
 		INDIVIDUAL_PHASE = false;
-		FINISH_PHASE = false;
+		XFORMS_PHASE = false;
 		
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(true);
@@ -851,7 +853,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		LOCATION_PHASE = false;
 		VISIT_PHASE = false;
 		INDIVIDUAL_PHASE = true;
-		FINISH_PHASE = false;
+		XFORMS_PHASE = false;
 		
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
@@ -873,7 +875,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		LOCATION_PHASE = false;
 		VISIT_PHASE = false;
 		INDIVIDUAL_PHASE = false;
-		FINISH_PHASE = true;
+		XFORMS_PHASE = true;
 		
 		regionBtn.setEnabled(false);
 		finishVisitBtn.setEnabled(true);
