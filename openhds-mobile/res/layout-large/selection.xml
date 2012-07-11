@@ -8,7 +8,7 @@
 	    android:layout_height="fill_parent"
 	    android:orientation="vertical" >
 	    
-	    <TextView
+	   <TextView
 	        android:id="@+id/loginGreetingText"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
@@ -16,7 +16,7 @@
 	        android:paddingTop="10dp"
 	        android:paddingBottom="10dp"
 	        android:textAppearance="?android:attr/textAppearanceSmall"  />
-	
+	    	
 	    <Button
 	        android:id="@+id/regionBtn"
 	        android:layout_width="150dp"

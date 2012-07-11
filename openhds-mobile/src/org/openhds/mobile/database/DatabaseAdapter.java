@@ -2,14 +2,12 @@ package org.openhds.mobile.database;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.Visit;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -22,7 +20,7 @@ public class DatabaseAdapter {
 	
 	private static final String TAG = "DatabaseAdapter";
 	private static final String DATABASE_NAME = "entityData";
-	
+		
 	private static final String DATABASE_TABLE_INDIVIDUAL = "individual";
 	private static final String INDIVIDUAL_UUID = "uuid";  
 	private static final String INDIVIDUAL_EXTID = "extId";  
@@ -69,8 +67,8 @@ public class DatabaseAdapter {
 	private static final String FIELDWORKER_FIRSTNAME = "firstName";  
 	private static final String FIELDWORKER_LASTNAME = "lastName";  
 	 
-	private static final int DATABASE_VERSION = 5;
-	 
+	private static final int DATABASE_VERSION = 7;
+		 
 	private static final String INDIVIDUAL_CREATE =
 	        "create table individual (uuid text primary key, " + 
 	        "extId text not null, firstname text not null, lastname text not null, " +
@@ -122,7 +120,7 @@ public class DatabaseAdapter {
 		dbHelper.close();
 	    database.close();
 	}
-	 
+		 
 	public long createIndividual(String uuid, String extId, String firstName, 
 				String lastName, String gender, String dob, String mother, String father, String residence) {
 		 		
@@ -202,7 +200,7 @@ public class DatabaseAdapter {
 			 values.put(FIELDWORKER_FIRSTNAME, firstName);
 			 values.put(FIELDWORKER_LASTNAME, lastName);
 			 Log.i(TAG, "inserting into fieldworker with extId " + extId + " and password " + password);
-			 long result = database.insert(DATABASE_TABLE_FIELDWORKER, null, values);
+			 database.insert(DATABASE_TABLE_FIELDWORKER, null, values);
 			 close();
 			 return true;
 		 }
@@ -234,7 +232,7 @@ public class DatabaseAdapter {
 		 close();
 		 return false;
 	 }
-	 
+	 	 	 
 	 public FieldWorker getFieldWorker(String extId, String password) {
 		 open();
 		 String query = "select * from fieldworker where extId = ? and password = ?;";

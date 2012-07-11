@@ -20,6 +20,8 @@ import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.UpdateEvent;
 import org.openhds.mobile.task.OdkFormLoadTask;
 import android.app.ActionBar;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -45,13 +47,13 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					 locationNameText, locationExtIdText, locationLatitudeText, locationLongitudeText, locationName, locationExtId, locationLatitude, locationLongitude,
 					 individualFirstNameText, individualLastNameText, individualExtIdText, individualDobText, individualFirstName, individualLastName, individualExtId, individualDob;	
 	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, individualBtn, 
-	 			   createVisitBtn, clearLocationBtn, resetBtn, deathBtn;
+	 			   createVisitBtn, clearLocationBtn, deathBtn, finishVisitBtn;
 	
 	private FieldWorker fieldWorker;
 	
-	SelectionFragment selectionFragment;
-	ValueFragment valueFragment;
-	EventFragment eventFragment;
+	private SelectionFragment selectionFragment;
+	private ValueFragment valueFragment;
+	private EventFragment eventFragment;
 	
 	private final int SELECTED_XFORM = 1;
 	
@@ -74,8 +76,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	   
         databaseAdapter = new DatabaseAdapter(getBaseContext());
                 
-        resetBtn = (Button) findViewById(R.id.resetBtn);
-        resetBtn.setOnClickListener(this);
+        finishVisitBtn = (Button) findViewById(R.id.finishVisitBtn);
+        finishVisitBtn.setOnClickListener(this);
         
         clearLocationBtn = (Button) findViewById(R.id.clearLocationBtn);
         clearLocationBtn.setOnClickListener(this);
@@ -177,10 +179,12 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					Cursor cursor = getContentResolver().query(contentUri, null, 
 							InstanceProviderAPI.InstanceColumns.STATUS + "=?", new String[] {InstanceProviderAPI.STATUS_COMPLETE}, null);
 					if (cursor.moveToNext()) {
-						setPhase("INDIVIDUAL");
+						setPhase(UpdateEvent.INDIVIDUAL);
+					}
+					else {
+						createAlertDialog();
 					}
 				}
-			
 			}
 		}
 	}
@@ -304,53 +308,65 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     		valueFragment.setContent(list);
     	}
     }
+    
+    private void createAlertDialog() {
+		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+		alertDialogBuilder.setTitle("Warning");
+		alertDialogBuilder.setMessage(getPhase() + " started but not saved. " +
+				"This form instance will be deleted. What do you want to do?");
+		alertDialogBuilder.setCancelable(true);
+		alertDialogBuilder.setPositiveButton("Delete form", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				getContentResolver().delete(contentUri, 
+						InstanceProviderAPI.InstanceColumns.STATUS + "=?", new String[] {InstanceProviderAPI.STATUS_INCOMPLETE});
+			}
+		});	
+		alertDialogBuilder.setNegativeButton("Edit form", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				startActivityForResult(new Intent(Intent.ACTION_EDIT, contentUri), SELECTED_XFORM);				
+			}
+		});
+		AlertDialog alertDialog = alertDialogBuilder.create();
+		alertDialog.show();
+    }
         
 	public void onClick(View view) {
 		switch (view.getId()) {
-			case R.id.regionBtn: {
+			case R.id.regionBtn: 
 				loadRegionValueData();
 				break;
-			}
-			case R.id.subRegionBtn: {
+			case R.id.subRegionBtn: 
 				loadSubRegionValueData();
 				break;
-			}
-			case R.id.villageBtn: {
+			case R.id.villageBtn: 
 				loadVillageValueData();
 				break;
-			}
-			case R.id.roundBtn: {
+			case R.id.roundBtn: 
 				loadRoundValueData();
 				break;
-			}
-			case R.id.locationBtn: {
+			case R.id.locationBtn: 
 				loadLocationValueData();
 				break;
-			}
-			case R.id.createVisitBtn: {
+			case R.id.createVisitBtn: 
 				selectionFragment.createVisit();
-				Record record = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
+				Record visitRecord = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
 						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getVisit());
-				new OdkFormLoadTask(this, getContentResolver(), record, UpdateEvent.VISIT).execute();				
+				new OdkFormLoadTask(this, getContentResolver(), visitRecord, UpdateEvent.VISIT).execute();		
 				break;
-			}
-			case R.id.individualBtn: {
+			case R.id.individualBtn: 
 				loadIndividualValueData();
 				break;
-			}
-			case R.id.clearLocationBtn: {
-				setPhase("LOCATION");
+			case R.id.clearLocationBtn: 
+				setPhase(UpdateEvent.LOCATION);
 				break;
-			}
-			case R.id.resetBtn: {
+			case R.id.finishVisitBtn: {
 				reset();
 				break;
 			}
-			case R.id.deathBtn: {
-				Record record = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
+			case R.id.deathBtn: 
+				Record deathRecord = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
 						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getVisit());
-				new OdkFormLoadTask(this, getContentResolver(), record, UpdateEvent.DEATH).execute();
-			}
+				new OdkFormLoadTask(this, getContentResolver(), deathRecord, UpdateEvent.DEATH).execute();
 		}	
 	}
 	
@@ -361,31 +377,31 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		
 	public void onValueSelected(int position) {
 		String phase = getPhase();
-		if (phase.equals("REGION")) {
+		if (phase.equals(UpdateEvent.REGION)) {
 			selectionFragment.setRegion(selectionFragment.getRegions().get(position));
 			regionName.setVisibility(View.VISIBLE);
 			regionExtId.setVisibility(View.VISIBLE);
 			regionNameText.setText(selectionFragment.getRegion().getName());
 			regionExtIdText.setText(selectionFragment.getRegion().getExtId());
-			setPhase("SUB_REGION");
+			setPhase(UpdateEvent.SUBREGION);
 		}
-		else if (phase.equals("SUB_REGION")) {
+		else if (phase.equals(UpdateEvent.SUBREGION)) {
 			selectionFragment.setSubRegion(selectionFragment.getSubRegions().get(position));
 			subRegionName.setVisibility(View.VISIBLE);
 			subRegionExtId.setVisibility(View.VISIBLE);
 			subRegionNameText.setText(selectionFragment.getSubRegion().getName());
 			subRegionExtIdText.setText(selectionFragment.getSubRegion().getExtId());
-			setPhase("VILLAGE");
+			setPhase(UpdateEvent.VILLAGE);
 		}
-		else if (phase.equals("VILLAGE")) {
+		else if (phase.equals(UpdateEvent.VILLAGE)) {
 			selectionFragment.setVillage(selectionFragment.getVillages().get(position));
 			villageName.setVisibility(View.VISIBLE);
 			villageExtId.setVisibility(View.VISIBLE);
 			villageNameText.setText(selectionFragment.getVillage().getName());
 			villageExtIdText.setText(selectionFragment.getVillage().getExtId());
-			setPhase("ROUND");
+			setPhase(UpdateEvent.ROUND);
 		}
-		else if (phase.equals("ROUND")) {
+		else if (phase.equals(UpdateEvent.ROUND)) {
 			selectionFragment.setRound(selectionFragment.getRounds().get(position));
 			roundNumber.setVisibility(View.VISIBLE);
 			roundStartDate.setVisibility(View.VISIBLE);
@@ -393,9 +409,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			roundNumberText.setText(selectionFragment.getRound().getRoundNumber());
 			roundStartDateText.setText(selectionFragment.getRound().getStartDate());
 			roundEndDateText.setText(selectionFragment.getRound().getEndDate());
-			setPhase("LOCATION");
+			setPhase(UpdateEvent.LOCATION);
 		}
-		else if (phase.equals("LOCATION")) {
+		else if (phase.equals(UpdateEvent.LOCATION)) {
 			selectionFragment.setLocation(selectionFragment.getLocations().get(position));
 			locationName.setVisibility(View.VISIBLE);
 			locationExtId.setVisibility(View.VISIBLE);
@@ -405,9 +421,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			locationExtIdText.setText(selectionFragment.getLocation().getExtId());
 			locationLatitudeText.setText(selectionFragment.getLocation().getLatitude());
 			locationLongitudeText.setText(selectionFragment.getLocation().getLongitude());
-			setPhase("VISIT");
+			setPhase(UpdateEvent.VISIT);
 		}
-		else if (phase.equals("INDIVIDUAL")) {
+		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
 			selectionFragment.setIndividual(selectionFragment.getIndividuals().get(position));
 			individualExtId.setVisibility(View.VISIBLE);
 			individualFirstName.setVisibility(View.VISIBLE);
@@ -417,12 +433,12 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			individualFirstNameText.setText(selectionFragment.getIndividual().getFirstName());
 			individualLastNameText.setText(selectionFragment.getIndividual().getLastName());
 			individualDobText.setText(selectionFragment.getIndividual().getDob());
-			setPhase("FINISH");
+			setPhase(UpdateEvent.FINISH);
 		}
 	}
 	
 	public void reset() {
-		setPhase("REGION");	
+		setPhase(UpdateEvent.LOCATION);	
 		if (valueFragment != null) {
 			valueFragment.reset();
 		}
@@ -430,21 +446,165 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 	private String getPhase() {
 		if (FINISH_PHASE)
-			return "FINISH";
+			return UpdateEvent.FINISH;
 		else if (INDIVIDUAL_PHASE)
-			return "INDIVIDUAL";
+			return UpdateEvent.INDIVIDUAL;
 		else if (VISIT_PHASE)
-			return "VISIT";
+			return UpdateEvent.VISIT;
 		else if (LOCATION_PHASE)
-			return "LOCATION";
+			return UpdateEvent.LOCATION;
 		else if (ROUND_PHASE)
-			return "ROUND";
+			return UpdateEvent.ROUND;
 		else if (VILLAGE_PHASE)
-			return "VILLAGE";
+			return UpdateEvent.VILLAGE;
 		else if (SUB_REGION_PHASE)
-			return "SUB_REGION";
+			return UpdateEvent.SUBREGION;
 		else
-			return "REGION";
+			return UpdateEvent.REGION;
+	}
+	
+	private void restorePhase(String phase) {
+		if (phase.equals(UpdateEvent.REGION)) {
+			setStateRegion();
+		}
+		else if (phase.equals(UpdateEvent.SUBREGION)) {
+			setStateSubRegion();
+			restoreRegionTextFields();
+		}
+		else if (phase.equals(UpdateEvent.VILLAGE)) {
+			setStateVillage();
+			
+			restoreRegionTextFields();
+			restoreSubRegionTextFields();
+		}
+		else if (phase.equals(UpdateEvent.ROUND)) {
+			setStateRound();
+			
+			restoreRegionTextFields();
+			restoreSubRegionTextFields();
+			restoreVillageTextFields();
+		}
+		else if (phase.equals(UpdateEvent.LOCATION)) {
+			setStateLocation();
+			
+			restoreRegionTextFields();
+			restoreSubRegionTextFields();
+			restoreVillageTextFields();
+			restoreRoundTextFields();
+		}
+		else if (phase.equals(UpdateEvent.VISIT)) {
+			setStateVisit();
+			
+			restoreRegionTextFields();
+			restoreSubRegionTextFields();
+			restoreVillageTextFields();
+			restoreRoundTextFields();
+			restoreLocationTextFields();
+		}
+		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
+			setStateIndividual();
+			
+			restoreRegionTextFields();
+			restoreSubRegionTextFields();
+			restoreVillageTextFields();
+			restoreRoundTextFields();
+			restoreLocationTextFields();
+		}
+		else if (phase.equals(UpdateEvent.FINISH)) {
+			setStateFinish();
+			
+			restoreRegionTextFields();
+			restoreSubRegionTextFields();
+			restoreVillageTextFields();
+			restoreRoundTextFields();
+			restoreLocationTextFields();
+			restoreIndividualTextFields();
+		}
+	}
+	
+	private void setPhase(String phase) {
+		if (phase.equals(UpdateEvent.REGION)) {
+			setStateRegion();
+			
+			clearRegionTextFields();
+			clearSubRegionTextFields();
+			clearVillageTextFields();
+			clearRoundTextFields();
+			clearLocationTextFields();
+			clearIndividualTextFields();
+		
+			selectionFragment.setRegion(new LocationHierarchy());
+			selectionFragment.setSubRegion(new LocationHierarchy());
+			selectionFragment.setVillage(new LocationHierarchy());
+			selectionFragment.setRound(new Round());
+			selectionFragment.setLocation(new Location());
+			selectionFragment.setIndividual(new Individual());
+		}
+		else if (phase.equals(UpdateEvent.SUBREGION)) {		
+			setStateSubRegion();
+			
+			clearSubRegionTextFields();
+			clearVillageTextFields();
+			clearRoundTextFields();
+			clearLocationTextFields();
+			clearIndividualTextFields();
+			
+			selectionFragment.setSubRegion(new LocationHierarchy());
+			selectionFragment.setVillage(new LocationHierarchy());
+			selectionFragment.setRound(new Round());
+			selectionFragment.setLocation(new Location());
+			selectionFragment.setIndividual(new Individual());
+		}
+		else if (phase.equals(UpdateEvent.VILLAGE)) {
+			setStateVillage();
+			
+			clearVillageTextFields();
+			clearRoundTextFields();
+			clearLocationTextFields();
+			clearIndividualTextFields();
+			
+			selectionFragment.setVillage(new LocationHierarchy());
+			selectionFragment.setRound(new Round());
+			selectionFragment.setLocation(new Location());
+			selectionFragment.setIndividual(new Individual());
+		}
+		else if (phase.equals(UpdateEvent.ROUND)) {
+			setStateRound();
+			
+			clearRoundTextFields();
+			clearLocationTextFields();
+			clearIndividualTextFields();
+			
+			selectionFragment.setRound(new Round());
+			selectionFragment.setLocation(new Location());
+			selectionFragment.setIndividual(new Individual());
+		}
+		else if (phase.equals(UpdateEvent.LOCATION)) {
+			setStateLocation();
+			
+			clearLocationTextFields();
+			clearIndividualTextFields();
+			
+			selectionFragment.setLocation(new Location());
+			selectionFragment.setIndividual(new Individual());
+		}
+		else if (phase.equals(UpdateEvent.VISIT)) {
+			setStateVisit();
+			
+			clearIndividualTextFields();
+			
+			selectionFragment.setIndividual(new Individual());
+		}
+		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
+			setStateIndividual();
+			
+			clearIndividualTextFields();
+			
+			selectionFragment.setIndividual(new Individual());
+		}
+		else if (phase.equals(UpdateEvent.FINISH)) {
+			setStateFinish();
+		}
 	}
 	
 	private void clearRegionTextFields() {
@@ -551,436 +711,179 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		individualDob.setVisibility(View.VISIBLE);
 	}
 	
-	private void restorePhase(String phase) {
-		if (phase.equals("REGION")) {
-			REGION_PHASE = true;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(false);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(false);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(true);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-		}
-		else if (phase.equals("SUB_REGION")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = true;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(false);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(true);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			
-			restoreRegionTextFields();
-		}
-		else if (phase.equals("VILLAGE")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = true;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(false);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(true);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			
-			restoreRegionTextFields();
-			restoreSubRegionTextFields();
-		}
-		else if (phase.equals("ROUND")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = true;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(false);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(true);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			
-			restoreRegionTextFields();
-			restoreSubRegionTextFields();
-			restoreVillageTextFields();
-		}
-		else if (phase.equals("LOCATION")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = true;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(false);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(true);
-			individualBtn.setEnabled(false);
-			
-			restoreRegionTextFields();
-			restoreSubRegionTextFields();
-			restoreVillageTextFields();
-			restoreRoundTextFields();
-		}
-		else if (phase.equals("VISIT")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = true;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(true);
-			clearLocationBtn.setEnabled(true);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			
-			restoreRegionTextFields();
-			restoreSubRegionTextFields();
-			restoreVillageTextFields();
-			restoreRoundTextFields();
-			restoreLocationTextFields();
-		}
-		else if (phase.equals("INDIVIDUAL")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = true;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(true);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(true);
-			
-			restoreRegionTextFields();
-			restoreSubRegionTextFields();
-			restoreVillageTextFields();
-			restoreRoundTextFields();
-			restoreLocationTextFields();
-		}
-		else if (phase.equals("FINISH")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = true;
-			
-			regionBtn.setEnabled(false);
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(true);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			deathBtn.setEnabled(true);
-			
-			restoreRegionTextFields();
-			restoreSubRegionTextFields();
-			restoreVillageTextFields();
-			restoreRoundTextFields();
-			restoreLocationTextFields();
-			restoreIndividualTextFields();
-		}
+	private void setStateRegion() {
+		REGION_PHASE = true;
+		SUB_REGION_PHASE = false;
+		VILLAGE_PHASE = false;
+		ROUND_PHASE = false;
+		LOCATION_PHASE = false;
+		VISIT_PHASE = false;
+		INDIVIDUAL_PHASE = false;
+		FINISH_PHASE = false;
+		
+		finishVisitBtn.setEnabled(false);
+		createVisitBtn.setEnabled(false);
+		clearLocationBtn.setEnabled(false);
+		deathBtn.setEnabled(false);
+		regionBtn.setEnabled(true);
+		subRegionBtn.setEnabled(false);
+		villageBtn.setEnabled(false);
+		roundBtn.setEnabled(false);
+		locationBtn.setEnabled(false);
+		individualBtn.setEnabled(false);
 	}
 	
-	private void setPhase(String phase) {
-		if (phase.equals("REGION")) {
-			REGION_PHASE = true;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(false);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(false);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(true);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			
-			clearRegionTextFields();
-			clearSubRegionTextFields();
-			clearVillageTextFields();
-			clearRoundTextFields();
-			clearLocationTextFields();
-			clearIndividualTextFields();
+	private void setStateSubRegion() {
+		REGION_PHASE = false;
+		SUB_REGION_PHASE = true;
+		VILLAGE_PHASE = false;
+		ROUND_PHASE = false;
+		LOCATION_PHASE = false;
+		VISIT_PHASE = false;
+		INDIVIDUAL_PHASE = false;
+		FINISH_PHASE = false;
 		
-			selectionFragment.setRegion(new LocationHierarchy());
-			selectionFragment.setSubRegion(new LocationHierarchy());
-			selectionFragment.setVillage(new LocationHierarchy());
-			selectionFragment.setRound(new Round());
-			selectionFragment.setLocation(new Location());
-			selectionFragment.setIndividual(new Individual());
-		}
-		else if (phase.equals("SUB_REGION")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = true;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(false);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(true);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			
-			clearSubRegionTextFields();
-			clearVillageTextFields();
-			clearRoundTextFields();
-			clearLocationTextFields();
-			clearIndividualTextFields();
-			
-			selectionFragment.setSubRegion(new LocationHierarchy());
-			selectionFragment.setVillage(new LocationHierarchy());
-			selectionFragment.setRound(new Round());
-			selectionFragment.setLocation(new Location());
-			selectionFragment.setIndividual(new Individual());
-		}
-		else if (phase.equals("VILLAGE")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = true;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
+		finishVisitBtn.setEnabled(false);
+		createVisitBtn.setEnabled(false);
+		clearLocationBtn.setEnabled(false);
+		deathBtn.setEnabled(false);
+		regionBtn.setEnabled(false);
+		subRegionBtn.setEnabled(true);
+		villageBtn.setEnabled(false);
+		roundBtn.setEnabled(false);
+		locationBtn.setEnabled(false);
+		individualBtn.setEnabled(false);
+	}
+	
+	private void setStateVillage() {
+		REGION_PHASE = false;
+		SUB_REGION_PHASE = false;
+		VILLAGE_PHASE = true;
+		ROUND_PHASE = false;
+		LOCATION_PHASE = false;
+		VISIT_PHASE = false;
+		INDIVIDUAL_PHASE = false;
+		FINISH_PHASE = false;
 
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(false);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(true);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			
-			clearVillageTextFields();
-			clearRoundTextFields();
-			clearLocationTextFields();
-			clearIndividualTextFields();
-			
-			selectionFragment.setVillage(new LocationHierarchy());
-			selectionFragment.setRound(new Round());
-			selectionFragment.setLocation(new Location());
-			selectionFragment.setIndividual(new Individual());
-		}
-		else if (phase.equals("ROUND")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = true;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(false);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(true);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			
-			clearRoundTextFields();
-			clearLocationTextFields();
-			clearIndividualTextFields();
-			
-			selectionFragment.setRound(new Round());
-			selectionFragment.setLocation(new Location());
-			selectionFragment.setIndividual(new Individual());
-		}
-		else if (phase.equals("LOCATION")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = true;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(false);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(true);
-			individualBtn.setEnabled(false);
-			
-			clearLocationTextFields();
-			clearIndividualTextFields();
-			
-			selectionFragment.setLocation(new Location());
-			selectionFragment.setIndividual(new Individual());
-		}
-		else if (phase.equals("VISIT")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = true;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(true);
-			clearLocationBtn.setEnabled(true);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			
-			clearIndividualTextFields();
-			
-			selectionFragment.setIndividual(new Individual());
-		}
-		else if (phase.equals("INDIVIDUAL")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = true;
-			FINISH_PHASE = false;
-			
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(true);
-			deathBtn.setEnabled(false);
-			regionBtn.setEnabled(false);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(true);
-			
-			clearIndividualTextFields();
-			
-			selectionFragment.setIndividual(new Individual());
-		}
-		else if (phase.equals("FINISH")) {
-			REGION_PHASE = false;
-			SUB_REGION_PHASE = false;
-			VILLAGE_PHASE = false;
-			ROUND_PHASE = false;
-			LOCATION_PHASE = false;
-			VISIT_PHASE = false;
-			INDIVIDUAL_PHASE = false;
-			FINISH_PHASE = true;
-			
-			regionBtn.setEnabled(false);
-			resetBtn.setEnabled(true);
-			createVisitBtn.setEnabled(false);
-			clearLocationBtn.setEnabled(true);
-			subRegionBtn.setEnabled(false);
-			villageBtn.setEnabled(false);
-			roundBtn.setEnabled(false);
-			locationBtn.setEnabled(false);
-			individualBtn.setEnabled(false);
-			deathBtn.setEnabled(true);
-		}
+		finishVisitBtn.setEnabled(false);
+		createVisitBtn.setEnabled(false);
+		clearLocationBtn.setEnabled(false);
+		deathBtn.setEnabled(false);
+		regionBtn.setEnabled(false);
+		subRegionBtn.setEnabled(false);
+		villageBtn.setEnabled(true);
+		roundBtn.setEnabled(false);
+		locationBtn.setEnabled(false);
+		individualBtn.setEnabled(false);
+	}
+	
+	private void setStateRound() {
+		REGION_PHASE = false;
+		SUB_REGION_PHASE = false;
+		VILLAGE_PHASE = false;
+		ROUND_PHASE = true;
+		LOCATION_PHASE = false;
+		VISIT_PHASE = false;
+		INDIVIDUAL_PHASE = false;
+		FINISH_PHASE = false;
+		
+		finishVisitBtn.setEnabled(false);
+		createVisitBtn.setEnabled(false);
+		clearLocationBtn.setEnabled(false);
+		deathBtn.setEnabled(false);
+		regionBtn.setEnabled(false);
+		subRegionBtn.setEnabled(false);
+		villageBtn.setEnabled(false);
+		roundBtn.setEnabled(true);
+		locationBtn.setEnabled(false);
+		individualBtn.setEnabled(false);
+	}
+	
+	private void setStateLocation() {
+		REGION_PHASE = false;
+		SUB_REGION_PHASE = false;
+		VILLAGE_PHASE = false;
+		ROUND_PHASE = false;
+		LOCATION_PHASE = true;
+		VISIT_PHASE = false;
+		INDIVIDUAL_PHASE = false;
+		FINISH_PHASE = false;
+		
+		finishVisitBtn.setEnabled(false);
+		createVisitBtn.setEnabled(false);
+		clearLocationBtn.setEnabled(false);
+		deathBtn.setEnabled(false);
+		regionBtn.setEnabled(false);
+		subRegionBtn.setEnabled(false);
+		villageBtn.setEnabled(false);
+		roundBtn.setEnabled(false);
+		locationBtn.setEnabled(true);
+		individualBtn.setEnabled(false);
+	}
+	
+	private void setStateVisit() { 
+		REGION_PHASE = false;
+		SUB_REGION_PHASE = false;
+		VILLAGE_PHASE = false;
+		ROUND_PHASE = false;
+		LOCATION_PHASE = false;
+		VISIT_PHASE = true;
+		INDIVIDUAL_PHASE = false;
+		FINISH_PHASE = false;
+		
+		finishVisitBtn.setEnabled(false);
+		createVisitBtn.setEnabled(true);
+		clearLocationBtn.setEnabled(true);
+		deathBtn.setEnabled(false);
+		regionBtn.setEnabled(false);
+		subRegionBtn.setEnabled(false);
+		villageBtn.setEnabled(false);
+		roundBtn.setEnabled(false);
+		locationBtn.setEnabled(false);
+		individualBtn.setEnabled(false);
+	}
+	
+	private void setStateIndividual() {
+		REGION_PHASE = false;
+		SUB_REGION_PHASE = false;
+		VILLAGE_PHASE = false;
+		ROUND_PHASE = false;
+		LOCATION_PHASE = false;
+		VISIT_PHASE = false;
+		INDIVIDUAL_PHASE = true;
+		FINISH_PHASE = false;
+		
+		finishVisitBtn.setEnabled(false);
+		createVisitBtn.setEnabled(false);
+		clearLocationBtn.setEnabled(false);
+		deathBtn.setEnabled(false);
+		regionBtn.setEnabled(false);
+		subRegionBtn.setEnabled(false);
+		villageBtn.setEnabled(false);
+		roundBtn.setEnabled(false);
+		locationBtn.setEnabled(false);
+		individualBtn.setEnabled(true);
+	}
+	
+	private void setStateFinish() {
+		REGION_PHASE = false;
+		SUB_REGION_PHASE = false;
+		VILLAGE_PHASE = false;
+		ROUND_PHASE = false;
+		LOCATION_PHASE = false;
+		VISIT_PHASE = false;
+		INDIVIDUAL_PHASE = false;
+		FINISH_PHASE = true;
+		
+		regionBtn.setEnabled(false);
+		finishVisitBtn.setEnabled(true);
+		createVisitBtn.setEnabled(false);
+		clearLocationBtn.setEnabled(false);
+		subRegionBtn.setEnabled(false);
+		villageBtn.setEnabled(false);
+		roundBtn.setEnabled(false);
+		locationBtn.setEnabled(false);
+		individualBtn.setEnabled(false);
+		deathBtn.setEnabled(true);
 	}
 }

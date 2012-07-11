@@ -49,8 +49,7 @@ public class ValueFragment extends ListFragment {
 	public void setContent(List<ValueFragmentCell> list) {
 		this.items = list;
 		MyListAdapter adapter = new MyListAdapter(getActivity(), R.layout.custom_row, list);
-		this.setListAdapter(adapter);
-		//this.setListAdapter(new ArrayAdapter<String>(getActivity(), R.layout.value, R.id.textValue, list));	
+		this.setListAdapter(adapter);	
 	} 
 	
 	public void reset() {
