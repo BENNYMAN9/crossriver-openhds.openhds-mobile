@@ -10,6 +10,7 @@ public class Visit implements Serializable {
 	private String location;
 	private String date;
 	private String round;
+	private String status;
 	
 	public String getUuid() {
 		return uuid;
@@ -49,5 +50,13 @@ public class Visit implements Serializable {
 	
 	public void setRound(String round) {
 		this.round = round;
+	}
+	
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
 	}
 }

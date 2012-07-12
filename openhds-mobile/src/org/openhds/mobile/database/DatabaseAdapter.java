@@ -30,7 +30,8 @@ public class DatabaseAdapter {
 	private static final String INDIVIDUAL_GENDER = "gender";
 	private static final String INDIVIDUAL_MOTHER = "mother";  
 	private static final String INDIVIDUAL_FATHER = "father";  
-	private static final String INDIVIDUAL_RESIDENCE = "currentResidence";  
+	private static final String INDIVIDUAL_RESIDENCE = "currentResidence"; 
+	private static final String INDIVIDUAL_STATUS = "status";
 	
 	private static final String DATABASE_TABLE_LOCATION = "location";
 	private static final String LOCATION_UUID = "uuid";  
@@ -39,6 +40,7 @@ public class DatabaseAdapter {
 	private static final String LOCATION_LATITUDE = "latitude";  
 	private static final String LOCATION_LONGITUDE = "longitude";  
 	private static final String LOCATION_HIERARCHY = "hierarchy";	
+	private static final String LOCATION_STATUS = "status";
 	
 	private static final String DATABASE_TABLE_HIERARCHY = "hierarchy";
 	private static final String HIERARCHY_UUID = "uuid";  
@@ -60,6 +62,18 @@ public class DatabaseAdapter {
 	private static final String VISIT_ROUND = "round";  
 	private static final String VISIT_DATE = "date";  
 	private static final String VISIT_LOCATION = "location"; 
+	private static final String VISIT_STATUS = "status";
+	
+	private static final String DATABASE_TABLE_SOCIALGROUP = "socialgroup";
+	private static final String SOCIALGROUP_UUID = "uuid";
+	private static final String SOCIALGROUP_EXTID = "extId";  
+	private static final String SOCIALGROUP_GROUPNAME = "groupName";  
+	private static final String SOCIALGROUP_GROUPHEAD = "groupHead";  
+	private static final String SOCIALGROUP_STATUS = "status";  
+	
+	private static final String DATABASE_TABLE_INDIVIDUALSOCIALGROUP = "individual_socialgroup";
+	private static final String INDIVIDUALSOCIALGROUP_INDIVIDUALUUID = "individual_uuid";
+	private static final String INDIVIDUALSOCIALGROUP_SOCIALGROUPUUID = "socialgroup_uuid";  
 	
 	private static final String DATABASE_TABLE_FIELDWORKER = "fieldworker";
 	private static final String FIELDWORKER_EXTID = "extId";  
@@ -67,13 +81,13 @@ public class DatabaseAdapter {
 	private static final String FIELDWORKER_FIRSTNAME = "firstName";  
 	private static final String FIELDWORKER_LASTNAME = "lastName";  
 	 
-	private static final int DATABASE_VERSION = 7;
+	private static final int DATABASE_VERSION = 8;
 		 
 	private static final String INDIVIDUAL_CREATE =
 	        "create table individual (uuid text primary key, " + 
 	        "extId text not null, firstname text not null, lastname text not null, " +
 	        "dob text not null, gender text not null, mother text not null, " +
-	        "father text not null, currentResidence text not null, " +
+	        "father text not null, currentResidence text not null, status text not null," +
 	        "foreign key(mother) references individual(uuid), " +
 	        "foreign key(father) references individual(uuid), " +
 	        "foreign key(currentResidence) references location(uuid));";
@@ -81,7 +95,7 @@ public class DatabaseAdapter {
 	private static final String LOCATION_CREATE =
         "create table location (uuid text primary key, " + 
         "extId text not null, name text not null, latitude text, " +
-        "longitude text, hierarchy text not null);";
+        "longitude text, hierarchy text not null, status text not null);";
 	
 	private static final String HIERARCHY_CREATE =
 	        "create table hierarchy (uuid text primary key, " + 
@@ -96,11 +110,24 @@ public class DatabaseAdapter {
 	private static final String VISIT_CREATE =
 	        "create table visit (uuid text primary key, " + 
 	        "extId text not null, date text not null, round text not null, " +
-	        "location text not null, foreign key(location) references location(uuid));";
+	        "location text not null, status text not null, " +
+	        "foreign key(location) references location(uuid));";
+	
+	private static final String SOCIALGROUP_CREATE =
+	        "create table socialgroup (uuid text primary key, " + 
+	        "extId text not null, groupName text not null, groupHead text not null, " +
+	        "status text not null, " +
+	        "foreign key(groupHead) references individual(uuid));";
 	
 	private static final String FIELDWORKER_CREATE =
         "create table fieldworker (extId text primary key, " + 
         "password text not null, firstName text not null, lastName text not null);";
+	
+	private static final String INDIVIDUAL_SOCIALGROUP_CREATE =
+	        "create table individual_socialgroup (individual_uuid text not null, " + 
+	        "socialgroup_uuid text not null, " +
+	        "foreign key(individual_uuid) references individual(uuid), " +
+	        "foreign key(socialgroup_uuid) references socialgroup(uuid));";
 	 
 	private DatabaseHelper dbHelper;
 	private SQLiteDatabase database;
@@ -121,8 +148,8 @@ public class DatabaseAdapter {
 	    database.close();
 	}
 		 
-	public long createIndividual(String uuid, String extId, String firstName, 
-				String lastName, String gender, String dob, String mother, String father, String residence) {
+	public long createIndividual(String uuid, String extId, String firstName, String lastName, 
+			String gender, String dob, String mother, String father, String residence, String status) {
 		 		
 		 ContentValues values = new ContentValues();
 		 values.put(INDIVIDUAL_UUID, uuid);
@@ -134,12 +161,13 @@ public class DatabaseAdapter {
 		 values.put(INDIVIDUAL_MOTHER, mother);
 		 values.put(INDIVIDUAL_FATHER, father);
 		 values.put(INDIVIDUAL_RESIDENCE, residence);
+		 values.put(INDIVIDUAL_STATUS, status);
 		 Log.i(TAG, "inserting into individual with extId " + extId);
 		 return database.insert(DATABASE_TABLE_INDIVIDUAL, null, values);	
 	}
 	 
 	public long createLocation(String uuid, String extId, String name, String latitude, 
-			 String longitude, String hierarchy) {
+			 String longitude, String hierarchy, String status) {
 		 
 		 ContentValues values = new ContentValues();
 		 values.put(LOCATION_UUID, uuid);
@@ -148,6 +176,7 @@ public class DatabaseAdapter {
 		 values.put(LOCATION_LONGITUDE, longitude);
 		 values.put(LOCATION_LATITUDE, latitude);
 		 values.put(LOCATION_HIERARCHY, hierarchy);
+		 values.put(LOCATION_STATUS, status);
 		 Log.i(TAG, "inserting into location with extId " + extId);
 		 return database.insert(DATABASE_TABLE_LOCATION, null, values);
 	 }
@@ -179,7 +208,7 @@ public class DatabaseAdapter {
 	 }
 	 
 	 public long createVisit(String uuid, String extId, String roundNumber, String date, 
-			 String location) {
+			 String location, String status) {
 		 
 		 ContentValues values = new ContentValues();
 		 values.put(VISIT_UUID, uuid);
@@ -187,8 +216,33 @@ public class DatabaseAdapter {
 		 values.put(VISIT_DATE, date);
 		 values.put(VISIT_ROUND, roundNumber);
 		 values.put(VISIT_LOCATION, location);
+		 values.put(VISIT_STATUS, status);
 		 Log.i(TAG, "inserting into visit with extId " + extId);
 		 return database.insert(DATABASE_TABLE_VISIT, null, values);
+	 }
+	 
+	 public long createSocialGroup(String uuid, String extId, String groupName, String groupHead, 
+			 String status) {
+		 
+		 ContentValues values = new ContentValues();
+		 values.put(SOCIALGROUP_UUID, uuid);
+		 values.put(SOCIALGROUP_EXTID, extId);
+		 values.put(SOCIALGROUP_GROUPNAME, groupName);
+		 values.put(SOCIALGROUP_GROUPHEAD, groupHead);
+		 values.put(SOCIALGROUP_STATUS, status);
+		 Log.i(TAG, "inserting into socialgroup with extId " + extId);
+		 return database.insert(DATABASE_TABLE_SOCIALGROUP, null, values);
+	 }
+	 
+	 public long createIndividualSocialGroupLink(String individual, String socialGroup) {
+		 open();
+		 ContentValues values = new ContentValues();
+		 values.put(INDIVIDUALSOCIALGROUP_INDIVIDUALUUID, individual);
+		 values.put(INDIVIDUALSOCIALGROUP_SOCIALGROUPUUID, socialGroup);
+		 Log.i(TAG, "inserting into individual_socialgroup with individual_uuid " + individual + " and socialgroup_uuid " + socialGroup);
+		 long result = database.insert(DATABASE_TABLE_INDIVIDUALSOCIALGROUP, null, values);
+		 close();
+		 return result;
 	 }
 	 
 	 public boolean createFieldWorker(String extId, String password, String firstName, String lastName) {
@@ -416,7 +470,9 @@ public class DatabaseAdapter {
 			 db.execSQL(HIERARCHY_CREATE);
 			 db.execSQL(ROUND_CREATE);
 			 db.execSQL(VISIT_CREATE);
+			 db.execSQL(SOCIALGROUP_CREATE);
 			 db.execSQL(FIELDWORKER_CREATE);
+			 db.execSQL(INDIVIDUAL_SOCIALGROUP_CREATE);
 		 }
 		 	
 		 @Override
@@ -426,7 +482,9 @@ public class DatabaseAdapter {
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_HIERARCHY);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_ROUND);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_VISIT);
+			 db.execSQL("drop table if exists " + DATABASE_TABLE_SOCIALGROUP);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_FIELDWORKER);
+			 db.execSQL("drop table if exists " + INDIVIDUAL_SOCIALGROUP_CREATE);
 		     onCreate(db);
 		 }
 	 }

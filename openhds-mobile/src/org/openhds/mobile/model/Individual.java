@@ -14,6 +14,7 @@ public class Individual implements Serializable {
 	private String mother;
 	private String father;
 	private String currentResidence;
+	private String status;
 	
 	public String getUuid() {
 		return uuid;
@@ -84,5 +85,13 @@ public class Individual implements Serializable {
 	
 	public void setCurrentResidence(String currentResidence) {
 		this.currentResidence = currentResidence;
+	}
+	
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
 	}
 }

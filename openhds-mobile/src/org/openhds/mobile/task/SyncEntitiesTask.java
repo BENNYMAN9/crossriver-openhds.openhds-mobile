@@ -91,6 +91,9 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 			processUrl(baseurl + "/visit");
 			resetDialogParams();
 			
+			processUrl(baseurl + "/socialgroup");
+			resetDialogParams();
+			
 			wl.release();
 		 } 
 		 catch (Exception e) {
@@ -138,6 +141,8 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 		databaseAdapter.getDatabase().delete("hierarchy", null, null);
 		databaseAdapter.getDatabase().delete("round", null, null);
 		databaseAdapter.getDatabase().delete("visit", null, null);
+		databaseAdapter.getDatabase().delete("socialgroup", null, null);
+		databaseAdapter.getDatabase().delete("individual_socialgroup", null, null);
 		databaseAdapter.close();
 	}
 	
@@ -187,6 +192,10 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
                     	processVisitParams(parser);
                     	activity.runOnUiThread(changeMessageVisit);
                     }
+                    else if (name.equalsIgnoreCase("socialgroup")) {
+                    	processSocialGroupParams(parser);
+                    	activity.runOnUiThread(changeMessageSocialGroup);
+                    }
                     break;
             }
             eventType = parser.next();
@@ -220,6 +229,12 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	private Runnable changeMessageVisit = new Runnable() {
 	    public void run() {
 	        dialog.setMessage("Downloading Visits");
+	    }
+	};
+	
+	private Runnable changeMessageSocialGroup = new Runnable() {
+	    public void run() {
+	        dialog.setMessage("Downloading Social Groups");
 	    }
 	};
 	
@@ -269,16 +284,20 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         paramMap.put("name", parser.nextText());
         parser.nextTag();
         name = parser.getName();
+        paramMap.put("status", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
         paramMap.put("uuid", parser.nextText());
         parser.nextTag();
         
         saveLocationToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("name"), 
-        		paramMap.get("latitude"), paramMap.get("longitude"), paramMap.get("hierarchy"));
+        		paramMap.get("latitude"), paramMap.get("longitude"), paramMap.get("hierarchy"), paramMap.get("status"));
         
         dialog.incrementProgressBy(1);
 	}
 	
 	private void processIndividualParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+		String[] groups;
 		String name = "";
 		Map<String, String> paramMap = new HashMap<String, String>();
 		parser.nextTag();
@@ -301,18 +320,28 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         paramMap.put("gender", parser.nextText());
         parser.nextTag();
         name = parser.getName();
+        groups = parser.nextText().split(",");
+        parser.nextTag();
+        name = parser.getName();
         paramMap.put("lastName", parser.nextText());
         parser.nextTag();
         name = parser.getName();
         paramMap.put("mother", parser.nextText());
         parser.nextTag();
         name = parser.getName();
+        paramMap.put("status", parser.nextText());       
+        parser.nextTag();
+        name = parser.getName();
         paramMap.put("uuid", parser.nextText());
         parser.nextTag();
         
+        for (String item : groups) {
+        	databaseAdapter.createIndividualSocialGroupLink(paramMap.get("uuid"), item);
+        }
+        
         saveIndividualToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("firstName"), 
         		paramMap.get("lastName"), paramMap.get("gender"), paramMap.get("dob"), paramMap.get("mother"),
-        		paramMap.get("father"), paramMap.get("currentResidence"));
+        		paramMap.get("father"), paramMap.get("currentResidence"), paramMap.get("status"));
         
         dialog.incrementProgressBy(1);
 	}
@@ -354,6 +383,9 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         paramMap.put("roundNumber", parser.nextText());
         parser.nextTag();
         name = parser.getName();
+        paramMap.put("status", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
         paramMap.put("uuid", parser.nextText());
         parser.nextTag();
         name = parser.getName();
@@ -364,7 +396,33 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         parser.nextTag();
           
         saveVisitToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("roundNumber"), 
-        		paramMap.get("visitDate"), paramMap.get("visitLocation"));
+        		paramMap.get("visitDate"), paramMap.get("visitLocation"), paramMap.get("status"));
+        
+        dialog.incrementProgressBy(1);
+	}
+	
+	private void processSocialGroupParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+		String name = "";
+		Map<String, String> paramMap = new HashMap<String, String>();
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("extId", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("groupHead", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("groupName", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("status", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
+        paramMap.put("uuid", parser.nextText());
+        parser.nextTag();
+        
+        saveSocialGroupToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("groupHead"), 
+        		paramMap.get("groupName"), paramMap.get("status"));
         
         dialog.incrementProgressBy(1);
 	}
@@ -379,15 +437,17 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	    listener.collectionComplete(result);
 	}
 	
-	public void saveIndividualToDB(String uuid, String extId, String firstName, String lastName, String gender, String dob, String mother, String father, String residence) {
+	public void saveIndividualToDB(String uuid, String extId, String firstName, String lastName, String gender, String dob, 
+			String mother, String father, String residence, String status) {
 	    databaseAdapter.open();
-	    databaseAdapter.createIndividual(uuid, extId, firstName, lastName, gender, dob, mother, father, residence);
+	    databaseAdapter.createIndividual(uuid, extId, firstName, lastName, gender, dob, mother, father, residence, status);
 	    databaseAdapter.close();
 	}
 	
-	public void saveLocationToDB(String uuid, String extId, String name, String latitude, String longitude, String hierarchy) {
+	public void saveLocationToDB(String uuid, String extId, String name, String latitude, String longitude, 
+			String hierarchy, String status) {
 	    databaseAdapter.open();
-	    databaseAdapter.createLocation(uuid, extId, name, latitude, longitude, hierarchy);
+	    databaseAdapter.createLocation(uuid, extId, name, latitude, longitude, hierarchy, status);
 	    databaseAdapter.close();
 	}
 	
@@ -403,9 +463,15 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	    databaseAdapter.close();
 	}
 	
-	public void saveVisitToDB(String uuid, String extId, String roundNumber, String date, String location) {
+	public void saveVisitToDB(String uuid, String extId, String roundNumber, String date, String location, String status) {
 	    databaseAdapter.open();
-	    databaseAdapter.createVisit(uuid, extId, roundNumber, date, location);
+	    databaseAdapter.createVisit(uuid, extId, roundNumber, date, location, status);
+	    databaseAdapter.close();
+	}
+	
+	public void saveSocialGroupToDB(String uuid, String extId, String groupHead, String groupName, String status) {
+	    databaseAdapter.open();
+	    databaseAdapter.createSocialGroup(uuid, extId, groupName, groupHead, status);
 	    databaseAdapter.close();
 	}
 }

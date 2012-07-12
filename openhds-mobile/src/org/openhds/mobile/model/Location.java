@@ -11,6 +11,7 @@ public class Location implements Serializable {
 	private String latitude;
 	private String longitude;
 	private String hierarchy;
+	private String status;
 	
 	public String getUuid() {
 		return uuid;
@@ -58,5 +59,13 @@ public class Location implements Serializable {
 	
 	public void setHierarchy(String hierarchy) {
 		this.hierarchy = hierarchy;
+	}
+	
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
 	}
 }
