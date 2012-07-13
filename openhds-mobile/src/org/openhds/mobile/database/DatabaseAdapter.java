@@ -7,6 +7,7 @@ import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.Round;
+import org.openhds.mobile.model.SocialGroup;
 import org.openhds.mobile.model.UpdateStatus;
 import org.openhds.mobile.model.Visit;
 import android.content.ContentValues;
@@ -323,11 +324,14 @@ public class DatabaseAdapter {
 	 
 	 public boolean isIndividualStatusValid(String uuid) {
 		 open();
-		 String query = "select * from individual i " +
-		 		"inner join individual m on i.mother = m.uuid " +
-		 		"inner join individual f on i.father = f.uuid " +
-		 		"where i.uuid = ? and i.status = ? and m.status = ? and f.status = ?;";
-		 Cursor cursor = database.rawQuery(query, new String[] {uuid, UpdateStatus.VALID, UpdateStatus.VALID, UpdateStatus.VALID});
+		 String query = "select * from individual i where i.uuid = ? and i.status = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {uuid, UpdateStatus.VALID});
+		 
+//		 String query = "select * from individual i " +
+//	 		"inner join individual m on i.mother = m.uuid " +
+//	 		"inner join individual f on i.father = f.uuid " +
+//	 		"where i.uuid = ? and i.status = ? and m.status = ? and f.status = ?;";
+//		 Cursor cursor = database.rawQuery(query, new String[] {uuid, UpdateStatus.VALID, UpdateStatus.VALID, UpdateStatus.VALID});
 		 
 		 if (cursor.moveToFirst()) {
 			return true;
@@ -336,6 +340,31 @@ public class DatabaseAdapter {
 		 cursor.close();
 		 close();
 		 return false;
+	 }
+	 
+	 public List<SocialGroup> getSocialGroupsForIndividual(String uuid) {
+		 open();
+		 List<SocialGroup> socialgroups = new ArrayList<SocialGroup>();
+		 String query = "select * from socialgroup s " +
+		 		"inner join individual_socialgroup x on s.uuid = x.socialgroup_uuid " +
+		 		"where x.individual_uuid = ? and s.status = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {uuid, UpdateStatus.VALID});
+		 
+		 if (cursor.moveToFirst()) {
+			 do {
+				 SocialGroup group = new SocialGroup();
+				 group.setUuid(cursor.getString(0));
+				 group.setExtId(cursor.getString(1));
+				 group.setGroupName(cursor.getString(2));
+				 group.setGroupHead(cursor.getString(3));
+				 group.setStatus(cursor.getString(4));
+				 socialgroups.add(group);
+			 } while(cursor.moveToNext());
+		 }
+		 		 
+		 cursor.close();
+		 close();
+		 return socialgroups;
 	 }
 	  	 
 	 public List<LocationHierarchy> getAllRegions(String levelName) {

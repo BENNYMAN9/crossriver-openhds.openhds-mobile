@@ -66,8 +66,8 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 			xml += "<dateOfInterview>" + record.getVisit().getDate() + "</dateOfInterview>" + "\r\n";
 			xml += "<permanentId>" + record.getIndividual().getExtId() + "</permanentId>"  + "\r\n";
 			xml += "<houseId>" + record.getLocation().getExtId() + "</houseId>" + "\r\n";
-			xml += "<householdName />" + "\r\n";
-			xml += "<householdId />" + "\r\n";
+			xml += "<householdName>" + record.getSocialgroup().getGroupName() + "</householdName>" + "\r\n";
+			xml += "<householdId>" + record.getSocialgroup().getExtId() + "</householdId>" + "\r\n";
 			xml += "<dateOfDeath />" + "\r\n";
 			xml += "<deceasedName>" + record.getIndividual().getFirstName() + " " + record.getIndividual().getLastName() + "</deceasedName>" + "\r\n";
 			xml += "<sex>" + (record.getIndividual().getGender().equalsIgnoreCase("Male") ? "1" : "2") + "</sex>" + "\r\n";

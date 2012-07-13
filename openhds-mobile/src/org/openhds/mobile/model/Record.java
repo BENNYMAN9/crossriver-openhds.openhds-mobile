@@ -9,14 +9,17 @@ public class Record {
 	LocationHierarchy village;
 	Location location;
 	Individual individual;
+	SocialGroup socialgroup;
 	Round round;
 	Visit visit;
 	
-	public Record(String username, LocationHierarchy village, Location location, Round round, Individual individual, Visit visit) {
+	public Record(String username, LocationHierarchy village, Location location, Round round, 
+			Individual individual, SocialGroup socialgroup, Visit visit) {
 		this.fieldWorkerId = username;
 		this.village = village;
 		this.location = location;
 		this.individual = individual;
+		this.socialgroup = socialgroup;
 		this.round = round;
 		this.visit = visit;
 	}
@@ -51,6 +54,14 @@ public class Record {
 	
 	public void setIndividual(Individual individual) {
 		this.individual = individual;
+	}
+	
+	public SocialGroup getSocialgroup() {
+		return socialgroup;
+	}
+
+	public void setSocialgroup(SocialGroup socialgroup) {
+		this.socialgroup = socialgroup;
 	}
 	
 	public Round getRound() {

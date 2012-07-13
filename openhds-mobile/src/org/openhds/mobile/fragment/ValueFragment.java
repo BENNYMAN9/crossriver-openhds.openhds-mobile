@@ -86,4 +86,8 @@ public class ValueFragment extends ListFragment {
             return v;
         }
     }
+	
+	public List<ValueFragmentCell> getItems() {
+		return items;
+	}
 }

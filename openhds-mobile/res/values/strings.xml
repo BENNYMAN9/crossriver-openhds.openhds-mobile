@@ -15,6 +15,7 @@
     <string name="field_worker_already_exists">Field Worker already exists</string>
     <string name="field_worker_created">Field Worker Successfully Created</string>
     <string name="hello">Hello, Android!</string>
+    <string name="household_not_found">A household was not found for this Individual</string>
     <string name="openhdswebservice">OpenHDS Web Service</string>
     <string name="password">Password</string>
     <string name="retrieving_fieldworkers_interrupted">Retrieving Field Workers has been interrupted</string>

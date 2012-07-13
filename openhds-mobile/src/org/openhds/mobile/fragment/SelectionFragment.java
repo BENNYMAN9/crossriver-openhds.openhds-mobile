@@ -12,6 +12,7 @@ import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.Round;
+import org.openhds.mobile.model.SocialGroup;
 import org.openhds.mobile.model.Visit;
 
 import android.os.Bundle;
@@ -30,6 +31,7 @@ public class SelectionFragment extends Fragment {
 	private Round round;
 	private Location location;
 	private Individual individual;
+	private SocialGroup socialgroup;
 	private Visit visit;
 	
 	private List<LocationHierarchy> regions;
@@ -38,6 +40,7 @@ public class SelectionFragment extends Fragment {
 	private List<Round> rounds;
 	private List<Location> locations;
 	private List<Individual> individuals;
+	private List<SocialGroup> socialgroups;
 	
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -47,8 +50,9 @@ public class SelectionFragment extends Fragment {
         round = new Round();
         location = new Location();
         individual = new Individual();
+        socialgroup = new SocialGroup();
         visit = new Visit();
-        
+
         databaseAdapter = new DatabaseAdapter(getActivity().getBaseContext());
         return inflater.inflate(R.layout.selection, container, false);
     }
@@ -73,6 +77,20 @@ public class SelectionFragment extends Fragment {
         String date = df.format(new Date());
         
         visit.setDate(date);
+	}
+	
+	public CharSequence[] getSocialGroupsForDialog() {
+		CharSequence[] names = new CharSequence[socialgroups.size()];
+		
+		for (int i = 0; i < socialgroups.size(); i++) {
+			names[i] = socialgroups.get(i).getGroupName();
+		}
+		
+		return names;
+	}
+	
+	public void setSocialGroupDialogSelection(int index) {
+		this.socialgroup = socialgroups.get(index);
 	}
 	
 	public LocationHierarchy getRegion() {
@@ -178,4 +196,21 @@ public class SelectionFragment extends Fragment {
 	public void setIndividuals(List<Individual> individuals) {
 		this.individuals = individuals;
 	}
+	
+	public SocialGroup getSocialgroup() {
+		return socialgroup;
+	}
+
+	public void setSocialgroup(SocialGroup socialgroup) {
+		this.socialgroup = socialgroup;
+	}
+
+	public List<SocialGroup> getSocialgroups() {
+		return socialgroups;
+	}
+
+	public void setSocialgroups(List<SocialGroup> socialgroups) {
+		this.socialgroups = socialgroups;
+	}
+
 }
