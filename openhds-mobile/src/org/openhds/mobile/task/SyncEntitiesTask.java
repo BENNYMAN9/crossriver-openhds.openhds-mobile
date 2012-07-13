@@ -26,8 +26,6 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
-import android.os.PowerManager;
-import android.os.PowerManager.WakeLock;
 
 /**
  * An AsyncTask to upload all OpenHDS data from the web service configured in ServerPreferences.
@@ -68,12 +66,7 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 		 HttpConnectionParams.setSoTimeout(httpParameters, 100000);
 		 client = new DefaultHttpClient(httpParameters);
 		 
-		 try {	
-			 
-			PowerManager pm = (PowerManager) activity.getSystemService(Context.POWER_SERVICE);
-			WakeLock wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "DoNotDimScreen");
-			wl.acquire();
-			 
+		 try {		 			 
 			setupDB();
 						 
 			processUrl(baseurl + "/individual");	
@@ -93,8 +86,6 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 			
 			processUrl(baseurl + "/socialgroup");
 			resetDialogParams();
-			
-			wl.release();
 		 } 
 		 catch (Exception e) {
 			e.printStackTrace();

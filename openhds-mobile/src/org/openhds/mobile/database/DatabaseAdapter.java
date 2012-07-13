@@ -7,6 +7,7 @@ import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.Round;
+import org.openhds.mobile.model.UpdateStatus;
 import org.openhds.mobile.model.Visit;
 import android.content.ContentValues;
 import android.content.Context;
@@ -304,6 +305,37 @@ public class DatabaseAdapter {
 		 cursor.close();
 		 close();
 		 return null;
+	 }
+	 
+	 public boolean isLocationStatusValid(String uuid) {
+		 open();
+		 String query = "select * from location where uuid = ? and status = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {uuid, UpdateStatus.VALID});
+		 
+		 if (cursor.moveToFirst()) {
+			return true;
+		 }
+		 		 
+		 cursor.close();
+		 close();
+		 return false;
+	 }
+	 
+	 public boolean isIndividualStatusValid(String uuid) {
+		 open();
+		 String query = "select * from individual i " +
+		 		"inner join individual m on i.mother = m.uuid " +
+		 		"inner join individual f on i.father = f.uuid " +
+		 		"where i.uuid = ? and i.status = ? and m.status = ? and f.status = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {uuid, UpdateStatus.VALID, UpdateStatus.VALID, UpdateStatus.VALID});
+		 
+		 if (cursor.moveToFirst()) {
+			return true;
+		 }
+		 		 
+		 cursor.close();
+		 close();
+		 return false;
 	 }
 	  	 
 	 public List<LocationHierarchy> getAllRegions(String levelName) {

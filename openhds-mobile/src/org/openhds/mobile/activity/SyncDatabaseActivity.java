@@ -3,7 +3,6 @@ package org.openhds.mobile.activity;
 import org.openhds.mobile.R;
 import org.openhds.mobile.listener.CollectEntitiesListener;
 import org.openhds.mobile.task.SyncEntitiesTask;
-
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -13,6 +12,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask.Status;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -27,6 +27,7 @@ public class SyncDatabaseActivity extends Activity implements CollectEntitiesLis
 	private ProgressDialog dialog;
 	private SharedPreferences settings;
     private SyncEntitiesTask entitiesTask = null;
+    private PowerManager.WakeLock wl;
     
     private String url;
     private String username;
@@ -36,6 +37,9 @@ public class SyncDatabaseActivity extends Activity implements CollectEntitiesLis
 		 super.onCreate(savedInstanceState);
 		 setTitle(getString(R.string.app_name) + " > " + getString(R.string.syncDatabase));
 		 setContentView(R.layout.sync_database);
+		 
+		 PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+		 wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "DoNotDimScreen");
 	   	     	     
 	     initializeProgressDialog();
  
@@ -69,8 +73,15 @@ public class SyncDatabaseActivity extends Activity implements CollectEntitiesLis
 	@Override
 	protected void onPause() {
 		super.onPause();
+		wl.release();
 		if (entitiesTask != null)
 			entitiesTask.cancel(true);
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		wl.acquire();
 	}
 		
 	@Override

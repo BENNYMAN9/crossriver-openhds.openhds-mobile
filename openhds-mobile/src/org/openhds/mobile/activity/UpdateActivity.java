@@ -18,6 +18,7 @@ import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.Record;
 import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.UpdateEvent;
+import org.openhds.mobile.model.Visit;
 import org.openhds.mobile.task.OdkFormLoadTask;
 import android.app.ActionBar;
 import android.app.AlertDialog;
@@ -58,6 +59,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	private final int SELECTED_XFORM = 1;
 	
 	private Uri contentUri;
+	private boolean isFormUnFinished = false;
 	
 	private boolean REGION_PHASE = true;
 	private boolean SUB_REGION_PHASE = false;
@@ -180,9 +182,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 							InstanceProviderAPI.InstanceColumns.STATUS + "=?", new String[] {InstanceProviderAPI.STATUS_COMPLETE}, null);
 					if (cursor.moveToNext()) {
 						setPhase(UpdateEvent.INDIVIDUAL);
+						isFormUnFinished = false;
 					}
 					else {
-						createAlertDialog();
+						createUnfinishedFormDialog();
 					}
 				}
 			}
@@ -198,8 +201,13 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		outState.putSerializable("village", selectionFragment.getVillage());
 		outState.putSerializable("round", selectionFragment.getRound());
 		outState.putSerializable("location", selectionFragment.getLocation());
+		outState.putSerializable("visit", selectionFragment.getVisit());
 		outState.putSerializable("individual", selectionFragment.getIndividual());
 		outState.putString("phase", getPhase());
+		outState.putBoolean("unfinishedFormDialog", isFormUnFinished);
+		
+		if (contentUri != null)
+			outState.putString("uri", contentUri.toString());
 	}
     
     private void restoreState(Bundle state) {
@@ -210,8 +218,16 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	    	selectionFragment.setVillage((LocationHierarchy)state.get("village"));
 	    	selectionFragment.setRound((Round)state.get("round"));
 	    	selectionFragment.setLocation((Location)state.get("location"));
+	    	selectionFragment.setVisit((Visit)state.get("visit"));
 	    	selectionFragment.setIndividual((Individual)state.get("individual"));
 	    	restorePhase(state.getString("phase"));
+	    	
+	    	String uri = state.getString("uri");
+	    	if (uri != null)
+	    		contentUri = Uri.parse(uri);
+	    		    	
+	    	if (state.getBoolean("unfinishedFormDialog"))
+	    		createUnfinishedFormDialog();
     	}
 	}
     
@@ -309,7 +325,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     	}
     }
     
-    private void createAlertDialog() {
+    private void createUnfinishedFormDialog() {
+    	isFormUnFinished = true;
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 		alertDialogBuilder.setTitle("Warning");
 		alertDialogBuilder.setMessage("Form started but not saved. " +
@@ -329,6 +346,20 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				startActivityForResult(new Intent(Intent.ACTION_EDIT, contentUri), SELECTED_XFORM);				
 			}
 		});
+		AlertDialog alertDialog = alertDialogBuilder.create();
+		alertDialog.show();
+    }
+    
+    private void createInvalidStatusDialog() {
+		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+		alertDialogBuilder.setTitle("Warning");
+		alertDialogBuilder.setMessage("The selected entity does not have a valid status. \n Please fix the error(s) before proceeding.");
+		alertDialogBuilder.setCancelable(true);
+		alertDialogBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				dialog.dismiss();
+			}
+		});	
 		AlertDialog alertDialog = alertDialogBuilder.create();
 		alertDialog.show();
     }
@@ -414,28 +445,40 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			setPhase(UpdateEvent.LOCATION);
 		}
 		else if (phase.equals(UpdateEvent.LOCATION)) {
-			selectionFragment.setLocation(selectionFragment.getLocations().get(position));
-			locationName.setVisibility(View.VISIBLE);
-			locationExtId.setVisibility(View.VISIBLE);
-			locationLatitude.setVisibility(View.VISIBLE);
-			locationLongitude.setVisibility(View.VISIBLE);
-			locationNameText.setText(selectionFragment.getLocation().getName());
-			locationExtIdText.setText(selectionFragment.getLocation().getExtId());
-			locationLatitudeText.setText(selectionFragment.getLocation().getLatitude());
-			locationLongitudeText.setText(selectionFragment.getLocation().getLongitude());
-			setPhase(UpdateEvent.VISIT);
+			
+			if (!databaseAdapter.isLocationStatusValid(selectionFragment.getLocations().get(position).getUuid())) {
+				createInvalidStatusDialog();
+			}
+			else {
+				selectionFragment.setLocation(selectionFragment.getLocations().get(position));
+				locationName.setVisibility(View.VISIBLE);
+				locationExtId.setVisibility(View.VISIBLE);
+				locationLatitude.setVisibility(View.VISIBLE);
+				locationLongitude.setVisibility(View.VISIBLE);
+				locationNameText.setText(selectionFragment.getLocation().getName());
+				locationExtIdText.setText(selectionFragment.getLocation().getExtId());
+				locationLatitudeText.setText(selectionFragment.getLocation().getLatitude());
+				locationLongitudeText.setText(selectionFragment.getLocation().getLongitude());
+				setPhase(UpdateEvent.VISIT);
+			}
 		}
 		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
-			selectionFragment.setIndividual(selectionFragment.getIndividuals().get(position));
-			individualExtId.setVisibility(View.VISIBLE);
-			individualFirstName.setVisibility(View.VISIBLE);
-			individualLastName.setVisibility(View.VISIBLE);
-			individualDob.setVisibility(View.VISIBLE);
-			individualExtIdText.setText(selectionFragment.getIndividual().getExtId());
-			individualFirstNameText.setText(selectionFragment.getIndividual().getFirstName());
-			individualLastNameText.setText(selectionFragment.getIndividual().getLastName());
-			individualDobText.setText(selectionFragment.getIndividual().getDob());
-			setPhase(UpdateEvent.XFORMS);
+			
+			if (!databaseAdapter.isIndividualStatusValid(selectionFragment.getIndividuals().get(position).getUuid())) {
+				createInvalidStatusDialog();
+			}
+			else {
+				selectionFragment.setIndividual(selectionFragment.getIndividuals().get(position));
+				individualExtId.setVisibility(View.VISIBLE);
+				individualFirstName.setVisibility(View.VISIBLE);
+				individualLastName.setVisibility(View.VISIBLE);
+				individualDob.setVisibility(View.VISIBLE);
+				individualExtIdText.setText(selectionFragment.getIndividual().getExtId());
+				individualFirstNameText.setText(selectionFragment.getIndividual().getFirstName());
+				individualLastNameText.setText(selectionFragment.getIndividual().getLastName());
+				individualDobText.setText(selectionFragment.getIndividual().getDob());
+				setPhase(UpdateEvent.XFORMS);
+			}
 		}
 	}
 	
@@ -855,7 +898,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		INDIVIDUAL_PHASE = true;
 		XFORMS_PHASE = false;
 		
-		finishVisitBtn.setEnabled(false);
+		finishVisitBtn.setEnabled(true);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
 		deathBtn.setEnabled(false);
