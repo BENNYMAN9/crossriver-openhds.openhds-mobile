@@ -307,48 +307,14 @@ public class DatabaseAdapter {
 		 close();
 		 return null;
 	 }
-	 
-	 public boolean isLocationStatusValid(String uuid) {
-		 open();
-		 String query = "select * from location where uuid = ? and status = ?;";
-		 Cursor cursor = database.rawQuery(query, new String[] {uuid, UpdateStatus.VALID});
-		 
-		 if (cursor.moveToFirst()) {
-			return true;
-		 }
-		 		 
-		 cursor.close();
-		 close();
-		 return false;
-	 }
-	 
-	 public boolean isIndividualStatusValid(String uuid) {
-		 open();
-		 String query = "select * from individual i where i.uuid = ? and i.status = ?;";
-		 Cursor cursor = database.rawQuery(query, new String[] {uuid, UpdateStatus.VALID});
-		 
-//		 String query = "select * from individual i " +
-//	 		"inner join individual m on i.mother = m.uuid " +
-//	 		"inner join individual f on i.father = f.uuid " +
-//	 		"where i.uuid = ? and i.status = ? and m.status = ? and f.status = ?;";
-//		 Cursor cursor = database.rawQuery(query, new String[] {uuid, UpdateStatus.VALID, UpdateStatus.VALID, UpdateStatus.VALID});
-		 
-		 if (cursor.moveToFirst()) {
-			return true;
-		 }
-		 		 
-		 cursor.close();
-		 close();
-		 return false;
-	 }
-	 
+	 	 	 
 	 public List<SocialGroup> getSocialGroupsForIndividual(String uuid) {
 		 open();
 		 List<SocialGroup> socialgroups = new ArrayList<SocialGroup>();
 		 String query = "select * from socialgroup s " +
 		 		"inner join individual_socialgroup x on s.uuid = x.socialgroup_uuid " +
-		 		"where x.individual_uuid = ? and s.status = ?;";
-		 Cursor cursor = database.rawQuery(query, new String[] {uuid, UpdateStatus.VALID});
+		 		"where x.individual_uuid = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {uuid});
 		 
 		 if (cursor.moveToFirst()) {
 			 do {

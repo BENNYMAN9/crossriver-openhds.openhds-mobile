@@ -70,7 +70,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 	// status flags indicating a dialog, used for restoring the activity
 	private boolean formUnFinished = false;
-	private boolean invalidStatus = false;
 	private boolean householdSelection = false;
 	
 	// the workflow for this activity is arranged into multiple phases
@@ -206,7 +205,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					if (cursor.moveToNext()) {
 						setPhase(UpdateEvent.INDIVIDUAL);
 						formUnFinished = false;
-						invalidStatus = false;
 					}
 					else {
 						createUnfinishedFormDialog();
@@ -234,7 +232,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		outState.putSerializable("socialgroup", selectionFragment.getSocialgroup());
 		outState.putString("phase", getPhase());
 		outState.putBoolean("unfinishedFormDialog", formUnFinished);
-		outState.putBoolean("invalidStatus", invalidStatus);
 		outState.putBoolean("householdSelection", householdSelection);
 		
 		if (contentUri != null)
@@ -263,8 +260,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	    		    	
 	    	if (state.getBoolean("unfinishedFormDialog"))
 	    		createUnfinishedFormDialog();
-	    	if (state.getBoolean("invalidStatus"))
-	    		createInvalidStatusDialog();
 	    	if (state.getBoolean("householdSelection")) {
 	    		selectionFragment.setSocialgroups(databaseAdapter.getSocialGroupsForIndividual(selectionFragment.getIndividual().getUuid()));
 	    		createHouseholdSelectionDialog();
@@ -422,27 +417,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		});
 		AlertDialog alertDialog = alertDialogBuilder.create();
 		alertDialog.show();
-    }
-    
-    /**
-     * A dialog indicating that a selected entity has an invalid status code.
-     */
-    private void createInvalidStatusDialog() {
-    	invalidStatus = true;
-		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-		alertDialogBuilder.setTitle("Warning");
-		alertDialogBuilder.setMessage("The selected entity does not have a valid status. \n Please fix the error(s) before proceeding.");
-		alertDialogBuilder.setCancelable(true);
-		alertDialogBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int which) {
-				invalidStatus = false;
-				dialog.dismiss();
-			}
-		});	
-		AlertDialog alertDialog = alertDialogBuilder.create();
-		alertDialog.show();
-    }
-    
+    } 
     
     /**
      * This is specific for Cross River.
@@ -556,62 +531,46 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			setPhase(UpdateEvent.LOCATION);
 		}
 		else if (phase.equals(UpdateEvent.LOCATION)) {
-			
-			// it's possible for the selected location to have an invalid status.
-			// must signal that here.
-			if (!databaseAdapter.isLocationStatusValid(selectionFragment.getLocations().get(position).getUuid())) {
-				createInvalidStatusDialog();
-			}
-			else {
-				selectionFragment.setLocation(selectionFragment.getLocations().get(position));
-				locationName.setVisibility(View.VISIBLE);
-				locationExtId.setVisibility(View.VISIBLE);
-				locationLatitude.setVisibility(View.VISIBLE);
-				locationLongitude.setVisibility(View.VISIBLE);
-				locationNameText.setText(selectionFragment.getLocation().getName());
-				locationExtIdText.setText(selectionFragment.getLocation().getExtId());
-				locationLatitudeText.setText(selectionFragment.getLocation().getLatitude());
-				locationLongitudeText.setText(selectionFragment.getLocation().getLongitude());
-				setPhase(UpdateEvent.VISIT);
-			}
+			selectionFragment.setLocation(selectionFragment.getLocations().get(position));
+			locationName.setVisibility(View.VISIBLE);
+			locationExtId.setVisibility(View.VISIBLE);
+			locationLatitude.setVisibility(View.VISIBLE);
+			locationLongitude.setVisibility(View.VISIBLE);
+			locationNameText.setText(selectionFragment.getLocation().getName());
+			locationExtIdText.setText(selectionFragment.getLocation().getExtId());
+			locationLatitudeText.setText(selectionFragment.getLocation().getLatitude());
+			locationLongitudeText.setText(selectionFragment.getLocation().getLongitude());
+			setPhase(UpdateEvent.VISIT);
 		}
 		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
 			
-			// it's possible for the selected individual to have an invalid status
-			// must signal that here
-			if (!databaseAdapter.isIndividualStatusValid(selectionFragment.getIndividuals().get(position).getUuid())) {
-				createInvalidStatusDialog();
-			}
-			else {
-				invalidStatus = false;
-				selectionFragment.setIndividual(selectionFragment.getIndividuals().get(position));
-				individualExtId.setVisibility(View.VISIBLE);
-				individualFirstName.setVisibility(View.VISIBLE);
-				individualLastName.setVisibility(View.VISIBLE);
-				individualDob.setVisibility(View.VISIBLE);
-				individualExtIdText.setText(selectionFragment.getIndividual().getExtId());
-				individualFirstNameText.setText(selectionFragment.getIndividual().getFirstName());
-				individualLastNameText.setText(selectionFragment.getIndividual().getLastName());
-				individualDobText.setText(selectionFragment.getIndividual().getDob());
-				
-				// get the socialgroups the individual is a part of
-				List<SocialGroup> list = databaseAdapter.getSocialGroupsForIndividual(selectionFragment.getIndividual().getUuid());
-				
-				if (list.size() > 0) {
-					selectionFragment.setSocialgroups(list);
-				
-					// if the individual is in more that one social group then the socialgroup must be specified
-					if (list.size() > 1) {
-						createHouseholdSelectionDialog();
-						setPhase(UpdateEvent.XFORMS);
-					}
-					else if (list.size() == 1) {
-						selectionFragment.setSocialGroupDialogSelection(0);
-						setPhase(UpdateEvent.XFORMS);
-					}
-					else {
-						Toast.makeText(getApplicationContext(),	getString(R.string.household_not_found), Toast.LENGTH_SHORT).show();
-					}
+			selectionFragment.setIndividual(selectionFragment.getIndividuals().get(position));
+			individualExtId.setVisibility(View.VISIBLE);
+			individualFirstName.setVisibility(View.VISIBLE);
+			individualLastName.setVisibility(View.VISIBLE);
+			individualDob.setVisibility(View.VISIBLE);
+			individualExtIdText.setText(selectionFragment.getIndividual().getExtId());
+			individualFirstNameText.setText(selectionFragment.getIndividual().getFirstName());
+			individualLastNameText.setText(selectionFragment.getIndividual().getLastName());
+			individualDobText.setText(selectionFragment.getIndividual().getDob());
+			
+			// get the socialgroups the individual is a part of
+			List<SocialGroup> list = databaseAdapter.getSocialGroupsForIndividual(selectionFragment.getIndividual().getUuid());
+			
+			if (list.size() > 0) {
+				selectionFragment.setSocialgroups(list);
+			
+				// if the individual is in more that one social group then the socialgroup must be specified
+				if (list.size() > 1) {
+					createHouseholdSelectionDialog();
+					setPhase(UpdateEvent.XFORMS);
+				}
+				else if (list.size() == 1) {
+					selectionFragment.setSocialGroupDialogSelection(0);
+					setPhase(UpdateEvent.XFORMS);
+				}
+				else {
+					Toast.makeText(getApplicationContext(),	getString(R.string.household_not_found), Toast.LENGTH_SHORT).show();
 				}
 			}
 		}
