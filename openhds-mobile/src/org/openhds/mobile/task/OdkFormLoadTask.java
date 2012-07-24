@@ -1,16 +1,38 @@
 package org.openhds.mobile.task;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.openhds.mobile.FormsProviderAPI;
 import org.openhds.mobile.InstanceProviderAPI;
 import org.openhds.mobile.listener.OdkFormLoadListener;
+import org.openhds.mobile.model.FilledParams;
 import org.openhds.mobile.model.Record;
 import org.openhds.mobile.model.UpdateEvent;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -39,6 +61,15 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 		
 		String xml = "";
 		if (event == UpdateEvent.VISIT) {
+
+			Cursor cursor = getCursorForFormsProvider("visit");
+			if (cursor.moveToFirst()) {
+				String formFilePath = cursor.getString(0);
+				processXml(formFilePath);
+			}
+			
+			
+			
 			
 			xml = "<data id=\"visit_registration_v2\">" + "\r\n";
 			xml += "<visitId>" + record.getVisit().getExtId() + "</visitId>" + "\r\n";
@@ -85,6 +116,49 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 			}
 		}
 		return false;
+	}
+	
+	private Cursor getCursorForFormsProvider(String name) {
+		return resolver.query(FormsProviderAPI.FormsColumns.CONTENT_URI, new String[] {FormsProviderAPI.FormsColumns.FORM_FILE_PATH},
+				FormsProviderAPI.FormsColumns.JR_FORM_ID + " like ?", new String[] {name + "%"}, null);
+	}
+	
+	private void processXml(String formFilePath) {
+		
+		try {
+		    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+	        DocumentBuilder builder = factory.newDocumentBuilder();
+	        Document doc = builder.parse(new FileInputStream(formFilePath));
+	        doc.getDocumentElement().normalize();
+	        
+	        Node node = doc.getElementsByTagName("instance").item(0);
+	        Node child = node.getChildNodes().item(0);
+	        NodeList childElements = child.getChildNodes();
+	        
+	        for (int i = 0; i < childElements.getLength(); i++) {
+	        	Node n = childElements.item(i);
+	        	if (n.getNodeType() == Node.ELEMENT_NODE) {
+	        		Element element = (Element)n;
+	        		String visitId = getTagValue(FilledParams.visitId, element);
+	        		System.out.println(visitId);
+	        	}
+	        }
+
+
+	       
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ParserConfigurationException e) {
+			e.printStackTrace();
+		} catch (SAXException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private String getTagValue(String sTag, Element eElement) {
+		NodeList nlList = eElement.getElementsByTagName(sTag).item(0).getChildNodes();
+	    Node nValue = (Node) nlList.item(0);
+		return nValue.getNodeValue();
 	}
 		
 	private File saveFile(String xml) {
