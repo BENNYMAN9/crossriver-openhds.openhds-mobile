@@ -1,5 +1,8 @@
 package org.openhds.mobile.model;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * This class specifies the fields which are prefilled when an xform is loaded.
  * The convention is based on these naming standards, all other fields will be ignored.
@@ -18,11 +21,18 @@ public class FilledParams {
 	
 	public static final String houseId = "houseId";
 	public static final String houseName = "houseName";
+	public static final String longitude = "longitude";
+	public static final String latitude = "latitude";
 	
 	public static final String householdId = "householdId";
 	public static final String householdName = "householdName";
 	
 	public static final String fieldWorkerId = "fieldWorkerId";
-	
-	public static final String dateOfInterview = "dateOfInterview";
+			
+	public static List<String> getParamsArray() {
+		return Arrays.asList(visitId, roundNumber, visitDate, 
+				individualId, firstName, lastName, gender, dob, 
+				houseId, houseName, longitude, latitude, 
+				householdId, householdName, fieldWorkerId);
+	}
 }

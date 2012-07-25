@@ -71,6 +71,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	// status flags indicating a dialog, used for restoring the activity
 	private boolean formUnFinished = false;
 	private boolean householdSelection = false;
+	private boolean xFormNotFound = false;
 	
 	// the workflow for this activity is arranged into multiple phases
 	private boolean REGION_PHASE = true;
@@ -233,6 +234,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		outState.putString("phase", getPhase());
 		outState.putBoolean("unfinishedFormDialog", formUnFinished);
 		outState.putBoolean("householdSelection", householdSelection);
+		outState.putBoolean("xFormNotFound", xFormNotFound);
 		
 		if (contentUri != null)
 			outState.putString("uri", contentUri.toString());
@@ -258,6 +260,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	    	if (uri != null)
 	    		contentUri = Uri.parse(uri);
 	    		    	
+	    	if (state.getBoolean("xFormNotFound"))
+	    		createXFormNotFoundDialog();
 	    	if (state.getBoolean("unfinishedFormDialog"))
 	    		createUnfinishedFormDialog();
 	    	if (state.getBoolean("householdSelection")) {
@@ -438,6 +442,24 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		AlertDialog alertDialog = alertDialogBuilder.create();
 		alertDialog.show();
     }
+    
+    /**
+     * A dialog indicating that an Xform instance could not be found.
+     */
+    private void createXFormNotFoundDialog() {
+    	xFormNotFound = true;
+		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+		alertDialogBuilder.setTitle("Warning");
+		alertDialogBuilder.setMessage("The XForm could not be found within Open Data Kit Collect. " +
+				"Please make sure that it exists and it's named correctly.");
+		alertDialogBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				xFormNotFound = false;
+			}
+		});	
+		AlertDialog alertDialog = alertDialogBuilder.create();
+		alertDialog.show();
+    } 
         
     /**
      * Defining what happens when a button is pressed, each button corresponds to a phase.
@@ -485,9 +507,17 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 * This is called after the OdkFormLoadTask has created an instance of the Xform.
 	 * It returns the content uri which is used to start the ODK Activity to load that Xform instance.
 	 */
-	public void onSuccess(Uri contentUri) {
+	public void onOdkFormLoadSuccess(Uri contentUri) {
 		this.contentUri = contentUri;
 		startActivityForResult(new Intent(Intent.ACTION_EDIT, contentUri), SELECTED_XFORM);
+	}
+	
+	/**
+	 * This is called when the OdkFormLoadTask is unable to locate an xform.
+	 * It's possible for this to happen if the form doesn't exist.
+	 */
+	public void onOdkFormLoadFailure() {
+		createXFormNotFoundDialog();
 	}
 		
 	/**

@@ -2,38 +2,25 @@ package org.openhds.mobile.task;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
 import org.openhds.mobile.FormsProviderAPI;
 import org.openhds.mobile.InstanceProviderAPI;
 import org.openhds.mobile.listener.OdkFormLoadListener;
 import org.openhds.mobile.model.FilledParams;
 import org.openhds.mobile.model.Record;
-import org.openhds.mobile.model.UpdateEvent;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
-
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -58,94 +45,43 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 
 	@Override
 	protected Boolean doInBackground(Void... params) {
-		
-		String xml = "";
-		if (event == UpdateEvent.VISIT) {
 
-			Cursor cursor = getCursorForFormsProvider("visit");
-			if (cursor.moveToFirst()) {
-				String formFilePath = cursor.getString(0);
-				processXml(formFilePath);
-			}
-			
-			
-			
-			
-			xml = "<data id=\"visit_registration_v2\">" + "\r\n";
-			xml += "<visitId>" + record.getVisit().getExtId() + "</visitId>" + "\r\n";
-			xml += "<fieldWorkerId>" + record.getFieldWorkerId() + "</fieldWorkerId>" + "\r\n";
-			xml += "<locationId>" + record.getLocation().getExtId() + "</locationId>" + "\r\n";
-			xml += "<visitDate>" + record.getVisit().getDate() + "</visitDate>" + "\r\n";
-			xml += "<roundNumber>" + record.getRound().getRoundNumber() + "</roundNumber>" + "\r\n";
-			xml += "<derivedFromUri />" + "\r\n";
-			xml += "<supervisorStatus />" + "\r\n";
-			xml += "<processedByMirth />" + "\r\n";
-			xml += "<validationFailed>" + "0" + "</validationFailed>" + "\r\n";
-			xml += "</data>" + "\r\n";
+		Cursor cursor = getCursorForFormsProvider(event.toLowerCase());
+		if (cursor.moveToFirst()) {
+			String jrFormId = cursor.getString(0);
+			String formFilePath = cursor.getString(1);
+			String xml = processXml(jrFormId, formFilePath);
 			
 			File targetFile = saveFile(xml);
 			if (targetFile != null) {
-				return writeContent(targetFile, "visit", "visit_registration_v2");
-			}
-			
-		}
-		else if (event == UpdateEvent.DEATH) {
-			
-			xml = "<data id=\"death_registration_v4\">" + "\r\n";
-			xml += "<basicInformation>" + "\r\n";
-			xml += "<fieldWorker>" + record.getFieldWorkerId() + "</fieldWorker>" + "\r\n";
-			xml += "<dateOfInterview>" + record.getVisit().getDate() + "</dateOfInterview>" + "\r\n";
-			xml += "<permanentId>" + record.getIndividual().getExtId() + "</permanentId>"  + "\r\n";
-			xml += "<houseId>" + record.getLocation().getExtId() + "</houseId>" + "\r\n";
-			xml += "<householdName>" + record.getSocialgroup().getGroupName() + "</householdName>" + "\r\n";
-			xml += "<householdId>" + record.getSocialgroup().getExtId() + "</householdId>" + "\r\n";
-			xml += "<dateOfDeath />" + "\r\n";
-			xml += "<deceasedName>" + record.getIndividual().getFirstName() + " " + record.getIndividual().getLastName() + "</deceasedName>" + "\r\n";
-			xml += "<sex>" + (record.getIndividual().getGender().equalsIgnoreCase("Male") ? "1" : "2") + "</sex>" + "\r\n";
-			xml += "<placeOfDeath />" + "\r\n";
-			xml += "<placeOfDeathOther />" + "\r\n";
-			xml += "</basicInformation>" + "\r\n";
-			xml += "<sourceOfInformation>" + "\r\n";
-			xml += "<reportedBy />" + "\r\n";
-			xml += "</sourceOfInformation>" + "\r\n";
-			xml += "</data>" + "\r\n";
-			
-			File targetFile = saveFile(xml);
-			if (targetFile != null) {
-				return writeContent(targetFile, "death", "death_registration_v4");
+				return writeContent(targetFile, event, jrFormId);
 			}
 		}
+		cursor.close();
+
 		return false;
 	}
 	
 	private Cursor getCursorForFormsProvider(String name) {
-		return resolver.query(FormsProviderAPI.FormsColumns.CONTENT_URI, new String[] {FormsProviderAPI.FormsColumns.FORM_FILE_PATH},
+		return resolver.query(FormsProviderAPI.FormsColumns.CONTENT_URI, 
+				new String[] {FormsProviderAPI.FormsColumns.JR_FORM_ID, FormsProviderAPI.FormsColumns.FORM_FILE_PATH},
 				FormsProviderAPI.FormsColumns.JR_FORM_ID + " like ?", new String[] {name + "%"}, null);
 	}
 	
-	private void processXml(String formFilePath) {
+	private String processXml(String jrFormId, String formFilePath) {
+		
+		StringBuilder sbuilder = new StringBuilder();
 		
 		try {
 		    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	        DocumentBuilder builder = factory.newDocumentBuilder();
 	        Document doc = builder.parse(new FileInputStream(formFilePath));
-	        doc.getDocumentElement().normalize();
 	        
-	        Node node = doc.getElementsByTagName("instance").item(0);
-	        Node child = node.getChildNodes().item(0);
-	        NodeList childElements = child.getChildNodes();
+	        Node node = doc.getElementsByTagName("data").item(0);
+	        sbuilder.append("<data id=\"" + jrFormId + "\">" + "\r\n");
 	        
-	        for (int i = 0; i < childElements.getLength(); i++) {
-	        	Node n = childElements.item(i);
-	        	if (n.getNodeType() == Node.ELEMENT_NODE) {
-	        		Element element = (Element)n;
-	        		String visitId = getTagValue(FilledParams.visitId, element);
-	        		System.out.println(visitId);
-	        	}
-	        }
-
-
-	       
+	        processNodeChildren(node, sbuilder);
+	        
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ParserConfigurationException e) {
@@ -153,14 +89,64 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 		} catch (SAXException e) {
 			e.printStackTrace();
 		}
+		
+        return sbuilder.toString();
 	}
 	
-	private String getTagValue(String sTag, Element eElement) {
-		NodeList nlList = eElement.getElementsByTagName(sTag).item(0).getChildNodes();
-	    Node nValue = (Node) nlList.item(0);
-		return nValue.getNodeValue();
+	private void processNodeChildren(Node node, StringBuilder sbuilder) {
+		NodeList childElements = node.getChildNodes();
+	        
+        List<String> params = FilledParams.getParamsArray();
+        for (int i = 0; i < childElements.getLength(); i++) {
+        	Node n = childElements.item(i);
+        	if (n.getNodeType() == Node.ELEMENT_NODE) {
+        		String name = n.getNodeName();
+        		
+        		if (params.contains(name)) {
+        			if (name.equals(FilledParams.visitId))
+        				sbuilder.append("<visitId>" + record.getVisit().getExtId() + "</visitId>" + "\r\n");
+        			else if (name.equals(FilledParams.roundNumber))
+        				sbuilder.append("<roundNumber>" + record.getRound().getRoundNumber() + "</roundNumber>" + "\r\n");
+        			else if (name.equals(FilledParams.visitDate))
+        				sbuilder.append("<visitDate>" + record.getVisit().getDate() + "</visitDate>" + "\r\n");
+        			else if (name.equals(FilledParams.individualId))
+        				sbuilder.append("<individualId>" + record.getIndividual().getExtId() + "</individualId>" + "\r\n");
+        			else if (name.equals(FilledParams.firstName))
+        				sbuilder.append("<firstName>" + record.getIndividual().getFirstName() + "</firstName>" + "\r\n");
+        			else if (name.equals(FilledParams.lastName))
+        				sbuilder.append("<lastName>" + record.getIndividual().getLastName() + "</lastName>" + "\r\n");
+        			else if (name.equals(FilledParams.gender))
+        				sbuilder.append("<gender>" + (record.getIndividual().getGender().equalsIgnoreCase("Male") ? "1" : "2") + "</gender>" + "\r\n");
+        			else if (name.equals(FilledParams.dob))
+        				sbuilder.append("<dob>" + record.getIndividual().getDob() + "</dob>" + "\r\n");
+        			else if (name.equals(FilledParams.houseId)) 
+        				sbuilder.append("<houseId>" + record.getLocation().getExtId() + "</houseId>" + "\r\n");
+        			else if (name.equals(FilledParams.houseName))
+        				sbuilder.append("<houseName>" + record.getLocation().getName() + "</houseName>" + "\r\n");
+        			else if (name.equals(FilledParams.longitude))
+        				sbuilder.append("<longitude>" + record.getLocation().getLongitude() + "</longitude>" + "\r\n");
+        			else if (name.equals(FilledParams.latitude))
+        				sbuilder.append("<latitude>" + record.getLocation().getLatitude() + "</latitude>" + "\r\n");
+        			else if (name.equals(FilledParams.householdId))
+        				sbuilder.append("<householdId>" + record.getSocialgroup().getExtId() + "</householdId>" + "\r\n");
+        			else if (name.equals(FilledParams.householdName))
+        				sbuilder.append("<householdName>" + record.getSocialgroup().getGroupName() + "</householdName>" + "\r\n");
+        			else if (name.equals(FilledParams.fieldWorkerId))
+        				sbuilder.append("<fieldWorkerId>" + record.getFieldWorkerId() + "</fieldWorkerId>" + "\r\n");	
+        		}
+        		else {
+        			if (!n.hasChildNodes())
+        				sbuilder.append("<" + name + " />" + "\r\n");
+        			else {
+        				sbuilder.append("<" + name + ">" + "\r\n");
+            			processNodeChildren(n, sbuilder);
+        			}
+        		}
+        	}
+        }
+        sbuilder.append("</" + node.getNodeName() + ">" + "\r\n");
 	}
-		
+			
 	private File saveFile(String xml) {
 		File root = Environment.getExternalStorageDirectory();
         String destinationPath = root.getAbsolutePath() + File.separator
@@ -208,7 +194,9 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 	
 	@Override
 	protected void onPostExecute(final Boolean result) {
-	    listener.onSuccess(odkUri);
+		if (result) 
+			listener.onOdkFormLoadSuccess(odkUri);
+		else 
+			listener.onOdkFormLoadFailure();
 	}
-
 }

@@ -4,6 +4,8 @@ import android.net.Uri;
 
 public interface OdkFormLoadListener {
 
-	public void onSuccess(Uri contentUri);
+	public void onOdkFormLoadSuccess(Uri contentUri);
+	
+	public void onOdkFormLoadFailure();
 
 }
