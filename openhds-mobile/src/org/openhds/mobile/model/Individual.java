@@ -1,6 +1,10 @@
 package org.openhds.mobile.model;
 
 import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class Individual implements Serializable {
 
@@ -61,7 +65,15 @@ public class Individual implements Serializable {
 	}
 	
 	public void setDob(String dob) {
-		this.dob = dob;
+		try {
+			DateFormat inFormat = new SimpleDateFormat("dd-MM-yyyy");
+			DateFormat outFormat = new SimpleDateFormat("yyyy-MM-dd");  
+			
+			String date = outFormat.format(inFormat.parse(dob));
+			this.dob = date;
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
 	}
 	public String getMother() {
 		return mother;

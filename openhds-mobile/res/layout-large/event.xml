@@ -27,17 +27,38 @@
 	        android:layout_gravity="center"
 	        android:text="Clear Location"
 	        android:enabled="false" />
-	       
-	     <Button
-	        android:id="@+id/deathBtn"
+	    
+	    <Button
+	        android:id="@+id/inMigrationBtn"
 	        android:layout_width="150dp"
 	        android:layout_height="wrap_content"
 	        android:layout_marginTop="30dp"
 	        android:layout_marginLeft="20dp"
 	        android:layout_gravity="center"
+	        android:text="In Migration"
+	        android:enabled="false"  />
+	    
+	     <Button
+	        android:id="@+id/outMigrationBtn"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:layout_gravity="center"
+	        android:text="Out Migration"
+	        android:enabled="false"  />
+	       
+	     <Button
+	        android:id="@+id/deathBtn"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:layout_gravity="center"
 	        android:text="Death"
 	        android:enabled="false"  />
 	     
+	   	     
 	    <Button
 	        android:id="@+id/finishVisitBtn"
 	        android:layout_width="150dp"

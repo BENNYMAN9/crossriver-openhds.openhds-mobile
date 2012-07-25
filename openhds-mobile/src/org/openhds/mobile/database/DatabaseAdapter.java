@@ -83,15 +83,13 @@ public class DatabaseAdapter {
 	private static final String FIELDWORKER_FIRSTNAME = "firstName";  
 	private static final String FIELDWORKER_LASTNAME = "lastName";  
 	 
-	private static final int DATABASE_VERSION = 8;
+	private static final int DATABASE_VERSION = 9;
 		 
 	private static final String INDIVIDUAL_CREATE =
 	        "create table individual (uuid text primary key, " + 
-	        "extId text not null, firstname text not null, lastname text not null, " +
+	        "extId text unique, firstname text not null, lastname text not null, " +
 	        "dob text not null, gender text not null, mother text not null, " +
 	        "father text not null, currentResidence text not null, status text not null," +
-	        "foreign key(mother) references individual(uuid), " +
-	        "foreign key(father) references individual(uuid), " +
 	        "foreign key(currentResidence) references location(uuid));";
 	
 	private static final String LOCATION_CREATE =
@@ -504,6 +502,7 @@ public class DatabaseAdapter {
 		 	
 		 @Override
 		 public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+			 db.execSQL("drop table if exists " + DATABASE_TABLE_INDIVIDUALSOCIALGROUP);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_INDIVIDUAL);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_LOCATION);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_HIERARCHY);
@@ -511,7 +510,6 @@ public class DatabaseAdapter {
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_VISIT);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_SOCIALGROUP);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_FIELDWORKER);
-			 db.execSQL("drop table if exists " + INDIVIDUAL_SOCIALGROUP_CREATE);
 		     onCreate(db);
 		 }
 	 }
