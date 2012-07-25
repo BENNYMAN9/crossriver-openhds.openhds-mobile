@@ -64,6 +64,7 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 		 HttpParams httpParameters = new BasicHttpParams();
 		 HttpConnectionParams.setConnectionTimeout(httpParameters, 100000);
 		 HttpConnectionParams.setSoTimeout(httpParameters, 100000);
+		 HttpConnectionParams.setSocketBufferSize(httpParameters, 240);
 		 client = new DefaultHttpClient(httpParameters);
 		 
 		 try {		 			 
