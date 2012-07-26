@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class Individual implements Serializable {
 
@@ -19,7 +18,7 @@ public class Individual implements Serializable {
 	private String father;
 	private String currentResidence;
 	private String status;
-	
+
 	public String getUuid() {
 		return uuid;
 	}
@@ -64,6 +63,8 @@ public class Individual implements Serializable {
 		return dob;
 	}
 	
+	// dates come in from the web service in dd-MM-yyyy format but
+	// they must be changed to yyyy-MM-dd for ODK Collect
 	public void setDob(String dob) {
 		try {
 			DateFormat inFormat = new SimpleDateFormat("dd-MM-yyyy");

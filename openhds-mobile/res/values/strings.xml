@@ -12,10 +12,12 @@
     <string name="configureDatabase">Configure Database</string>
     <string name="databaseSync">Sync with OpenHDS Database</string>
     <string name="default_openhdsserver">http://rcg.usm.maine.edu/openhds/api/rest/corewebservice</string>
+    <string name="fatherNotFound">A father could not be found</string>
     <string name="field_worker_already_exists">Field Worker already exists</string>
     <string name="field_worker_created">Field Worker Successfully Created</string>
     <string name="hello">Hello, Android!</string>
     <string name="household_not_found">A household was not found for this Individual</string>
+    <string name="idGenerationFailure">An error occurred while generating an id</string>
     <string name="openhdswebservice">OpenHDS Web Service</string>
     <string name="password">Password</string>
     <string name="retrieving_fieldworkers_interrupted">Retrieving Field Workers has been interrupted</string>

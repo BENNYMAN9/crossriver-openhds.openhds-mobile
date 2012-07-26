@@ -29,6 +29,16 @@
 	        android:enabled="false" />
 	    
 	    <Button
+	        android:id="@+id/clearIndividualBtn"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:layout_gravity="center"
+	        android:text="Clear Individual"
+	        android:enabled="false" />
+	    
+	    <Button
 	        android:id="@+id/inMigrationBtn"
 	        android:layout_width="150dp"
 	        android:layout_height="wrap_content"
@@ -46,6 +56,26 @@
 	        android:layout_marginLeft="20dp"
 	        android:layout_gravity="center"
 	        android:text="Out Migration"
+	        android:enabled="false"  />
+	     
+	      <Button
+	        android:id="@+id/pregRegBtn"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:layout_gravity="center"
+	        android:text="Pregnancy Registration"
+	        android:enabled="false"  />
+	      
+	       <Button
+	        android:id="@+id/birthRegBtn"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:layout_gravity="center"
+	        android:text="Birth Registration"
 	        android:enabled="false"  />
 	       
 	     <Button

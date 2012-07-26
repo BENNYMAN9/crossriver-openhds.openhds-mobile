@@ -1,20 +1,20 @@
 package org.openhds.mobile.fragment;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
-
 import org.openhds.mobile.R;
 import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
+import org.openhds.mobile.model.PregnancyOutcome;
+import org.openhds.mobile.model.Relationship;
 import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.SocialGroup;
 import org.openhds.mobile.model.Visit;
-
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -33,6 +33,7 @@ public class SelectionFragment extends Fragment {
 	private Individual individual;
 	private SocialGroup socialgroup;
 	private Visit visit;
+	private PregnancyOutcome pregnancyOutcome;
 	
 	private List<LocationHierarchy> regions;
 	private List<LocationHierarchy> subRegions;
@@ -52,6 +53,7 @@ public class SelectionFragment extends Fragment {
         individual = new Individual();
         socialgroup = new SocialGroup();
         visit = new Visit();
+        pregnancyOutcome = new PregnancyOutcome();
 
         databaseAdapter = new DatabaseAdapter(getActivity().getBaseContext());
         return inflater.inflate(R.layout.selection, container, false);
@@ -79,12 +81,88 @@ public class SelectionFragment extends Fragment {
         visit.setDate(date);
 	}
 	
+	// this logic is specific for the Cross River birth registration
+	public boolean createPregnancyOutcome() {
+		
+		Individual father = determinePregnancyOutcomeFather(individual);
+		this.getPregnancyOutcome().setMother(individual);
+		this.getPregnancyOutcome().setFather(father);
+
+		// generation of child ids
+		String motherId;
+		String childId;
+		try {
+			motherId = individual.getExtId();
+			String householdSectionId = motherId.substring(9, 11);
+			String locationId = individual.getCurrentResidence();
+			childId = locationId + householdSectionId;
+		} catch (Exception e) {
+			return false;
+		}
+		
+		String baseString = childId;
+		Integer partToIncrement = Integer.parseInt(motherId.substring(11, 13));
+				
+		String child1Id = generateId(partToIncrement, baseString);
+		partToIncrement = Integer.parseInt(child1Id.substring(11, 13));
+		String child2Id = generateId(partToIncrement, baseString);
+		
+		this.getPregnancyOutcome().setChild1ExtId(child1Id);
+		this.getPregnancyOutcome().setChild2ExtId(child2Id);
+		return true;
+	}
+	
+	private String generateId(Integer partToIncrement, String baseString) {
+		String temp = "";
+		do {
+			StringBuilder builder = new StringBuilder();
+			partToIncrement++;
+			if (partToIncrement.toString().length() < 2) 
+				builder.append("0").append(partToIncrement.toString());
+			if (partToIncrement.toString().length() == 2)
+				builder.append(partToIncrement.toString());
+			temp = baseString.concat(builder.toString());
+		} while (databaseAdapter.getIndividualByExtId(temp) != null);
+		
+		baseString = temp;
+		return baseString;
+	}
+	
+	private Individual determinePregnancyOutcomeFather(Individual mother) {
+		
+		List<Relationship> rels = databaseAdapter.getAllRelationshipsForFemale(mother.getExtId());
+		DateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
+		
+		Relationship current = null;
+		// must find the most current relationship
+		for (Relationship rel : rels) {
+			if (current == null)
+				current = rel;
+			
+			else {
+				try {
+					Date currentDate = formatter.parse(current.getStartDate());
+					Date relDate = formatter.parse(rel.getStartDate());	
+					if (currentDate.before(relDate))
+						current = rel;
+					
+				} catch (ParseException e) {
+					return null;
+				}
+			}
+		}
+		if (current == null)
+			return null;
+		else  {
+			String fatherId = current.getMaleIndividual();
+			return databaseAdapter.getIndividualByExtId(fatherId);
+		}
+	}
+	
 	public CharSequence[] getSocialGroupsForDialog() {
 		CharSequence[] names = new CharSequence[socialgroups.size()];
-		
-		for (int i = 0; i < socialgroups.size(); i++) {
+		for (int i = 0; i < socialgroups.size(); i++) 
 			names[i] = socialgroups.get(i).getGroupName();
-		}
 		
 		return names;
 	}
@@ -212,5 +290,12 @@ public class SelectionFragment extends Fragment {
 	public void setSocialgroups(List<SocialGroup> socialgroups) {
 		this.socialgroups = socialgroups;
 	}
+	
+	public PregnancyOutcome getPregnancyOutcome() {
+		return pregnancyOutcome;
+	}
 
+	public void setPregnancyOutcome(PregnancyOutcome pregnancyOutcome) {
+		this.pregnancyOutcome = pregnancyOutcome;
+	}
 }

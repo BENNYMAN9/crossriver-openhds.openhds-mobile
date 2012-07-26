@@ -6,6 +6,7 @@ import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
+import org.openhds.mobile.model.Relationship;
 import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.SocialGroup;
 import org.openhds.mobile.model.UpdateStatus;
@@ -66,6 +67,11 @@ public class DatabaseAdapter {
 	private static final String VISIT_LOCATION = "location"; 
 	private static final String VISIT_STATUS = "status";
 	
+	private static final String DATABASE_TABLE_RELATIONSHIP = "relationship";
+	private static final String RELATIONSHIP_MALEINDIVIDUAL = "maleIndividual";
+	private static final String RELATIONSHIP_FEMALEINDIVIDUAL = "femaleIndividual";
+	private static final String RELATIONSHIP_STARTDATE = "startDate";
+	
 	private static final String DATABASE_TABLE_SOCIALGROUP = "socialgroup";
 	private static final String SOCIALGROUP_UUID = "uuid";
 	private static final String SOCIALGROUP_EXTID = "extId";  
@@ -74,8 +80,8 @@ public class DatabaseAdapter {
 	private static final String SOCIALGROUP_STATUS = "status";  
 	
 	private static final String DATABASE_TABLE_INDIVIDUALSOCIALGROUP = "individual_socialgroup";
-	private static final String INDIVIDUALSOCIALGROUP_INDIVIDUALUUID = "individual_uuid";
-	private static final String INDIVIDUALSOCIALGROUP_SOCIALGROUPUUID = "socialgroup_uuid";  
+	private static final String INDIVIDUALSOCIALGROUP_INDIVIDUALUUID = "individual_extId";
+	private static final String INDIVIDUALSOCIALGROUP_SOCIALGROUPUUID = "socialgroup_extId";  
 	
 	private static final String DATABASE_TABLE_FIELDWORKER = "fieldworker";
 	private static final String FIELDWORKER_EXTID = "extId";  
@@ -83,7 +89,7 @@ public class DatabaseAdapter {
 	private static final String FIELDWORKER_FIRSTNAME = "firstName";  
 	private static final String FIELDWORKER_LASTNAME = "lastName";  
 	 
-	private static final int DATABASE_VERSION = 9;
+	private static final int DATABASE_VERSION = 12;
 		 
 	private static final String INDIVIDUAL_CREATE =
 	        "create table individual (uuid text primary key, " + 
@@ -113,6 +119,10 @@ public class DatabaseAdapter {
 	        "location text not null, status text not null, " +
 	        "foreign key(location) references location(uuid));";
 	
+	private static final String RELATIONSHIP_CREATE =
+        "create table relationship (maleIndividual text not null, " + 
+        "femaleIndividual text not null, startDate text not null);";
+	
 	private static final String SOCIALGROUP_CREATE =
 	        "create table socialgroup (uuid text primary key, " + 
 	        "extId text not null, groupName text not null, groupHead text not null, " +
@@ -124,10 +134,10 @@ public class DatabaseAdapter {
         "password text not null, firstName text not null, lastName text not null);";
 	
 	private static final String INDIVIDUAL_SOCIALGROUP_CREATE =
-	        "create table individual_socialgroup (individual_uuid text not null, " + 
-	        "socialgroup_uuid text not null, " +
-	        "foreign key(individual_uuid) references individual(uuid), " +
-	        "foreign key(socialgroup_uuid) references socialgroup(uuid));";
+	        "create table individual_socialgroup (individual_extId text not null, " + 
+	        "socialgroup_extId text not null, " +
+	        "foreign key(individual_extId) references individual(extId), " +
+	        "foreign key(socialgroup_extId) references socialgroup(extId));";
 	 
 	private DatabaseHelper dbHelper;
 	private SQLiteDatabase database;
@@ -221,6 +231,15 @@ public class DatabaseAdapter {
 		 return database.insert(DATABASE_TABLE_VISIT, null, values);
 	 }
 	 
+	 public long createRelationship(String maleIndividual, String femaleIndividual, String startDate) {
+		 ContentValues values = new ContentValues();
+		 values.put(RELATIONSHIP_MALEINDIVIDUAL, maleIndividual);
+		 values.put(RELATIONSHIP_FEMALEINDIVIDUAL, femaleIndividual);
+		 values.put(RELATIONSHIP_STARTDATE, startDate);
+		 Log.i(TAG, "inserting into relationship with maleIndividual " + maleIndividual + " and femaleIndividual " + femaleIndividual);
+		 return database.insert(DATABASE_TABLE_RELATIONSHIP, null, values);
+	 }
+	 
 	 public long createSocialGroup(String uuid, String extId, String groupName, String groupHead, 
 			 String status) {
 		 
@@ -239,7 +258,7 @@ public class DatabaseAdapter {
 		 ContentValues values = new ContentValues();
 		 values.put(INDIVIDUALSOCIALGROUP_INDIVIDUALUUID, individual);
 		 values.put(INDIVIDUALSOCIALGROUP_SOCIALGROUPUUID, socialGroup);
-		 Log.i(TAG, "inserting into individual_socialgroup with individual_uuid " + individual + " and socialgroup_uuid " + socialGroup);
+		 Log.i(TAG, "inserting into individual_socialgroup with individual_extId " + individual + " and socialgroup_extId " + socialGroup);
 		 long result = database.insert(DATABASE_TABLE_INDIVIDUALSOCIALGROUP, null, values);
 		 close();
 		 return result;
@@ -286,33 +305,57 @@ public class DatabaseAdapter {
 		 close();
 		 return false;
 	 }
+	 
+	 public Individual getIndividualByExtId(String extId) {
+		 open();
+		 String query = "select * from individual where extId = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {extId});
+		 
+		 Individual individual = null;
+		 if (cursor.moveToFirst()) {
+			 individual = new Individual();
+			 individual.setUuid(cursor.getString(0));
+			 individual.setExtId(cursor.getString(1));
+			 individual.setFirstName(cursor.getString(2));
+			 individual.setLastName(cursor.getString(3));
+			 individual.setDob(cursor.getString(4));
+			 individual.setGender(cursor.getString(5));
+			 individual.setMother(cursor.getString(6));
+			 individual.setFather(cursor.getString(7));
+			 individual.setCurrentResidence(cursor.getString(8));
+		 }
+		 		 
+		 cursor.close();
+		 close();
+		 return individual;
+	 }
 	 	 	 
 	 public FieldWorker getFieldWorker(String extId, String password) {
 		 open();
 		 String query = "select * from fieldworker where extId = ? and password = ?;";
 		 Cursor cursor = database.rawQuery(query, new String[] {extId, password});
 		 
+		 FieldWorker fieldWorker = null;
 		 if (cursor.moveToFirst()) {
-			 FieldWorker fieldWorker = new FieldWorker();
+			 fieldWorker = new FieldWorker();
 			 fieldWorker.setExtId(cursor.getString(0));
 			 fieldWorker.setPassword(cursor.getString(1));
 			 fieldWorker.setFirstName(cursor.getString(2));
 			 fieldWorker.setLastName(cursor.getString(3));
-			 return fieldWorker;
 		 }
 		 		 
 		 cursor.close();
 		 close();
-		 return null;
+		 return fieldWorker;
 	 }
 	 	 	 
-	 public List<SocialGroup> getSocialGroupsForIndividual(String uuid) {
+	 public List<SocialGroup> getSocialGroupsForIndividual(String extId) {
 		 open();
 		 List<SocialGroup> socialgroups = new ArrayList<SocialGroup>();
 		 String query = "select * from socialgroup s " +
-		 		"inner join individual_socialgroup x on s.uuid = x.socialgroup_uuid " +
-		 		"where x.individual_uuid = ?;";
-		 Cursor cursor = database.rawQuery(query, new String[] {uuid});
+		 		"inner join individual_socialgroup x on s.extId = x.socialgroup_extId " +
+		 		"where x.individual_extId = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {extId});
 		 
 		 if (cursor.moveToFirst()) {
 			 do {
@@ -406,7 +449,7 @@ public class DatabaseAdapter {
 		 List<Individual> individuals = new ArrayList<Individual>();
 		 
 		 String query = "select * from individual where currentResidence = ?;"; 
-		 Cursor cursor = database.rawQuery(query, new String[] {location.getUuid()});
+		 Cursor cursor = database.rawQuery(query, new String[] {location.getExtId()});
 		 
 		 if (cursor.moveToFirst()) {
 			 do {
@@ -473,6 +516,27 @@ public class DatabaseAdapter {
 		 close(); 
 		 return visits;
 	 }
+	 
+	 public List<Relationship> getAllRelationshipsForFemale(String extId) {
+		 open();
+		 List<Relationship> rels = new ArrayList<Relationship>();
+		 
+		 String query = "select * from relationship where femaleIndividual = ?;";
+		 Cursor cursor = database.rawQuery(query, new String [] {extId});
+		 
+		 if (cursor.moveToFirst()) {
+			 do {
+				 Relationship rel = new Relationship();
+				 rel.setMaleIndividual(cursor.getString(0));
+				 rel.setFemaleIndividual(cursor.getString(1));
+				 rel.setStartDate(cursor.getString(2));
+				 rels.add(rel);
+			 } while (cursor.moveToNext());
+		 }
+		 cursor.close();
+		 close(); 
+		 return rels;
+	 }
 	 	 	 	 
 	 public SQLiteDatabase getDatabase() {
 		 return database;
@@ -494,6 +558,7 @@ public class DatabaseAdapter {
 			 db.execSQL(LOCATION_CREATE);
 			 db.execSQL(HIERARCHY_CREATE);
 			 db.execSQL(ROUND_CREATE);
+			 db.execSQL(RELATIONSHIP_CREATE);
 			 db.execSQL(VISIT_CREATE);
 			 db.execSQL(SOCIALGROUP_CREATE);
 			 db.execSQL(FIELDWORKER_CREATE);
@@ -507,6 +572,7 @@ public class DatabaseAdapter {
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_LOCATION);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_HIERARCHY);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_ROUND);
+			 db.execSQL("drop table if exists " + DATABASE_TABLE_RELATIONSHIP);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_VISIT);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_SOCIALGROUP);
 			 db.execSQL("drop table if exists " + DATABASE_TABLE_FIELDWORKER);

@@ -137,6 +137,16 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
         				sbuilder.append("<householdName>" + record.getSocialgroup().getGroupName() + "</householdName>" + "\r\n");
         			else if (name.equals(FilledParams.fieldWorkerId))
         				sbuilder.append("<fieldWorkerId>" + record.getFieldWorkerId() + "</fieldWorkerId>" + "\r\n");	
+        			else if (name.equals(FilledParams.child1Id))
+        				sbuilder.append("<child1Id>" + record.getPregnancyOutcome().getChild1ExtId() + "</child1Id>" + "\r\n");
+        			else if (name.equals(FilledParams.child2Id))
+        				sbuilder.append("<child2Id>" + record.getPregnancyOutcome().getChild2ExtId() + "</child2Id>" + "\r\n");
+        			else if (name.equals(FilledParams.childFatherId))
+        				sbuilder.append("<childFatherId>" + record.getPregnancyOutcome().getFather().getExtId() + "</childFatherId>" + "\r\n");
+        			else if (name.equals(FilledParams.childFatherFirstName))
+        				sbuilder.append("<childFatherFirstName>" + record.getPregnancyOutcome().getFather().getFirstName() + "</childFatherFirstName>" + "\r\n");
+        			else if (name.equals(FilledParams.childFatherLastName))
+        				sbuilder.append("<childFatherLastName>" + record.getPregnancyOutcome().getFather().getLastName() + "</childFatherLastName>" + "\r\n");
         		}
         		else {
         			if (!n.hasChildNodes())

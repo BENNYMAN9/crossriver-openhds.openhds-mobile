@@ -12,6 +12,7 @@ public class Record {
 	SocialGroup socialgroup;
 	Round round;
 	Visit visit;
+	PregnancyOutcome pregnancyOutcome;
 	
 	public Record(String username, LocationHierarchy village, Location location, Round round, 
 			Individual individual, SocialGroup socialgroup, Visit visit) {
@@ -78,5 +79,15 @@ public class Record {
 
 	public void setVisit(Visit visit) {
 		this.visit = visit;
+	}
+	
+	public PregnancyOutcome getPregnancyOutcome() {
+		return pregnancyOutcome;
+	}
+
+	public void setPregnancyOutcome(PregnancyOutcome pregnancyOutcome) {
+		if (pregnancyOutcome.getFather() == null)
+			pregnancyOutcome.setFather(new Individual());
+		this.pregnancyOutcome = pregnancyOutcome;
 	}
 }

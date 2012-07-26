@@ -53,7 +53,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					 locationNameText, locationExtIdText, locationLatitudeText, locationLongitudeText, locationName, locationExtId, locationLatitude, locationLongitude,
 					 individualFirstNameText, individualLastNameText, individualExtIdText, individualDobText, individualFirstName, individualLastName, individualExtId, individualDob;	
 	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, individualBtn, 
-	 			   createVisitBtn, clearLocationBtn, inMigrationBtn, outMigrationBtn, deathBtn, 
+	 			   createVisitBtn, clearLocationBtn, clearIndividualBtn,
+	 			   inMigrationBtn, outMigrationBtn, pregRegBtn, birthRegBtn, deathBtn, 
 	 			   finishVisitBtn;
 	
 	// logged in fieldworker
@@ -98,6 +99,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         clearLocationBtn = (Button) findViewById(R.id.clearLocationBtn);
         clearLocationBtn.setOnClickListener(this);
         
+        clearIndividualBtn = (Button) findViewById(R.id.clearIndividualBtn);
+        clearIndividualBtn.setOnClickListener(this);
+        
         createVisitBtn = (Button) findViewById(R.id.createVisitBtn);
         createVisitBtn.setOnClickListener(this);
         
@@ -106,6 +110,12 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         
         outMigrationBtn = (Button) findViewById(R.id.outMigrationBtn);
         outMigrationBtn.setOnClickListener(this);
+        
+        pregRegBtn = (Button) findViewById(R.id.pregRegBtn);
+        pregRegBtn.setOnClickListener(this);
+        
+        birthRegBtn = (Button) findViewById(R.id.birthRegBtn);
+        birthRegBtn.setOnClickListener(this);
         
         deathBtn = (Button) findViewById(R.id.deathBtn);
         deathBtn.setOnClickListener(this);
@@ -275,7 +285,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	    		selectionFragment.setSocialgroups(databaseAdapter.getSocialGroupsForIndividual(selectionFragment.getIndividual().getUuid()));
 	    		createHouseholdSelectionDialog();
 	    	}
-	    	
     	}
 	}
     
@@ -500,6 +509,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			case R.id.clearLocationBtn: 
 				setPhase(UpdateEvent.LOCATION);
 				break;
+			case R.id.clearIndividualBtn:
+				setPhase(UpdateEvent.INDIVIDUAL);
+				break;
 			case R.id.finishVisitBtn: 
 				reset();
 				break;
@@ -512,6 +524,29 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				Record outMigrationRecord = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
 						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getSocialgroup(), selectionFragment.getVisit());
 				new OdkFormLoadTask(this, getContentResolver(), outMigrationRecord, UpdateEvent.OUTMIGRATION).execute();
+				break;
+			case R.id.pregRegBtn:
+				Record pregRegRecord = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
+						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getSocialgroup(), selectionFragment.getVisit());
+				new OdkFormLoadTask(this, getContentResolver(), pregRegRecord, UpdateEvent.PREGNANCYOBSERVATION).execute();
+				break;
+			case R.id.birthRegBtn:
+				boolean result = selectionFragment.createPregnancyOutcome();
+				
+				if (selectionFragment.getPregnancyOutcome().getFather() == null) 
+					Toast.makeText(getApplicationContext(),	getString(R.string.fatherNotFound), Toast.LENGTH_SHORT).show();
+				
+				Record birthRegRecord = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
+						selectionFragment.getRound(), selectionFragment.getIndividual(), selectionFragment.getSocialgroup(), selectionFragment.getVisit());
+				birthRegRecord.setPregnancyOutcome(selectionFragment.getPregnancyOutcome());
+				
+
+				
+				
+				if (result == false)
+					Toast.makeText(getApplicationContext(),	getString(R.string.idGenerationFailure), Toast.LENGTH_SHORT).show();
+				
+				new OdkFormLoadTask(this, getContentResolver(), birthRegRecord, UpdateEvent.BIRTH).execute();
 				break;
 			case R.id.deathBtn: 
 				Record deathRecord = new Record(fieldWorker.getExtId(), selectionFragment.getVillage(), selectionFragment.getLocation(),
@@ -602,24 +637,20 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			individualDobText.setText(selectionFragment.getIndividual().getDob());
 			
 			// get the socialgroups the individual is a part of
-			List<SocialGroup> list = databaseAdapter.getSocialGroupsForIndividual(selectionFragment.getIndividual().getUuid());
+			List<SocialGroup> list = databaseAdapter.getSocialGroupsForIndividual(selectionFragment.getIndividual().getExtId());	
+
+			selectionFragment.setSocialgroups(list);
+		
+			// if the individual is in more that one social group then the socialgroup must be specified
+			if (list.size() > 1) 
+				createHouseholdSelectionDialog();
+			else if (list.size() == 1) 
+				selectionFragment.setSocialGroupDialogSelection(0);
+			else 
+				Toast.makeText(getApplicationContext(),	getString(R.string.household_not_found), Toast.LENGTH_SHORT).show();
+
+			setPhase(UpdateEvent.XFORMS);
 			
-			if (list.size() > 0) {
-				selectionFragment.setSocialgroups(list);
-			
-				// if the individual is in more that one social group then the socialgroup must be specified
-				if (list.size() > 1) {
-					createHouseholdSelectionDialog();
-					setPhase(UpdateEvent.XFORMS);
-				}
-				else if (list.size() == 1) {
-					selectionFragment.setSocialGroupDialogSelection(0);
-					setPhase(UpdateEvent.XFORMS);
-				}
-				else {
-					Toast.makeText(getApplicationContext(),	getString(R.string.household_not_found), Toast.LENGTH_SHORT).show();
-				}
-			}
 		}
 	}
 	
@@ -922,8 +953,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
+		clearIndividualBtn.setEnabled(false);
 		inMigrationBtn.setEnabled(false);
 		outMigrationBtn.setEnabled(false);
+		pregRegBtn.setEnabled(false);
+		birthRegBtn.setEnabled(false);
 		deathBtn.setEnabled(false);
 		regionBtn.setEnabled(true);
 		subRegionBtn.setEnabled(false);
@@ -946,8 +980,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
+		clearIndividualBtn.setEnabled(false);
 		inMigrationBtn.setEnabled(false);
 		outMigrationBtn.setEnabled(false);
+		pregRegBtn.setEnabled(false);
+		birthRegBtn.setEnabled(false);
 		deathBtn.setEnabled(false);
 		regionBtn.setEnabled(false);
 		subRegionBtn.setEnabled(true);
@@ -970,8 +1007,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
+		clearIndividualBtn.setEnabled(false);
 		inMigrationBtn.setEnabled(false);
 		outMigrationBtn.setEnabled(false);
+		pregRegBtn.setEnabled(false);
+		birthRegBtn.setEnabled(false);
 		deathBtn.setEnabled(false);
 		regionBtn.setEnabled(false);
 		subRegionBtn.setEnabled(false);
@@ -994,8 +1034,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
+		clearIndividualBtn.setEnabled(false);
 		inMigrationBtn.setEnabled(false);
 		outMigrationBtn.setEnabled(false);
+		pregRegBtn.setEnabled(false);
+		birthRegBtn.setEnabled(false);
 		deathBtn.setEnabled(false);
 		regionBtn.setEnabled(false);
 		subRegionBtn.setEnabled(false);
@@ -1018,8 +1061,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
+		clearIndividualBtn.setEnabled(false);
 		inMigrationBtn.setEnabled(false);
 		outMigrationBtn.setEnabled(false);
+		pregRegBtn.setEnabled(false);
+		birthRegBtn.setEnabled(false);
 		deathBtn.setEnabled(false);
 		regionBtn.setEnabled(false);
 		subRegionBtn.setEnabled(false);
@@ -1042,8 +1088,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(true);
 		clearLocationBtn.setEnabled(true);
+		clearIndividualBtn.setEnabled(false);
 		inMigrationBtn.setEnabled(false);
 		outMigrationBtn.setEnabled(false);
+		pregRegBtn.setEnabled(false);
+		birthRegBtn.setEnabled(false);
 		deathBtn.setEnabled(false);
 		regionBtn.setEnabled(false);
 		subRegionBtn.setEnabled(false);
@@ -1066,8 +1115,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(true);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
+		clearIndividualBtn.setEnabled(false);
 		inMigrationBtn.setEnabled(false);
 		outMigrationBtn.setEnabled(false);
+		pregRegBtn.setEnabled(false);
+		birthRegBtn.setEnabled(false);
 		deathBtn.setEnabled(false);
 		regionBtn.setEnabled(false);
 		subRegionBtn.setEnabled(false);
@@ -1091,6 +1143,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(true);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
+		clearIndividualBtn.setEnabled(true);
 		subRegionBtn.setEnabled(false);
 		villageBtn.setEnabled(false);
 		roundBtn.setEnabled(false);
@@ -1099,5 +1152,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		inMigrationBtn.setEnabled(true);
 		outMigrationBtn.setEnabled(true);
 		deathBtn.setEnabled(true);
+		
+		if (selectionFragment.getIndividual().getGender().equalsIgnoreCase("Female")) {
+			pregRegBtn.setEnabled(true);
+			birthRegBtn.setEnabled(true);
+		}
 	}
 }

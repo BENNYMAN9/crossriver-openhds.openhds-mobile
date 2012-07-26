@@ -30,12 +30,19 @@ public class FilledParams {
 	public static final String householdName = "householdName";
 	
 	public static final String fieldWorkerId = "fieldWorkerId";
+	
+	public static final String child1Id = "child1Id";
+	public static final String child2Id = "child2Id";
+	public static final String childFatherId = "childFatherId";
+	public static final String childFatherFirstName = "childFatherFirstName";
+	public static final String childFatherLastName = "childFatherLastName";
 			
 	public static List<String> getParamsArray() {
 		return Arrays.asList(visitId, roundNumber, visitDate, 
 				individualId, motherId, fatherId, firstName, 
 				lastName, gender, dob, houseId, houseName, 
 				longitude, latitude, householdId, householdName, 
-				fieldWorkerId);
+				fieldWorkerId, child1Id, child2Id, childFatherId,
+				childFatherFirstName, childFatherLastName);
 	}
 }
