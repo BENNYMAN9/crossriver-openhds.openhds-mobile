@@ -36,6 +36,9 @@ public class FilledParams {
 	public static final String childFatherId = "childFatherId";
 	public static final String childFatherFirstName = "childFatherFirstName";
 	public static final String childFatherLastName = "childFatherLastName";
+	
+	public static final String womanId = "womanId";
+	public static final String manId = "manId";
 			
 	public static List<String> getParamsArray() {
 		return Arrays.asList(visitId, roundNumber, visitDate, 
@@ -43,6 +46,7 @@ public class FilledParams {
 				lastName, gender, dob, houseId, houseName, 
 				longitude, latitude, householdId, householdName, 
 				fieldWorkerId, child1Id, child2Id, childFatherId,
-				childFatherFirstName, childFatherLastName);
+				childFatherFirstName, childFatherLastName,
+				womanId, manId);
 	}
 }

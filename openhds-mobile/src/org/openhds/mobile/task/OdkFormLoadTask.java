@@ -147,6 +147,11 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
         				sbuilder.append("<childFatherFirstName>" + record.getPregnancyOutcome().getFather().getFirstName() + "</childFatherFirstName>" + "\r\n");
         			else if (name.equals(FilledParams.childFatherLastName))
         				sbuilder.append("<childFatherLastName>" + record.getPregnancyOutcome().getFather().getLastName() + "</childFatherLastName>" + "\r\n");
+        			else if (name.equals(FilledParams.manId))
+        				sbuilder.append("<manId>" + record.getRelationship().getMaleIndividual() + "</manId>" + "\r\n");
+        			else if (name.equals(FilledParams.womanId))
+        				sbuilder.append("<womanId>" + record.getRelationship().getFemaleIndividual() + "</womanId>" + "\r\n");
+        				
         		}
         		else {
         			if (!n.hasChildNodes())

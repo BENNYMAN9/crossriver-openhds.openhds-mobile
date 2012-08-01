@@ -34,6 +34,7 @@ public class SelectionFragment extends Fragment {
 	private SocialGroup socialgroup;
 	private Visit visit;
 	private PregnancyOutcome pregnancyOutcome;
+	private Relationship relationship;
 	
 	private List<LocationHierarchy> regions;
 	private List<LocationHierarchy> subRegions;
@@ -54,6 +55,7 @@ public class SelectionFragment extends Fragment {
         socialgroup = new SocialGroup();
         visit = new Visit();
         pregnancyOutcome = new PregnancyOutcome();
+        relationship = new Relationship();
 
         databaseAdapter = new DatabaseAdapter(getActivity().getBaseContext());
         return inflater.inflate(R.layout.selection, container, false);
@@ -297,5 +299,13 @@ public class SelectionFragment extends Fragment {
 
 	public void setPregnancyOutcome(PregnancyOutcome pregnancyOutcome) {
 		this.pregnancyOutcome = pregnancyOutcome;
+	}
+	
+	public Relationship getRelationship() {
+		return relationship;
+	}
+
+	public void setRelationship(Relationship relationship) {
+		this.relationship = relationship;
 	}
 }

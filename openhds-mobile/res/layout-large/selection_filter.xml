@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical" >
+        
+         <TextView
+            android:id="@+id/titleLbl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="10dp"
+            android:text="Search for an Individual"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
+        <TextView
+            android:id="@+id/regionLbl"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="10dp"
+            android:text="Region"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+	    <EditText
+	        android:id="@+id/regionTxt"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="20dp"
+	        android:layout_marginRight="20dp"
+	        android:ems="10" />
+	    
+	    <TextView
+	        android:id="@+id/subRegionLbl"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:textAppearance="?android:attr/textAppearanceMedium" 
+	        android:text="Sub Region" />
+
+	    <EditText
+	        android:id="@+id/subRegionTxt"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="20dp"
+	        android:layout_marginRight="20dp"
+	        android:ems="10" />
+	    
+	    <TextView
+	        android:id="@+id/villageLbl"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:textAppearance="?android:attr/textAppearanceMedium" 
+	        android:text="Village" />
+
+	    <EditText
+	        android:id="@+id/villageTxt"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="20dp"
+	        android:layout_marginRight="20dp"
+	        android:ems="10" />
+	    
+	    <TextView
+	        android:id="@+id/locationLbl"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:textAppearance="?android:attr/textAppearanceMedium" 
+	        android:text="Location" />
+
+	    <EditText
+	        android:id="@+id/locationTxt"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="20dp"
+	        android:layout_marginRight="20dp"
+	        android:ems="10" />
+	    
+	    <TextView
+	        android:id="@+id/firstNameLbl"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:textAppearance="?android:attr/textAppearanceMedium" 
+	        android:text="First Name" />
+
+	    <EditText
+	        android:id="@+id/firstNameTxt"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="20dp"
+	        android:layout_marginRight="20dp"
+	        android:ems="10" />
+	    
+	    <TextView
+	        android:id="@+id/lastNameLbl"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:textAppearance="?android:attr/textAppearanceMedium" 
+	        android:text="Last Name" />
+
+	    <EditText
+	        android:id="@+id/lastNameTxt"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="20dp"
+	        android:layout_marginRight="20dp"
+	        android:ems="10" />
+	    	    	    
+	    <TextView
+	        android:id="@+id/genderLbl"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
+	        android:layout_marginLeft="20dp"
+	        android:textAppearance="?android:attr/textAppearanceMedium" 
+	        android:text="Gender" />
+	    
+		<RadioGroup
+	        android:id="@+id/genderGroup"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="20dp" >
+		
+			<RadioButton
+	            android:id="@+id/maleBtn"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:text="Male" />
+			
+			<RadioButton
+	            android:id="@+id/femaleBtn"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:text="Female" />
+		</RadioGroup>
+		
+		<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content">
+	        <TableRow> 
+	            <Button
+			        android:id="@+id/clearFilterBtn"
+			        android:layout_width="150dp"
+			        android:layout_height="wrap_content"
+			        android:layout_marginLeft="20dp"
+			        android:text="Clear"
+			        android:textAppearance="?android:attr/textAppearanceMedium"  />
+	
+		    	<Button
+			        android:id="@+id/searchFilterBtn"
+			        android:layout_width="150dp"
+			        android:layout_height="wrap_content"
+			        android:layout_marginLeft="20dp"
+			        android:text="Search"
+			        android:textAppearance="?android:attr/textAppearanceMedium"  />
+	        </TableRow>
+		</TableLayout>
+	</LinearLayout>
+</ScrollView>

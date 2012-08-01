@@ -1,22 +1,32 @@
 package org.openhds.mobile.model;
 
+import java.io.Serializable;
+
 /**
  * This class acts as a wrapper for holding entities that were selected
  */
-public class Record {
+public class Record implements Serializable {
 
-	String fieldWorkerId;
-	LocationHierarchy village;
-	Location location;
-	Individual individual;
-	SocialGroup socialgroup;
-	Round round;
-	Visit visit;
-	PregnancyOutcome pregnancyOutcome;
+	private static final long serialVersionUID = -1097088542398911428L;
 	
-	public Record(String username, LocationHierarchy village, Location location, Round round, 
+	private String fieldWorkerId;
+	private LocationHierarchy region;
+	private LocationHierarchy subRegion;
+	private LocationHierarchy village;
+	private Location location;
+	private Individual individual;
+	private SocialGroup socialgroup;
+	private Round round;
+	private Visit visit;
+	private PregnancyOutcome pregnancyOutcome;
+	private Relationship relationship;
+	
+	public Record(String username, LocationHierarchy region, LocationHierarchy subRegion, 
+			LocationHierarchy village, Location location, Round round, 
 			Individual individual, SocialGroup socialgroup, Visit visit) {
 		this.fieldWorkerId = username;
+		this.region = region;
+		this.subRegion = subRegion;
 		this.village = village;
 		this.location = location;
 		this.individual = individual;
@@ -31,6 +41,22 @@ public class Record {
 
 	public void setFieldWorkerId(String fieldWorkerId) {
 		this.fieldWorkerId = fieldWorkerId;
+	}
+	
+	public LocationHierarchy getRegion() {
+		return region;
+	}
+
+	public void setRegion(LocationHierarchy region) {
+		this.region = region;
+	}
+
+	public LocationHierarchy getSubRegion() {
+		return subRegion;
+	}
+
+	public void setSubRegion(LocationHierarchy subRegion) {
+		this.subRegion = subRegion;
 	}
 	
 	public LocationHierarchy getVillage() {
@@ -89,5 +115,13 @@ public class Record {
 		if (pregnancyOutcome.getFather() == null)
 			pregnancyOutcome.setFather(new Individual());
 		this.pregnancyOutcome = pregnancyOutcome;
+	}
+	
+	public Relationship getRelationship() {
+		return relationship;
+	}
+
+	public void setRelationship(Relationship relationship) {
+		this.relationship = relationship;
 	}
 }
