@@ -9,7 +9,6 @@ import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.Relationship;
 import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.SocialGroup;
-import org.openhds.mobile.model.UpdateStatus;
 import org.openhds.mobile.model.Visit;
 import android.content.ContentValues;
 import android.content.Context;
@@ -254,13 +253,11 @@ public class DatabaseAdapter {
 	 }
 	 
 	 public long createIndividualSocialGroupLink(String individual, String socialGroup) {
-		 open();
 		 ContentValues values = new ContentValues();
 		 values.put(INDIVIDUALSOCIALGROUP_INDIVIDUALUUID, individual);
 		 values.put(INDIVIDUALSOCIALGROUP_SOCIALGROUPUUID, socialGroup);
 		 Log.i(TAG, "inserting into individual_socialgroup with individual_extId " + individual + " and socialgroup_extId " + socialGroup);
 		 long result = database.insert(DATABASE_TABLE_INDIVIDUALSOCIALGROUP, null, values);
-		 close();
 		 return result;
 	 }
 	 

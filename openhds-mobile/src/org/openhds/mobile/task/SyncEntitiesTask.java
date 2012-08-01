@@ -67,7 +67,9 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 		 HttpConnectionParams.setSocketBufferSize(httpParameters, 240);
 		 client = new DefaultHttpClient(httpParameters);
 		 
-		 try {		 			 
+		 try {		 
+			databaseAdapter.open();
+			databaseAdapter.getDatabase().beginTransaction();
 			setupDB();
 						 
 			processUrl(baseurl + "/individual");	
@@ -92,8 +94,13 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 			resetDialogParams();
 		 } 
 		 catch (Exception e) {
-			e.printStackTrace();
+			databaseAdapter.getDatabase().endTransaction();
+			databaseAdapter.close();
 			return false;
+		 }
+		 finally {
+			 databaseAdapter.getDatabase().endTransaction();
+			 databaseAdapter.close();
 		 }
 		 return true;
 	}
@@ -130,7 +137,6 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
     }
 		
 	private void setupDB() {	
-		databaseAdapter.open();
 		databaseAdapter.getDatabase().delete("individual", null, null);
 		databaseAdapter.getDatabase().delete("location", null, null);
 		databaseAdapter.getDatabase().delete("hierarchy", null, null);
@@ -139,7 +145,6 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 		databaseAdapter.getDatabase().delete("relationship", null, null);
 		databaseAdapter.getDatabase().delete("socialgroup", null, null);
 		databaseAdapter.getDatabase().delete("individual_socialgroup", null, null);
-		databaseAdapter.close();
 	}
 	
 	/**
@@ -457,51 +462,39 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	}
 	
 	protected void onPostExecute(final Boolean result) {
+		if (databaseAdapter.getDatabase().isOpen())
+			databaseAdapter.close();
 		dialog.setProgress(0);
 	    listener.collectionComplete(result);
 	}
 	
 	public void saveIndividualToDB(String uuid, String extId, String firstName, String lastName, String gender, String dob, 
 			String mother, String father, String residence, String status) {
-	    databaseAdapter.open();
 	    databaseAdapter.createIndividual(uuid, extId, firstName, lastName, gender, dob, mother, father, residence, status);
-	    databaseAdapter.close();
 	}
 	
 	public void saveLocationToDB(String uuid, String extId, String name, String latitude, String longitude, 
 			String hierarchy, String status) {
-	    databaseAdapter.open();
 	    databaseAdapter.createLocation(uuid, extId, name, latitude, longitude, hierarchy, status);
-	    databaseAdapter.close();
 	}
 	
 	public void saveHierarchyToDB(String uuid, String extId, String name, String parent, String level) {
-	    databaseAdapter.open();
 	    databaseAdapter.createHierarchy(uuid, extId, name, parent, level);
-	    databaseAdapter.close();
 	}
 	
 	public void saveRoundToDB(String uuid, String startDate, String endDate, String roundNumber, String remarks) {
-	    databaseAdapter.open();
 	    databaseAdapter.createRound(uuid, startDate, endDate, roundNumber, remarks);
-	    databaseAdapter.close();
 	}
 	
 	public void saveVisitToDB(String uuid, String extId, String roundNumber, String date, String location, String status) {
-	    databaseAdapter.open();
 	    databaseAdapter.createVisit(uuid, extId, roundNumber, date, location, status);
-	    databaseAdapter.close();
 	}
 	
 	public void saveSocialGroupToDB(String uuid, String extId, String groupHead, String groupName, String status) {
-	    databaseAdapter.open();
 	    databaseAdapter.createSocialGroup(uuid, extId, groupName, groupHead, status);
-	    databaseAdapter.close();
 	}
 	
 	public void saveRelationshipToDB(String femaleIndividual, String maleIndividual, String startDate) {
-	    databaseAdapter.open();
 	    databaseAdapter.createRelationship(maleIndividual, femaleIndividual, startDate);
-	    databaseAdapter.close();
 	}
 }
