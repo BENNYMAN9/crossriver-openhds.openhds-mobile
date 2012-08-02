@@ -23,7 +23,10 @@ public class PregnancyOutcome implements Serializable {
 	}
 	
 	public void setFather(Individual father) {
-		this.father = father;
+		if (father == null)
+			this.father = new Individual();
+		else
+			this.father = father;
 	}
 	
 	public String getChild1ExtId() {

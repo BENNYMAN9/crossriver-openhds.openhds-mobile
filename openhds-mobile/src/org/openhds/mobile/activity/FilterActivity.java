@@ -2,7 +2,6 @@ package org.openhds.mobile.activity;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.openhds.mobile.R;
 import org.openhds.mobile.cell.ValueFragmentCell;
 import org.openhds.mobile.database.DatabaseAdapter;
@@ -11,9 +10,7 @@ import org.openhds.mobile.fragment.ValueFragment;
 import org.openhds.mobile.listener.ValueSelectedListener;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
-import org.openhds.mobile.model.Record;
 import org.openhds.mobile.model.UpdateEvent;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -38,9 +35,7 @@ public class FilterActivity extends FragmentActivity implements OnClickListener,
 	
 	private SelectionFilterFragment selectionFilterFragment;
 	private ValueFragment valueFragment;
-	
-	private Record visitRecord;
-		
+			
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -80,22 +75,24 @@ public class FilterActivity extends FragmentActivity implements OnClickListener,
 	    
 	    selectionFilterFragment = (SelectionFilterFragment)getSupportFragmentManager().findFragmentById(R.id.selectionFilterFragment);
 		valueFragment = (ValueFragment)getSupportFragmentManager().findFragmentById(R.id.valueFragment);
-		
-		visitRecord = (Record) getIntent().getExtras().getSerializable("record");
-		if (visitRecord != null) {
-			initialize();
-		}
+
+		processExtras();
 	}
 	
-	private void initialize() {
-		regionTxt.setText(visitRecord.getRegion().getExtId());
-		subRegionTxt.setText(visitRecord.getSubRegion().getExtId());
-		villageTxt.setText(visitRecord.getVillage().getExtId());
-		locationTxt.setText(visitRecord.getLocation().getExtId());
-		selectionFilterFragment.setRegion(visitRecord.getRegion());
-		selectionFilterFragment.setSubRegion(visitRecord.getSubRegion());
-		selectionFilterFragment.setVillage(visitRecord.getVillage());
-		selectionFilterFragment.setLocation(visitRecord.getLocation());
+	private void processExtras() {	
+		LocationHierarchy region = (LocationHierarchy) getIntent().getExtras().getSerializable("region");
+		LocationHierarchy subRegion = (LocationHierarchy) getIntent().getExtras().getSerializable("subRegion");
+		LocationHierarchy village = (LocationHierarchy) getIntent().getExtras().getSerializable("village");
+		Location location = (Location) getIntent().getExtras().getSerializable("location");
+		
+		regionTxt.setText(region.getExtId());
+		subRegionTxt.setText(subRegion.getExtId());
+		villageTxt.setText(village.getExtId());
+		locationTxt.setText(location.getExtId());
+		selectionFilterFragment.setRegion(region);
+		selectionFilterFragment.setSubRegion(subRegion);
+		selectionFilterFragment.setVillage(village);
+		selectionFilterFragment.setLocation(location);
 	}
 
 	public void onClick(View view) {

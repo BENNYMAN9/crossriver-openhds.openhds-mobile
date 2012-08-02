@@ -15,7 +15,8 @@ import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
-import org.openhds.mobile.model.Record;
+import org.openhds.mobile.model.PregnancyOutcome;
+import org.openhds.mobile.model.Relationship;
 import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.SocialGroup;
 import org.openhds.mobile.model.UpdateEvent;
@@ -59,14 +60,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 	// logged in fieldworker
 	private FieldWorker fieldWorker;
-	
-	// encapsulates the hierarchy and visit
-	private Record visitRecord;
-	
+		
 	// this activity manages three fragments
-	private SelectionFragment selectionFragment;
-	private ValueFragment valueFragment;
-	private EventFragment eventFragment;
+	private SelectionFragment sf;
+	private ValueFragment vf;
+	private EventFragment ef;
 	
 	private final int SELECTED_XFORM = 1;
 	private final int FILTER = 2;
@@ -93,7 +91,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.main);    	   
-	    processExtras();
 	   
         databaseAdapter = new DatabaseAdapter(getBaseContext());
                 
@@ -182,9 +179,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         individualLastName = (TextView) findViewById(R.id.individualLastName);
         individualDob = (TextView) findViewById(R.id.individualDob);
         
-    	selectionFragment = (SelectionFragment)getSupportFragmentManager().findFragmentById(R.id.selectionFragment);
-		valueFragment = (ValueFragment)getSupportFragmentManager().findFragmentById(R.id.valueFragment);
-		eventFragment = (EventFragment)getSupportFragmentManager().findFragmentById(R.id.eventFragment);
+    	sf = (SelectionFragment)getSupportFragmentManager().findFragmentById(R.id.selectionFragment);
+		vf = (ValueFragment)getSupportFragmentManager().findFragmentById(R.id.valueFragment);
+		ef = (EventFragment)getSupportFragmentManager().findFragmentById(R.id.eventFragment);
+		
+	    processExtras();
 	    	       	    
 	    ActionBar actionBar = getActionBar();
 	    actionBar.show();
@@ -242,23 +241,21 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			}
 			case FILTER: {
 				if (resultCode == RESULT_OK) {
-					Individual currentIndividual = selectionFragment.getIndividual();
+					Individual currentIndividual = sf.getIndividual();
 					String individualExtId = data.getExtras().getString("extId");
 					
 					String type = data.getExtras().getString("type");
 					if (type.equals(UpdateEvent.RELATIONSHIP)) {
 						
-						if (selectionFragment.getIndividual().getGender().equals("Male")) {
-							selectionFragment.getRelationship().setMaleIndividual(currentIndividual.getExtId());
-							selectionFragment.getRelationship().setFemaleIndividual(individualExtId);
+						if (sf.getIndividual().getGender().equals("Male")) {
+							sf.getRelationship().setMaleIndividual(currentIndividual.getExtId());
+							sf.getRelationship().setFemaleIndividual(individualExtId);
 						}
 						else {
-							selectionFragment.getRelationship().setMaleIndividual(individualExtId);
-							selectionFragment.getRelationship().setFemaleIndividual(currentIndividual.getExtId());
+							sf.getRelationship().setMaleIndividual(individualExtId);
+							sf.getRelationship().setFemaleIndividual(currentIndividual.getExtId());
 						}
-
-						visitRecord.setRelationship(selectionFragment.getRelationship());
-						new OdkFormLoadTask(this, getContentResolver(), visitRecord, UpdateEvent.RELATIONSHIP).execute();
+						new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.RELATIONSHIP).execute();
 					}
 				}
 			}
@@ -273,14 +270,14 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		
-		outState.putSerializable("region", selectionFragment.getRegion());
-		outState.putSerializable("subRegion", selectionFragment.getSubRegion());
-		outState.putSerializable("village", selectionFragment.getVillage());
-		outState.putSerializable("round", selectionFragment.getRound());
-		outState.putSerializable("location", selectionFragment.getLocation());
-		outState.putSerializable("visit", selectionFragment.getVisit());
-		outState.putSerializable("individual", selectionFragment.getIndividual());
-		outState.putSerializable("socialgroup", selectionFragment.getSocialgroup());
+		outState.putSerializable("region", sf.getRegion());
+		outState.putSerializable("subRegion", sf.getSubRegion());
+		outState.putSerializable("village", sf.getVillage());
+		outState.putSerializable("round", sf.getRound());
+		outState.putSerializable("location", sf.getLocation());
+		outState.putSerializable("visit", sf.getVisit());
+		outState.putSerializable("individual", sf.getIndividual());
+		outState.putSerializable("socialgroup", sf.getSocialgroup());
 		outState.putString("phase", getPhase());
 		outState.putBoolean("unfinishedFormDialog", formUnFinished);
 		outState.putBoolean("householdSelection", householdSelection);
@@ -296,14 +293,14 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     private void restoreState(Bundle state) {
     	
     	if (state != null) {
-	    	selectionFragment.setRegion((LocationHierarchy)state.get("region"));
-	    	selectionFragment.setSubRegion((LocationHierarchy)state.get("subRegion"));
-	    	selectionFragment.setVillage((LocationHierarchy)state.get("village"));
-	    	selectionFragment.setRound((Round)state.get("round"));
-	    	selectionFragment.setLocation((Location)state.get("location"));
-	    	selectionFragment.setVisit((Visit)state.get("visit"));
-	    	selectionFragment.setIndividual((Individual)state.get("individual"));
-	    	selectionFragment.setSocialgroup((SocialGroup)state.get("socialgroup"));
+	    	sf.setRegion((LocationHierarchy)state.get("region"));
+	    	sf.setSubRegion((LocationHierarchy)state.get("subRegion"));
+	    	sf.setVillage((LocationHierarchy)state.get("village"));
+	    	sf.setRound((Round)state.get("round"));
+	    	sf.setLocation((Location)state.get("location"));
+	    	sf.setVisit((Visit)state.get("visit"));
+	    	sf.setIndividual((Individual)state.get("individual"));
+	    	sf.setSocialgroup((SocialGroup)state.get("socialgroup"));
 	    	restorePhase(state.getString("phase"));
 	    	
 	    	String uri = state.getString("uri");
@@ -315,7 +312,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	    	if (state.getBoolean("unfinishedFormDialog"))
 	    		createUnfinishedFormDialog();
 	    	if (state.getBoolean("householdSelection")) {
-	    		selectionFragment.setSocialgroups(databaseAdapter.getSocialGroupsForIndividual(selectionFragment.getIndividual().getUuid()));
+	    		sf.setSocialgroups(databaseAdapter.getSocialGroupsForIndividual(sf.getIndividual().getUuid()));
 	    		createHouseholdSelectionDialog();
 	    	}
     	}
@@ -326,6 +323,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      */
     private void processExtras() {
    	 	fieldWorker = (FieldWorker) getIntent().getExtras().getSerializable("fieldWorker");
+   	 	sf.setFieldWorker(fieldWorker);
    	 	loginGreetingText = (TextView) findViewById(R.id.loginGreetingText);
         loginGreetingText.setText("Hello, " + fieldWorker.getFirstName() + " " + fieldWorker.getLastName());
     }
@@ -351,14 +349,14 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      */
     private void loadRegionValueData() {
     	List<LocationHierarchy> regions = databaseAdapter.getAllRegions(UpdateParams.HIERARCHY_TOP_LEVEL);
-    	selectionFragment.setRegions(regions);
-    	if (valueFragment != null) {
+    	sf.setRegions(regions);
+    	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (LocationHierarchy item : regions) {
     			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
     			list.add(cell);
     		}
-    		valueFragment.setContent(list);
+    		vf.setContent(list);
     	}
     }
     
@@ -366,15 +364,15 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Sub Regions within the selected Region.
      */
     private void loadSubRegionValueData() {
-    	List<LocationHierarchy> subRegions = databaseAdapter.getAllSubRegionsOfRegion(selectionFragment.getRegion());
-      	selectionFragment.setSubRegions(subRegions);
-    	if (valueFragment != null) {
+    	List<LocationHierarchy> subRegions = databaseAdapter.getAllSubRegionsOfRegion(sf.getRegion());
+      	sf.setSubRegions(subRegions);
+    	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (LocationHierarchy item : subRegions) {
     			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
     			list.add(cell);
     		}
-    		valueFragment.setContent(list);
+    		vf.setContent(list);
     	}
     }
     
@@ -382,15 +380,15 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Villages within the selection Sub Region.
      */
     private void loadVillageValueData() {
-      	List<LocationHierarchy> villages = databaseAdapter.getAllSubRegionsOfRegion(selectionFragment.getSubRegion());
-    	selectionFragment.setVillages(villages);
-      	if (valueFragment != null) {
+      	List<LocationHierarchy> villages = databaseAdapter.getAllSubRegionsOfRegion(sf.getSubRegion());
+    	sf.setVillages(villages);
+      	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (LocationHierarchy item : villages) {
     			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
     			list.add(cell);
     		}
-    		valueFragment.setContent(list);
+    		vf.setContent(list);
     	}
     }
         
@@ -398,15 +396,15 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Locations within the selected Village.
      */
     private void loadLocationValueData() {
-    	List<Location> locations = databaseAdapter.getAllLocationsOfVillage(selectionFragment.getVillage());
-      	selectionFragment.setLocations(locations);
-    	if (valueFragment != null) {
+    	List<Location> locations = databaseAdapter.getAllLocationsOfVillage(sf.getVillage());
+      	sf.setLocations(locations);
+    	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (Location item : locations) {
     			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
     			list.add(cell);
     		}
-    		valueFragment.setContent(list);
+    		vf.setContent(list);
     	}
     }
     
@@ -415,14 +413,14 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      */
     private void loadRoundValueData() {
     	List<Round> rounds = databaseAdapter.getAllRounds();
-      	selectionFragment.setRounds(rounds);
-    	if (valueFragment != null) {
+      	sf.setRounds(rounds);
+    	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (Round item : rounds) {
     			ValueFragmentCell cell = new ValueFragmentCell("Round: " + item.getRoundNumber(), "");
     			list.add(cell);
     		}
-    		valueFragment.setContent(list);
+    		vf.setContent(list);
     	}
     }
     
@@ -430,15 +428,15 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Individuals within the selected Location.
      */
     private void loadIndividualValueData() {
-    	List<Individual> individuals = databaseAdapter.getIndividualsAtLocation(selectionFragment.getLocation());
-      	selectionFragment.setIndividuals(individuals);
-    	if (valueFragment != null) {
+    	List<Individual> individuals = databaseAdapter.getIndividualsAtLocation(sf.getLocation());
+      	sf.setIndividuals(individuals);
+    	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
     		for (Individual item : individuals) {
     			ValueFragmentCell cell = new ValueFragmentCell(item.getFirstName() + " " + item.getLastName(), item.getExtId());
     			list.add(cell);
     		}
-    		valueFragment.setContent(list);
+    		vf.setContent(list);
     	}
     }
     
@@ -480,11 +478,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     	householdSelection = true;
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 		alertDialogBuilder.setTitle("This Individual lives within multiple Households.\nSelect the Household to be used for this Individual.");
-		alertDialogBuilder.setSingleChoiceItems(selectionFragment.getSocialGroupsForDialog(), -1, new DialogInterface.OnClickListener() {
+		alertDialogBuilder.setSingleChoiceItems(sf.getSocialGroupsForDialog(), -1, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int clicked) {
 				householdSelection = false;
-				selectionFragment.setSocialGroupDialogSelection(clicked);
-				visitRecord.setSocialgroup(selectionFragment.getSocialgroup());
+				sf.setSocialGroupDialogSelection(clicked);
 				dialog.dismiss();
 			}
 		});
@@ -532,11 +529,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				loadLocationValueData();
 				break;
 			case R.id.createVisitBtn: 
-				selectionFragment.createVisit();
-				visitRecord = new Record(fieldWorker.getExtId(), selectionFragment.getRegion(), selectionFragment.getSubRegion(), 
-						selectionFragment.getVillage(), selectionFragment.getLocation(), selectionFragment.getRound(), 
-						selectionFragment.getIndividual(), selectionFragment.getSocialgroup(), selectionFragment.getVisit());
-				new OdkFormLoadTask(this, getContentResolver(), visitRecord, UpdateEvent.VISIT).execute();		
+				sf.createVisit();
+				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.VISIT).execute();		
 				break;
 			case R.id.individualBtn: 
 				loadIndividualValueData();
@@ -551,35 +545,38 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				reset();
 				break;
 			case R.id.membershipBtn:
-				new OdkFormLoadTask(this, getContentResolver(), visitRecord, UpdateEvent.MEMBERSHIP).execute();
+				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.MEMBERSHIP).execute();
 				break;
 			case R.id.relationshipBtn:
 				Intent i = new Intent(this, FilterActivity.class);
-				i.putExtra("record", visitRecord);
+				i.putExtra("region", sf.getRegion());
+				i.putExtra("subRegion", sf.getSubRegion());
+				i.putExtra("village", sf.getVillage());
+				i.putExtra("location", sf.getLocation());
 				startActivityForResult(i, FILTER);
 				break;
 			case R.id.inMigrationBtn:
-				new OdkFormLoadTask(this, getContentResolver(), visitRecord, UpdateEvent.INMIGRATION).execute();
+				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.INMIGRATION).execute();
 				break;
 			case R.id.outMigrationBtn:
-				new OdkFormLoadTask(this, getContentResolver(), visitRecord, UpdateEvent.OUTMIGRATION).execute();
+				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.OUTMIGRATION).execute();
 				break;
 			case R.id.pregRegBtn:
-				new OdkFormLoadTask(this, getContentResolver(), visitRecord, UpdateEvent.PREGNANCYOBSERVATION).execute();
+				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.PREGNANCYOBSERVATION).execute();
 				break;
 			case R.id.birthRegBtn:
-				boolean result = selectionFragment.createPregnancyOutcome();
-				if (selectionFragment.getPregnancyOutcome().getFather() == null) 
+				boolean result = sf.createPregnancyOutcome();
+				if (sf.getPregnancyOutcome().getFather() == null) 
 					Toast.makeText(getApplicationContext(),	getString(R.string.fatherNotFound), Toast.LENGTH_SHORT).show();
 
-				visitRecord.setPregnancyOutcome(selectionFragment.getPregnancyOutcome());
+				sf.setPregnancyOutcome(sf.getPregnancyOutcome());
 				if (result == false)
 					Toast.makeText(getApplicationContext(),	getString(R.string.idGenerationFailure), Toast.LENGTH_SHORT).show();
 				
-				new OdkFormLoadTask(this, getContentResolver(), visitRecord, UpdateEvent.BIRTH).execute();
+				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.BIRTH).execute();
 				break;
 			case R.id.deathBtn: 
-				new OdkFormLoadTask(this, getContentResolver(), visitRecord, UpdateEvent.DEATH).execute();
+				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.DEATH).execute();
 		}	
 	}
 	
@@ -607,79 +604,79 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	public void onValueSelected(int position) {
 		String phase = getPhase();
 		if (phase.equals(UpdateEvent.REGION)) {
-			selectionFragment.setRegion(selectionFragment.getRegions().get(position));
+			sf.setRegion(sf.getRegions().get(position));
 			regionName.setVisibility(View.VISIBLE);
 			regionExtId.setVisibility(View.VISIBLE);
-			regionNameText.setText(selectionFragment.getRegion().getName());
-			regionExtIdText.setText(selectionFragment.getRegion().getExtId());
+			regionNameText.setText(sf.getRegion().getName());
+			regionExtIdText.setText(sf.getRegion().getExtId());
 			setPhase(UpdateEvent.SUBREGION);
 		}
 		else if (phase.equals(UpdateEvent.SUBREGION)) {
-			selectionFragment.setSubRegion(selectionFragment.getSubRegions().get(position));
+			sf.setSubRegion(sf.getSubRegions().get(position));
 			subRegionName.setVisibility(View.VISIBLE);
 			subRegionExtId.setVisibility(View.VISIBLE);
-			subRegionNameText.setText(selectionFragment.getSubRegion().getName());
-			subRegionExtIdText.setText(selectionFragment.getSubRegion().getExtId());
+			subRegionNameText.setText(sf.getSubRegion().getName());
+			subRegionExtIdText.setText(sf.getSubRegion().getExtId());
 			setPhase(UpdateEvent.VILLAGE);
 		}
 		else if (phase.equals(UpdateEvent.VILLAGE)) {
-			selectionFragment.setVillage(selectionFragment.getVillages().get(position));
+			sf.setVillage(sf.getVillages().get(position));
 			villageName.setVisibility(View.VISIBLE);
 			villageExtId.setVisibility(View.VISIBLE);
-			villageNameText.setText(selectionFragment.getVillage().getName());
-			villageExtIdText.setText(selectionFragment.getVillage().getExtId());
+			villageNameText.setText(sf.getVillage().getName());
+			villageExtIdText.setText(sf.getVillage().getExtId());
 			setPhase(UpdateEvent.ROUND);
 		}
 		else if (phase.equals(UpdateEvent.ROUND)) {
-			selectionFragment.setRound(selectionFragment.getRounds().get(position));
+			sf.setRound(sf.getRounds().get(position));
 			roundNumber.setVisibility(View.VISIBLE);
 			roundStartDate.setVisibility(View.VISIBLE);
 			roundEndDate.setVisibility(View.VISIBLE);
-			roundNumberText.setText(selectionFragment.getRound().getRoundNumber());
-			roundStartDateText.setText(selectionFragment.getRound().getStartDate());
-			roundEndDateText.setText(selectionFragment.getRound().getEndDate());
+			roundNumberText.setText(sf.getRound().getRoundNumber());
+			roundStartDateText.setText(sf.getRound().getStartDate());
+			roundEndDateText.setText(sf.getRound().getEndDate());
 			setPhase(UpdateEvent.LOCATION);
 		}
 		else if (phase.equals(UpdateEvent.LOCATION)) {
-			selectionFragment.setLocation(selectionFragment.getLocations().get(position));
+			sf.setLocation(sf.getLocations().get(position));
 			locationName.setVisibility(View.VISIBLE);
 			locationExtId.setVisibility(View.VISIBLE);
 			locationLatitude.setVisibility(View.VISIBLE);
 			locationLongitude.setVisibility(View.VISIBLE);
-			locationNameText.setText(selectionFragment.getLocation().getName());
-			locationExtIdText.setText(selectionFragment.getLocation().getExtId());
-			locationLatitudeText.setText(selectionFragment.getLocation().getLatitude());
-			locationLongitudeText.setText(selectionFragment.getLocation().getLongitude());
+			locationNameText.setText(sf.getLocation().getName());
+			locationExtIdText.setText(sf.getLocation().getExtId());
+			locationLatitudeText.setText(sf.getLocation().getLatitude());
+			locationLongitudeText.setText(sf.getLocation().getLongitude());
 			setPhase(UpdateEvent.VISIT);
 		}
 		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
 			
-			selectionFragment.setIndividual(selectionFragment.getIndividuals().get(position));
-			visitRecord.setIndividual(selectionFragment.getIndividual());
+			sf.setIndividual(sf.getIndividuals().get(position));
 			individualExtId.setVisibility(View.VISIBLE);
 			individualFirstName.setVisibility(View.VISIBLE);
 			individualLastName.setVisibility(View.VISIBLE);
 			individualDob.setVisibility(View.VISIBLE);
-			individualExtIdText.setText(selectionFragment.getIndividual().getExtId());
-			individualFirstNameText.setText(selectionFragment.getIndividual().getFirstName());
-			individualLastNameText.setText(selectionFragment.getIndividual().getLastName());
-			individualDobText.setText(selectionFragment.getIndividual().getDob());
+			individualExtIdText.setText(sf.getIndividual().getExtId());
+			individualFirstNameText.setText(sf.getIndividual().getFirstName());
+			individualLastNameText.setText(sf.getIndividual().getLastName());
+			individualDobText.setText(sf.getIndividual().getDob());
 			
 			// get the socialgroups the individual is a part of
-			List<SocialGroup> list = databaseAdapter.getSocialGroupsForIndividual(selectionFragment.getIndividual().getExtId());	
+			List<SocialGroup> list = databaseAdapter.getSocialGroupsForIndividual(sf.getIndividual().getExtId());	
 
-			selectionFragment.setSocialgroups(list);
+			sf.setSocialgroups(list);
 		
 			// if the individual is in more that one social group then the socialgroup must be specified
 			if (list.size() > 1) 
 				createHouseholdSelectionDialog();
 			else if (list.size() == 1) 
-				selectionFragment.setSocialGroupDialogSelection(0);
-			else 
+				sf.setSocialGroupDialogSelection(0);
+			else {
 				Toast.makeText(getApplicationContext(),	getString(R.string.household_not_found), Toast.LENGTH_SHORT).show();
+				sf.setSocialgroup(new SocialGroup());
+			}
 
 			setPhase(UpdateEvent.XFORMS);
-			
 		}
 	}
 	
@@ -687,10 +684,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 * Clears all state and returns the phase to Location.
 	 */
 	public void reset() {
-		visitRecord = null;
 		setPhase(UpdateEvent.LOCATION);	
-		if (valueFragment != null) {
-			valueFragment.reset();
+		if (vf != null) {
+			vf.reset();
 		}
 	}
 	
@@ -792,12 +788,14 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearLocationTextFields();
 			clearIndividualTextFields();
 		
-			selectionFragment.setRegion(new LocationHierarchy());
-			selectionFragment.setSubRegion(new LocationHierarchy());
-			selectionFragment.setVillage(new LocationHierarchy());
-			selectionFragment.setRound(new Round());
-			selectionFragment.setLocation(new Location());
-			selectionFragment.setIndividual(new Individual());
+			sf.setRegion(new LocationHierarchy());
+			sf.setSubRegion(new LocationHierarchy());
+			sf.setVillage(new LocationHierarchy());
+			sf.setRound(new Round());
+			sf.setLocation(new Location());
+			sf.setIndividual(new Individual());
+			sf.setRelationship(new Relationship());
+			sf.setPregnancyOutcome(new PregnancyOutcome());
 		}
 		else if (phase.equals(UpdateEvent.SUBREGION)) {		
 			setStateSubRegion();
@@ -808,11 +806,13 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearLocationTextFields();
 			clearIndividualTextFields();
 			
-			selectionFragment.setSubRegion(new LocationHierarchy());
-			selectionFragment.setVillage(new LocationHierarchy());
-			selectionFragment.setRound(new Round());
-			selectionFragment.setLocation(new Location());
-			selectionFragment.setIndividual(new Individual());
+			sf.setSubRegion(new LocationHierarchy());
+			sf.setVillage(new LocationHierarchy());
+			sf.setRound(new Round());
+			sf.setLocation(new Location());
+			sf.setIndividual(new Individual());
+			sf.setRelationship(new Relationship());
+			sf.setPregnancyOutcome(new PregnancyOutcome());
 		}
 		else if (phase.equals(UpdateEvent.VILLAGE)) {
 			setStateVillage();
@@ -822,10 +822,12 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearLocationTextFields();
 			clearIndividualTextFields();
 			
-			selectionFragment.setVillage(new LocationHierarchy());
-			selectionFragment.setRound(new Round());
-			selectionFragment.setLocation(new Location());
-			selectionFragment.setIndividual(new Individual());
+			sf.setVillage(new LocationHierarchy());
+			sf.setRound(new Round());
+			sf.setLocation(new Location());
+			sf.setIndividual(new Individual());
+			sf.setRelationship(new Relationship());
+			sf.setPregnancyOutcome(new PregnancyOutcome());
 		}
 		else if (phase.equals(UpdateEvent.ROUND)) {
 			setStateRound();
@@ -834,9 +836,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearLocationTextFields();
 			clearIndividualTextFields();
 			
-			selectionFragment.setRound(new Round());
-			selectionFragment.setLocation(new Location());
-			selectionFragment.setIndividual(new Individual());
+			sf.setRound(new Round());
+			sf.setLocation(new Location());
+			sf.setIndividual(new Individual());
+			sf.setRelationship(new Relationship());
+			sf.setPregnancyOutcome(new PregnancyOutcome());
 		}
 		else if (phase.equals(UpdateEvent.LOCATION)) {
 			setStateLocation();
@@ -844,25 +848,33 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearLocationTextFields();
 			clearIndividualTextFields();
 			
-			selectionFragment.setLocation(new Location());
-			selectionFragment.setIndividual(new Individual());
+			sf.setLocation(new Location());
+			sf.setIndividual(new Individual());
+			sf.setRelationship(new Relationship());
+			sf.setPregnancyOutcome(new PregnancyOutcome());
 		}
 		else if (phase.equals(UpdateEvent.VISIT)) {
 			setStateVisit();
 			
 			clearIndividualTextFields();
 			
-			selectionFragment.setIndividual(new Individual());
+			sf.setIndividual(new Individual());
+			sf.setRelationship(new Relationship());
+			sf.setPregnancyOutcome(new PregnancyOutcome());
 		}
 		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
 			setStateIndividual();
 			
 			clearIndividualTextFields();
 			
-			selectionFragment.setIndividual(new Individual());
+			sf.setIndividual(new Individual());
+			sf.setRelationship(new Relationship());
+			sf.setPregnancyOutcome(new PregnancyOutcome());
 		}
 		else if (phase.equals(UpdateEvent.XFORMS)) {
 			setStateFinish();
+			sf.setRelationship(new Relationship());
+			sf.setPregnancyOutcome(new PregnancyOutcome());
 		}
 	}
 	
@@ -919,40 +931,40 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void restoreRegionTextFields() {
-		regionNameText.setText(selectionFragment.getRegion().getName());
-		regionExtIdText.setText(selectionFragment.getRegion().getExtId());
+		regionNameText.setText(sf.getRegion().getName());
+		regionExtIdText.setText(sf.getRegion().getExtId());
 		regionName.setVisibility(View.VISIBLE);
 		regionExtId.setVisibility(View.VISIBLE);
 	}
 	
 	private void restoreSubRegionTextFields() {
-		subRegionNameText.setText(selectionFragment.getSubRegion().getName());
-		subRegionExtIdText.setText(selectionFragment.getSubRegion().getExtId());
+		subRegionNameText.setText(sf.getSubRegion().getName());
+		subRegionExtIdText.setText(sf.getSubRegion().getExtId());
 		subRegionName.setVisibility(View.VISIBLE);
 		subRegionExtId.setVisibility(View.VISIBLE);
 	}
 	
 	private void restoreVillageTextFields() {
-		villageNameText.setText(selectionFragment.getVillage().getName());
-		villageExtIdText.setText(selectionFragment.getVillage().getExtId());
+		villageNameText.setText(sf.getVillage().getName());
+		villageExtIdText.setText(sf.getVillage().getExtId());
 		villageName.setVisibility(View.VISIBLE);
 		villageExtId.setVisibility(View.VISIBLE);
 	}
 	
 	private void restoreRoundTextFields() {
-		roundNumberText.setText(selectionFragment.getRound().getRoundNumber());
-		roundStartDateText.setText(selectionFragment.getRound().getStartDate());
-		roundEndDateText.setText(selectionFragment.getRound().getEndDate());
+		roundNumberText.setText(sf.getRound().getRoundNumber());
+		roundStartDateText.setText(sf.getRound().getStartDate());
+		roundEndDateText.setText(sf.getRound().getEndDate());
 		roundNumber.setVisibility(View.VISIBLE);
 		roundStartDate.setVisibility(View.VISIBLE);
 		roundEndDate.setVisibility(View.VISIBLE);
 	}
 	
 	private void restoreLocationTextFields() {
-		locationNameText.setText(selectionFragment.getLocation().getName());
-		locationExtIdText.setText(selectionFragment.getLocation().getExtId());
-		locationLatitudeText.setText(selectionFragment.getLocation().getLatitude());
-		locationLongitudeText.setText(selectionFragment.getLocation().getLongitude());
+		locationNameText.setText(sf.getLocation().getName());
+		locationExtIdText.setText(sf.getLocation().getExtId());
+		locationLatitudeText.setText(sf.getLocation().getLatitude());
+		locationLongitudeText.setText(sf.getLocation().getLongitude());
 		locationName.setVisibility(View.VISIBLE);
 		locationExtId.setVisibility(View.VISIBLE);
 		locationLatitude.setVisibility(View.VISIBLE);
@@ -960,10 +972,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void restoreIndividualTextFields() {
-		individualExtIdText.setText(selectionFragment.getIndividual().getExtId());
-		individualFirstNameText.setText(selectionFragment.getIndividual().getFirstName());
-		individualLastNameText.setText(selectionFragment.getIndividual().getLastName());
-		individualDobText.setText(selectionFragment.getIndividual().getDob());
+		individualExtIdText.setText(sf.getIndividual().getExtId());
+		individualFirstNameText.setText(sf.getIndividual().getFirstName());
+		individualLastNameText.setText(sf.getIndividual().getLastName());
+		individualDobText.setText(sf.getIndividual().getDob());
 		individualExtId.setVisibility(View.VISIBLE);
 		individualFirstName.setVisibility(View.VISIBLE);
 		individualLastName.setVisibility(View.VISIBLE);
@@ -977,7 +989,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		outMigrationBtn.setEnabled(value);
 		deathBtn.setEnabled(value);
 		
-		if (value == true && selectionFragment.getIndividual().getGender().equalsIgnoreCase("Female")) {
+		if (value == true && sf.getIndividual().getGender().equalsIgnoreCase("Female")) {
 			pregRegBtn.setEnabled(true);
 			birthRegBtn.setEnabled(true);
 		}

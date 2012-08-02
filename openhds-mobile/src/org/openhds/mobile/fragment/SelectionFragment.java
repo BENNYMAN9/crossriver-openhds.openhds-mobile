@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import org.openhds.mobile.R;
 import org.openhds.mobile.database.DatabaseAdapter;
+import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
@@ -25,6 +26,7 @@ public class SelectionFragment extends Fragment {
 	
 	private DatabaseAdapter databaseAdapter;
 	
+	private FieldWorker fieldWorker;
 	private LocationHierarchy region;
 	private LocationHierarchy subRegion;
 	private LocationHierarchy village;
@@ -46,6 +48,7 @@ public class SelectionFragment extends Fragment {
 	
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		fieldWorker = new FieldWorker();
         region = new LocationHierarchy();
         subRegion = new LocationHierarchy();
         village = new LocationHierarchy();
@@ -171,6 +174,14 @@ public class SelectionFragment extends Fragment {
 	
 	public void setSocialGroupDialogSelection(int index) {
 		this.socialgroup = socialgroups.get(index);
+	}
+	
+	public FieldWorker getFieldWorker() {
+		return fieldWorker;
+	}
+
+	public void setFieldWorker(FieldWorker fieldWorker) {
+		this.fieldWorker = fieldWorker;
 	}
 	
 	public LocationHierarchy getRegion() {
