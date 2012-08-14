@@ -9,10 +9,20 @@
 	    android:orientation="vertical" >
 	    
 	    <Button
-	        android:id="@+id/createVisitBtn"
+	        android:id="@+id/createLocationBtn"
 	        android:layout_width="150dp"
 	        android:layout_height="wrap_content"
 	        android:layout_marginTop="45dp"
+	        android:layout_marginLeft="20dp"
+	        android:layout_gravity="center"
+	        android:text="Create Location"
+	        android:enabled="false" />
+	    
+	    <Button
+	        android:id="@+id/createVisitBtn"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="10dp"
 	        android:layout_marginLeft="20dp"
 	        android:layout_gravity="center"
 	        android:text="Create Visit"

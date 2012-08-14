@@ -153,7 +153,7 @@
 	        <TableRow> 
 	            <Button
 			        android:id="@+id/clearFilterBtn"
-			        android:layout_width="125dp"
+			        android:layout_width="150dp"
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="Clear"
@@ -161,7 +161,7 @@
 	
 		    	<Button
 			        android:id="@+id/searchFilterBtn"
-			        android:layout_width="125dp"
+			        android:layout_width="150dp"
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="Search"

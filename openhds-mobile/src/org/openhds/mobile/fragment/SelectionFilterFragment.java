@@ -74,7 +74,7 @@ public class SelectionFilterFragment extends Fragment {
 	}
 	
 	public CharSequence[] getLocationsDialog() {
-		locations = databaseAdapter.getAllLocationsOfVillage(village);
+		locations = databaseAdapter.getAllLocationsOfVillage(village.getExtId());
 		CharSequence[] names = new CharSequence[locations.size()];
 		for (int i = 0; i < locations.size(); i++) 
 			names[i] = locations.get(i).getName();

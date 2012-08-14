@@ -64,6 +64,18 @@ public class SelectionFragment extends Fragment {
         return inflater.inflate(R.layout.selection, container, false);
     }
 	
+	// an option to create a new location rather than to reference an existing one
+	public void createLocation(String headId, String groupName) {
+				
+		StringBuilder builder = new StringBuilder();
+		builder.append(headId.substring(0, 12));
+
+		location.setExtId(builder.toString());
+		location.setHierarchy(village.getExtId());
+		location.setName(groupName);
+		location.setHead(headId);
+	}
+	
 	// this logic is specific for Cross River
 	public void createVisit() {
 		StringBuilder builder;
@@ -73,8 +85,8 @@ public class SelectionFragment extends Fragment {
 		do {
 			builder = new StringBuilder();
 			increment++;
-			builder.append("V" + location.getExtId().substring(0, 6) + 
-					round.getRoundNumber() + Integer.toString(increment) + location.getExtId().substring(6));
+			builder.append("V" + location.getExtId().substring(0, 9) + 
+					round.getRoundNumber() + Integer.toString(increment) + location.getExtId().substring(9));
 			result = databaseAdapter.findVisitByExtId(builder.toString());
 		} while (!result);	
 		

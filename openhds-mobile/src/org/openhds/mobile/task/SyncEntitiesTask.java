@@ -92,6 +92,8 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 			
 			processUrl(baseurl + "/relationship");
 			resetDialogParams();
+			
+			databaseAdapter.getDatabase().setTransactionSuccessful();
 		 } 
 		 catch (Exception e) {
 			databaseAdapter.getDatabase().endTransaction();
@@ -283,6 +285,9 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         paramMap.put("extId", parser.nextText());
         parser.nextTag();
         name = parser.getName();
+        paramMap.put("head", parser.nextText());
+        parser.nextTag();
+        name = parser.getName();
         paramMap.put("hierarchy", parser.nextText());
         parser.nextTag();
         name = parser.getName();
@@ -301,7 +306,7 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         paramMap.put("uuid", parser.nextText());
         parser.nextTag();
         
-        saveLocationToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("name"), 
+        saveLocationToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("head"), paramMap.get("name"), 
         		paramMap.get("latitude"), paramMap.get("longitude"), paramMap.get("hierarchy"), paramMap.get("status"));
         
         dialog.incrementProgressBy(1);
@@ -473,9 +478,9 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 	    databaseAdapter.createIndividual(uuid, extId, firstName, lastName, gender, dob, mother, father, residence, status);
 	}
 	
-	public void saveLocationToDB(String uuid, String extId, String name, String latitude, String longitude, 
+	public void saveLocationToDB(String uuid, String extId, String head, String name, String latitude, String longitude, 
 			String hierarchy, String status) {
-	    databaseAdapter.createLocation(uuid, extId, name, latitude, longitude, hierarchy, status);
+	    databaseAdapter.createLocation(uuid, extId, head, name, latitude, longitude, hierarchy, status);
 	}
 	
 	public void saveHierarchyToDB(String uuid, String extId, String name, String parent, String level) {

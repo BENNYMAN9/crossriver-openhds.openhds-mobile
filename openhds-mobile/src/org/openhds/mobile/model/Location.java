@@ -13,6 +13,9 @@ public class Location implements Serializable {
 	private String hierarchy;
 	private String status;
 	
+	// specific field for cross river
+	private String head;
+	
 	public String getUuid() {
 		return uuid;
 	}
@@ -67,5 +70,13 @@ public class Location implements Serializable {
 
 	public void setStatus(String status) {
 		this.status = status;
+	}
+	
+	public String getHead() {
+		return head;
+	}
+
+	public void setHead(String head) {
+		this.head = head;
 	}
 }

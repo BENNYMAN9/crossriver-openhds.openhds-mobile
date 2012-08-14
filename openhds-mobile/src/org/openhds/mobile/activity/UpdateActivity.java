@@ -54,7 +54,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					 locationNameText, locationExtIdText, locationLatitudeText, locationLongitudeText, locationName, locationExtId, locationLatitude, locationLongitude,
 					 individualFirstNameText, individualLastNameText, individualExtIdText, individualDobText, individualFirstName, individualLastName, individualExtId, individualDob;	
 	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, individualBtn, 
-	 			   createVisitBtn, clearLocationBtn, clearIndividualBtn,
+	 			   createLocationBtn, createVisitBtn, clearLocationBtn, clearIndividualBtn,
 	 			   membershipBtn, relationshipBtn, inMigrationBtn, outMigrationBtn, pregRegBtn, birthRegBtn, deathBtn, 
 	 			   finishVisitBtn;
 	
@@ -102,6 +102,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         
         clearIndividualBtn = (Button) findViewById(R.id.clearIndividualBtn);
         clearIndividualBtn.setOnClickListener(this);
+        
+        createLocationBtn = (Button) findViewById(R.id.createLocationBtn);
+        createLocationBtn.setOnClickListener(this);
         
         createVisitBtn = (Button) findViewById(R.id.createVisitBtn);
         createVisitBtn.setOnClickListener(this);
@@ -241,11 +244,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			}
 			case FILTER: {
 				if (resultCode == RESULT_OK) {
-					Individual currentIndividual = sf.getIndividual();
-					String individualExtId = data.getExtras().getString("extId");
-					
 					String type = data.getExtras().getString("type");
+					
 					if (type.equals(UpdateEvent.RELATIONSHIP)) {
+						Individual currentIndividual = sf.getIndividual();
+						String individualExtId = data.getExtras().getString("extId");
 						
 						if (sf.getIndividual().getGender().equals("Male")) {
 							sf.getRelationship().setMaleIndividual(currentIndividual.getExtId());
@@ -256,6 +259,16 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 							sf.getRelationship().setFemaleIndividual(currentIndividual.getExtId());
 						}
 						new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.RELATIONSHIP).execute();
+					}
+					else if (type.equals(UpdateEvent.LOCATION)) {
+						
+						String name = data.getExtras().getString("name");
+						String individualExtId = data.getExtras().getString("extId");
+						
+						sf.createLocation(individualExtId, name);
+						sf.getIndividual().setExtId(individualExtId);
+						
+						new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.LOCATION).execute();
 					}
 				}
 			}
@@ -344,6 +357,19 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         startActivity(i);
     }
     
+	/**
+	 * Method used for starting the activity for filtering for individuals
+	 */
+	private void startFilterActivity(String type) {
+		Intent i = new Intent(this, FilterActivity.class);
+		i.putExtra("region", sf.getRegion());
+		i.putExtra("subRegion", sf.getSubRegion());
+		i.putExtra("village", sf.getVillage());
+		i.putExtra("location", sf.getLocation());
+		i.putExtra("type", type);
+		startActivityForResult(i, FILTER);
+	}
+    
     /**
      * Loads the value fragment with a list of Regions.
      */
@@ -396,7 +422,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Locations within the selected Village.
      */
     private void loadLocationValueData() {
-    	List<Location> locations = databaseAdapter.getAllLocationsOfVillage(sf.getVillage());
+    	List<Location> locations = databaseAdapter.getAllLocationsOfVillage(sf.getVillage().getExtId());
       	sf.setLocations(locations);
     	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
@@ -528,6 +554,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			case R.id.locationBtn: 
 				loadLocationValueData();
 				break;
+			case R.id.createLocationBtn:
+				startFilterActivity(UpdateEvent.LOCATION);
+				break;
 			case R.id.createVisitBtn: 
 				sf.createVisit();
 				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.VISIT).execute();		
@@ -548,12 +577,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.MEMBERSHIP).execute();
 				break;
 			case R.id.relationshipBtn:
-				Intent i = new Intent(this, FilterActivity.class);
-				i.putExtra("region", sf.getRegion());
-				i.putExtra("subRegion", sf.getSubRegion());
-				i.putExtra("village", sf.getVillage());
-				i.putExtra("location", sf.getLocation());
-				startActivityForResult(i, FILTER);
+				startFilterActivity(UpdateEvent.RELATIONSHIP);
 				break;
 			case R.id.inMigrationBtn:
 				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.INMIGRATION).execute();
@@ -579,7 +603,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.DEATH).execute();
 		}	
 	}
-	
+		
 	/**
 	 * This is called after the OdkFormLoadTask has created an instance of the Xform.
 	 * It returns the content uri which is used to start the ODK Activity to load that Xform instance.
@@ -1102,6 +1126,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		XFORMS_PHASE = false;
 		
 		finishVisitBtn.setEnabled(false);
+		createLocationBtn.setEnabled(true);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
 		clearIndividualBtn.setEnabled(false);
@@ -1125,6 +1150,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		XFORMS_PHASE = false;
 		
 		finishVisitBtn.setEnabled(false);
+		createLocationBtn.setEnabled(false);
 		createVisitBtn.setEnabled(true);
 		clearLocationBtn.setEnabled(true);
 		clearIndividualBtn.setEnabled(false);
@@ -1148,6 +1174,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		XFORMS_PHASE = false;
 		
 		finishVisitBtn.setEnabled(true);
+		createLocationBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
 		clearIndividualBtn.setEnabled(false);
@@ -1172,6 +1199,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		
 		regionBtn.setEnabled(false);
 		finishVisitBtn.setEnabled(true);
+		createLocationBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
 		clearIndividualBtn.setEnabled(true);

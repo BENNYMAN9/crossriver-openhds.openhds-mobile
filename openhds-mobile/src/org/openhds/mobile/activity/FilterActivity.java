@@ -10,7 +10,6 @@ import org.openhds.mobile.fragment.ValueFragment;
 import org.openhds.mobile.listener.ValueSelectedListener;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
-import org.openhds.mobile.model.UpdateEvent;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -35,6 +34,8 @@ public class FilterActivity extends FragmentActivity implements OnClickListener,
 	
 	private SelectionFilterFragment selectionFilterFragment;
 	private ValueFragment valueFragment;
+	
+	private String type;
 			
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -84,6 +85,7 @@ public class FilterActivity extends FragmentActivity implements OnClickListener,
 		LocationHierarchy subRegion = (LocationHierarchy) getIntent().getExtras().getSerializable("subRegion");
 		LocationHierarchy village = (LocationHierarchy) getIntent().getExtras().getSerializable("village");
 		Location location = (Location) getIntent().getExtras().getSerializable("location");
+		type = getIntent().getExtras().getString("type");
 		
 		regionTxt.setText(region.getExtId());
 		subRegionTxt.setText(subRegion.getExtId());
@@ -119,10 +121,12 @@ public class FilterActivity extends FragmentActivity implements OnClickListener,
 	}
 
 	public void onValueSelected(int position) {
+		String name = valueFragment.getItems().get(position).getItem1();
 		String extId = valueFragment.getItems().get(position).getItem2();
 		Intent i = new Intent();
+		i.putExtra("name", name);
 		i.putExtra("extId", extId);
-		i.putExtra("type", UpdateEvent.RELATIONSHIP);
+		i.putExtra("type", type);
 		setResult(Activity.RESULT_OK, i);
 		finish();
 	}
@@ -248,6 +252,4 @@ public class FilterActivity extends FragmentActivity implements OnClickListener,
 		AlertDialog alertDialog = alertDialogBuilder.create();
 		alertDialog.show();
 	}
-	
-
 }

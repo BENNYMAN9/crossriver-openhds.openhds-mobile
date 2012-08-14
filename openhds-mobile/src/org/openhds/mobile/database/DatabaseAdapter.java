@@ -38,7 +38,8 @@ public class DatabaseAdapter {
 	private static final String DATABASE_TABLE_LOCATION = "location";
 	private static final String LOCATION_UUID = "uuid";  
 	private static final String LOCATION_EXTID = "extId";  
-	private static final String LOCATION_NAME = "name";  
+	private static final String LOCATION_HEAD = "head";
+	private static final String LOCATION_NAME = "name"; 
 	private static final String LOCATION_LATITUDE = "latitude";  
 	private static final String LOCATION_LONGITUDE = "longitude";  
 	private static final String LOCATION_HIERARCHY = "hierarchy";	
@@ -88,7 +89,7 @@ public class DatabaseAdapter {
 	private static final String FIELDWORKER_FIRSTNAME = "firstName";  
 	private static final String FIELDWORKER_LASTNAME = "lastName";  
 	 
-	private static final int DATABASE_VERSION = 12;
+	private static final int DATABASE_VERSION = 15;
 		 
 	private static final String INDIVIDUAL_CREATE =
 	        "create table individual (uuid text primary key, " + 
@@ -99,7 +100,7 @@ public class DatabaseAdapter {
 	
 	private static final String LOCATION_CREATE =
         "create table location (uuid text primary key, " + 
-        "extId text not null, name text not null, latitude text, " +
+        "extId text not null, head text not null, name text not null, latitude text, " +
         "longitude text, hierarchy text not null, status text not null);";
 	
 	private static final String HIERARCHY_CREATE =
@@ -175,12 +176,13 @@ public class DatabaseAdapter {
 		 return database.insert(DATABASE_TABLE_INDIVIDUAL, null, values);	
 	}
 	 
-	public long createLocation(String uuid, String extId, String name, String latitude, 
+	public long createLocation(String uuid, String extId, String head, String name, String latitude, 
 			 String longitude, String hierarchy, String status) {
 		 
 		 ContentValues values = new ContentValues();
 		 values.put(LOCATION_UUID, uuid);
 		 values.put(LOCATION_EXTID, extId);
+		 values.put(LOCATION_HEAD, head);
 		 values.put(LOCATION_NAME, name);
 		 values.put(LOCATION_LONGITUDE, longitude);
 		 values.put(LOCATION_LATITUDE, latitude);
@@ -199,7 +201,7 @@ public class DatabaseAdapter {
 		 values.put(HIERARCHY_NAME, name);
 		 values.put(HIERARCHY_PARENT, parent);
 		 values.put(HIERARCHY_LEVEL, level);
-		 Log.i(TAG, "inserting into hierarchy with extId " + extId);
+		 Log.i(TAG, "inserting into hierarchy with extId " + extId + " at level " + level);
 		 return database.insert(DATABASE_TABLE_HIERARCHY, null, values);
 	 }
 	 
@@ -289,7 +291,7 @@ public class DatabaseAdapter {
 		 close();
 		 return true;
 	 }
-	 
+	 	 
 	 public boolean findFieldWorker(String extId, String password) {
 		 open();
 		 String query = "select * from fieldworker where extId = ? and password = ?;";
@@ -302,7 +304,7 @@ public class DatabaseAdapter {
 		 close();
 		 return false;
 	 }
-	 
+	 	 
 	 public Individual getIndividualByExtId(String extId) {
 		 open();
 		 String query = "select * from individual where extId = ?;";
@@ -417,12 +419,12 @@ public class DatabaseAdapter {
 		 return subRegions;
 	 } 	 
 	 
-	 public List<Location> getAllLocationsOfVillage(LocationHierarchy village) {
+	 public List<Location> getAllLocationsOfVillage(String villageId) {
 		 open();
 		 List<Location> locations = new ArrayList<Location>();
 		 
 		 String query = "select * from location where hierarchy = ?;";
-		 Cursor cursor = database.rawQuery(query, new String[] {village.getUuid()});
+		 Cursor cursor = database.rawQuery(query, new String[] {villageId});
 		 
 		 if (cursor.moveToFirst()) {
 			 do {
