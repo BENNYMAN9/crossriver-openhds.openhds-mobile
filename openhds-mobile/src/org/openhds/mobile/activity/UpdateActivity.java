@@ -233,7 +233,14 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					Cursor cursor = getContentResolver().query(contentUri, null, 
 							InstanceProviderAPI.InstanceColumns.STATUS + "=?", new String[] {InstanceProviderAPI.STATUS_COMPLETE}, null);
 					if (cursor.moveToNext()) {
-						setPhase(UpdateEvent.INDIVIDUAL);
+						
+						if (getPhase().equals(UpdateEvent.LOCATION)) {
+							displayLocationState();
+							setPhase(UpdateEvent.VISIT);
+						}
+						else {
+							setPhase(UpdateEvent.INDIVIDUAL);
+						}
 						formUnFinished = false;
 					}
 					else {
@@ -484,6 +491,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				
 				if (getPhase().equals(UpdateEvent.XFORMS))
 					setPhase(UpdateEvent.INDIVIDUAL);
+				
+				if (getPhase().equals(UpdateEvent.LOCATION)) {
+					setPhase(UpdateEvent.LOCATION);
+				}
 			}
 		});	
 		alertDialogBuilder.setNegativeButton("Edit form", new DialogInterface.OnClickListener() {
@@ -663,14 +674,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		}
 		else if (phase.equals(UpdateEvent.LOCATION)) {
 			sf.setLocation(sf.getLocations().get(position));
-			locationName.setVisibility(View.VISIBLE);
-			locationExtId.setVisibility(View.VISIBLE);
-			locationLatitude.setVisibility(View.VISIBLE);
-			locationLongitude.setVisibility(View.VISIBLE);
-			locationNameText.setText(sf.getLocation().getName());
-			locationExtIdText.setText(sf.getLocation().getExtId());
-			locationLatitudeText.setText(sf.getLocation().getLatitude());
-			locationLongitudeText.setText(sf.getLocation().getLongitude());
+			displayLocationState();
 			setPhase(UpdateEvent.VISIT);
 		}
 		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
@@ -900,6 +904,20 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			sf.setRelationship(new Relationship());
 			sf.setPregnancyOutcome(new PregnancyOutcome());
 		}
+	}
+	
+	/**
+	 * This is responsible for displaying location state data
+	 */
+	private void displayLocationState() {
+		locationName.setVisibility(View.VISIBLE);
+		locationExtId.setVisibility(View.VISIBLE);
+		locationLatitude.setVisibility(View.VISIBLE);
+		locationLongitude.setVisibility(View.VISIBLE);
+		locationNameText.setText(sf.getLocation().getName());
+		locationExtIdText.setText(sf.getLocation().getExtId());
+		locationLatitudeText.setText(sf.getLocation().getLatitude());
+		locationLongitudeText.setText(sf.getLocation().getLongitude());
 	}
 	
 	private void clearRegionTextFields() {
