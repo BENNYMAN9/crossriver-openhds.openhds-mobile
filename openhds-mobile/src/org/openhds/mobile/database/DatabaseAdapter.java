@@ -431,10 +431,11 @@ public class DatabaseAdapter {
 				 Location loc = new Location();
 				 loc.setUuid(cursor.getString(0));
 				 loc.setExtId(cursor.getString(1));
-				 loc.setName(cursor.getString(2));
-				 loc.setLatitude(cursor.getString(3));
-				 loc.setLongitude(cursor.getString(4));
-				 loc.setHierarchy(cursor.getString(5));
+				 loc.setHead(cursor.getString(2));
+				 loc.setName(cursor.getString(3));
+				 loc.setLatitude(cursor.getString(4));
+				 loc.setLongitude(cursor.getString(5));
+				 loc.setHierarchy(cursor.getString(6));
 				 locations.add(loc);
 			 } while (cursor.moveToNext());
 		 }

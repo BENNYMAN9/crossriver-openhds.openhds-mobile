@@ -129,10 +129,8 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
         				sbuilder.append("<houseName>" + sf.getLocation().getName() + "</houseName>" + "\r\n");
         			else if (name.equals(FilledParams.hierarchyId))
         				sbuilder.append("<hierarchyId>" + sf.getLocation().getHierarchy() + "</hierarchyId>" + "\r\n");
-        			else if (name.equals(FilledParams.longitude))
-        				sbuilder.append("<longitude>" + sf.getLocation().getLongitude() + "</longitude>" + "\r\n");
-        			else if (name.equals(FilledParams.latitude))
-        				sbuilder.append("<latitude>" + sf.getLocation().getLatitude() + "</latitude>" + "\r\n");
+        			else if (name.equals(FilledParams.latlong))
+        				sbuilder.append("<latlong />" + "\r\n");
         			else if (name.equals(FilledParams.householdId))
         				sbuilder.append("<householdId>" + sf.getSocialgroup().getExtId() + "</householdId>" + "\r\n");
         			else if (name.equals(FilledParams.householdName))

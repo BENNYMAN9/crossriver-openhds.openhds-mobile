@@ -24,8 +24,7 @@ public class FilledParams {
 	public static final String houseId = "houseId";
 	public static final String houseName = "houseName";
 	public static final String hierarchyId = "hierarchyId";
-	public static final String longitude = "longitude";
-	public static final String latitude = "latitude";
+	public static final String latlong = "latlong";
 	
 	public static final String householdId = "householdId";
 	public static final String householdName = "householdName";
@@ -45,7 +44,7 @@ public class FilledParams {
 		return Arrays.asList(visitId, roundNumber, visitDate, 
 				individualId, motherId, fatherId, firstName, 
 				lastName, gender, dob, houseId, houseName, 
-				longitude, latitude, householdId, householdName, hierarchyId, 
+				latlong, householdId, householdName, hierarchyId, 
 				fieldWorkerId, child1Id, child2Id, childFatherId,
 				childFatherFirstName, childFatherLastName,
 				womanId, manId);

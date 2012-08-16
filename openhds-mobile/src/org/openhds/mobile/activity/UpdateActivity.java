@@ -55,7 +55,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					 individualFirstNameText, individualLastNameText, individualExtIdText, individualDobText, individualFirstName, individualLastName, individualExtId, individualDob;	
 	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, individualBtn, 
 	 			   createLocationBtn, createVisitBtn, clearLocationBtn, clearIndividualBtn,
-	 			   membershipBtn, relationshipBtn, inMigrationBtn, outMigrationBtn, pregRegBtn, birthRegBtn, deathBtn, 
+	 			   householdBtn, membershipBtn, relationshipBtn, inMigrationBtn, outMigrationBtn, pregRegBtn, birthRegBtn, deathBtn, 
 	 			   finishVisitBtn;
 	
 	// logged in fieldworker
@@ -108,6 +108,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         
         createVisitBtn = (Button) findViewById(R.id.createVisitBtn);
         createVisitBtn.setOnClickListener(this);
+        
+        householdBtn = (Button) findViewById(R.id.householdBtn);
+        householdBtn.setOnClickListener(this);
         
         membershipBtn = (Button) findViewById(R.id.membershipBtn);
         membershipBtn.setOnClickListener(this);
@@ -584,6 +587,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			case R.id.finishVisitBtn: 
 				reset();
 				break;
+			case R.id.householdBtn:
+				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.SOCIALGROUP).execute();
+				break;
 			case R.id.membershipBtn:
 				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.MEMBERSHIP).execute();
 				break;
@@ -1025,6 +1031,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void toggleUpdateEventButtons(Boolean value) {
+		householdBtn.setEnabled(value); 
 		relationshipBtn.setEnabled(value);
 		membershipBtn.setEnabled(value);
 		inMigrationBtn.setEnabled(value);
