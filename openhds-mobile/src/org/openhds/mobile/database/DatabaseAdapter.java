@@ -347,6 +347,26 @@ public class DatabaseAdapter {
 		 close();
 		 return fieldWorker;
 	 }
+	 
+	 public SocialGroup getSocialGroupByGroupName(String groupName) {
+		 open();
+		 String query = "select * from socialgroup where groupName = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {groupName});
+		 
+		 SocialGroup group = null;
+		 if (cursor.moveToFirst()) {
+			 group = new SocialGroup();
+			 group.setUuid(cursor.getString(0));
+			 group.setExtId(cursor.getString(1));
+			 group.setGroupName(cursor.getString(2));
+			 group.setGroupHead(cursor.getString(3));
+			 group.setStatus(cursor.getString(4));
+		 }
+		 		 
+		 cursor.close();
+		 close();
+		 return group;
+	 }
 	 	 	 
 	 public List<SocialGroup> getSocialGroupsForIndividual(String extId) {
 		 open();
@@ -469,6 +489,29 @@ public class DatabaseAdapter {
 		 cursor.close();
 		 close(); 
 		 return individuals;
+	 }
+	 
+	 public List<SocialGroup> getAllSocialGroups() {
+		 open();
+		 List<SocialGroup> groups = new ArrayList<SocialGroup>();
+		 
+		 String query = "select * from socialgroup;";
+		 Cursor cursor = database.rawQuery(query, null);
+		 
+		 if (cursor.moveToFirst()) {
+			 do {
+				 SocialGroup group = new SocialGroup();
+				 group.setUuid(cursor.getString(0));
+				 group.setExtId(cursor.getString(1));
+				 group.setGroupName(cursor.getString(2));
+				 group.setGroupHead(cursor.getString(3));
+				 group.setStatus(cursor.getString(4));
+				 groups.add(group);
+			 } while (cursor.moveToNext());
+		 }
+		 cursor.close();
+		 close(); 
+		 return groups;
 	 }
 	 
 	 public List<Round> getAllRounds() {

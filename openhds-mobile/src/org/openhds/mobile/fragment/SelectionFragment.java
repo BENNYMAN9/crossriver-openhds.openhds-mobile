@@ -46,6 +46,8 @@ public class SelectionFragment extends Fragment {
 	private List<Individual> individuals;
 	private List<SocialGroup> socialgroups;
 	
+	private boolean isExternalInMigration = false;
+	
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		fieldWorker = new FieldWorker();
@@ -63,6 +65,12 @@ public class SelectionFragment extends Fragment {
         databaseAdapter = new DatabaseAdapter(getActivity().getBaseContext());
         return inflater.inflate(R.layout.selection, container, false);
     }
+	
+	// called when the household_dialog is displayed and is used for external inmigrations
+	public void setSocialGroup(String groupName) {
+		SocialGroup group = databaseAdapter.getSocialGroupByGroupName(groupName);
+		this.socialgroup = group;
+	}
 	
 	// an option to create a new location rather than to reference an existing one
 	public void createLocation(String headId, String groupName) {
@@ -129,7 +137,7 @@ public class SelectionFragment extends Fragment {
 		return true;
 	}
 	
-	private String generateId(Integer partToIncrement, String baseString) {
+	public String generateId(Integer partToIncrement, String baseString) {
 		String temp = "";
 		do {
 			StringBuilder builder = new StringBuilder();
@@ -180,6 +188,15 @@ public class SelectionFragment extends Fragment {
 		CharSequence[] names = new CharSequence[socialgroups.size()];
 		for (int i = 0; i < socialgroups.size(); i++) 
 			names[i] = socialgroups.get(i).getGroupName();
+		
+		return names;
+	}
+	
+	public String[] getAllSocialGroupsForDialog() {
+		List<SocialGroup> groups = databaseAdapter.getAllSocialGroups();
+		String[] names = new String[groups.size()];
+		for (int i = 0; i < groups.size(); i++) 
+			names[i] = groups.get(i).getGroupName();
 		
 		return names;
 	}
@@ -330,5 +347,13 @@ public class SelectionFragment extends Fragment {
 
 	public void setRelationship(Relationship relationship) {
 		this.relationship = relationship;
+	}
+	
+	public boolean isExternalInMigration() {
+		return isExternalInMigration;
+	}
+
+	public void setExternalInMigration(boolean isExternalInMigration) {
+		this.isExternalInMigration = isExternalInMigration;
 	}
 }

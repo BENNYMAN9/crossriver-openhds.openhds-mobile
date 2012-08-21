@@ -35,7 +35,7 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
 	private Uri odkUri;
 	private SelectionFragment sf;
 	private String event;
-	
+		
 	public OdkFormLoadTask(OdkFormLoadListener listener, ContentResolver resolver, SelectionFragment sf, String event) {
 		this.listener = listener;
 		this.resolver = resolver;
@@ -111,17 +111,17 @@ public class OdkFormLoadTask extends AsyncTask<Void, Void, Boolean>  {
         				sbuilder.append("<visitDate>" + sf.getVisit().getDate() + "</visitDate>" + "\r\n");
         			else if (name.equals(FilledParams.individualId))
         				sbuilder.append("<individualId>" + sf.getIndividual().getExtId() + "</individualId>" + "\r\n");
-        			else if (name.equals(FilledParams.motherId))
+        			else if (name.equals(FilledParams.motherId) && !sf.isExternalInMigration())
         				sbuilder.append("<motherId>" + sf.getIndividual().getMother() + "</motherId>" + "\r\n");
-        			else if (name.equals(FilledParams.fatherId))
+        			else if (name.equals(FilledParams.fatherId) && !sf.isExternalInMigration())
         				sbuilder.append("<fatherId>" + sf.getIndividual().getFather() + "</fatherId>" + "\r\n");
-        			else if (name.equals(FilledParams.firstName))
+        			else if (name.equals(FilledParams.firstName) && !sf.isExternalInMigration())
         				sbuilder.append("<firstName>" + sf.getIndividual().getFirstName() + "</firstName>" + "\r\n");
-        			else if (name.equals(FilledParams.lastName))
+        			else if (name.equals(FilledParams.lastName) && !sf.isExternalInMigration())
         				sbuilder.append("<lastName>" + sf.getIndividual().getLastName() + "</lastName>" + "\r\n");
-        			else if (name.equals(FilledParams.gender))
+        			else if (name.equals(FilledParams.gender) && !sf.isExternalInMigration())
         				sbuilder.append("<gender>" + (sf.getIndividual().getGender().equalsIgnoreCase("Male") ? "1" : "2") + "</gender>" + "\r\n");
-        			else if (name.equals(FilledParams.dob))
+        			else if (name.equals(FilledParams.dob) && !sf.isExternalInMigration())
         				sbuilder.append("<dob>" + sf.getIndividual().getDob() + "</dob>" + "\r\n");
         			else if (name.equals(FilledParams.houseId)) 
         				sbuilder.append("<houseId>" + sf.getLocation().getExtId() + "</houseId>" + "\r\n");

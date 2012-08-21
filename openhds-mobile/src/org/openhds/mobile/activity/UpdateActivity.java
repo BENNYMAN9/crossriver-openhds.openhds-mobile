@@ -6,6 +6,7 @@ import org.openhds.mobile.InstanceProviderAPI;
 import org.openhds.mobile.R;
 import org.openhds.mobile.cell.ValueFragmentCell;
 import org.openhds.mobile.database.DatabaseAdapter;
+import org.openhds.mobile.dialog.HouseholdListDialog;
 import org.openhds.mobile.fragment.EventFragment;
 import org.openhds.mobile.fragment.SelectionFragment;
 import org.openhds.mobile.fragment.ValueFragment;
@@ -271,7 +272,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 						new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.RELATIONSHIP).execute();
 					}
 					else if (type.equals(UpdateEvent.LOCATION)) {
-						
 						String name = data.getExtras().getString("name");
 						String individualExtId = data.getExtras().getString("extId");
 						
@@ -279,6 +279,14 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 						sf.getIndividual().setExtId(individualExtId);
 						
 						new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.LOCATION).execute();
+					}
+					else if (type.equals(UpdateEvent.INMIGRATION)) {
+						String extId = data.getExtras().getString("extId");
+						Individual individual = databaseAdapter.getIndividualByExtId(extId);
+						sf.setIndividual(individual);
+						determineSocialGroupForIndividual();
+						
+						new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.INMIGRATION).execute();
 					}
 				}
 			}
@@ -511,13 +519,38 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
     } 
     
     /**
+     * A dialog for selecting in an InMigration is Internal or External.
+     */
+    private void createInMigrationFormDialog() {
+		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+		alertDialogBuilder.setTitle("In Migration");
+		alertDialogBuilder.setMessage("Is this an Internal or External In Migration event?");
+		alertDialogBuilder.setCancelable(true);
+		alertDialogBuilder.setPositiveButton("Internal", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				sf.setExternalInMigration(false);	
+				startFilterActivity(UpdateEvent.INMIGRATION);
+			}
+		});	
+		alertDialogBuilder.setNegativeButton("External", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				sf.setExternalInMigration(true);	
+				HouseholdListDialog householdDialog = new HouseholdListDialog(UpdateActivity.this, sf);
+				householdDialog.show();
+			}
+		});
+		AlertDialog alertDialog = alertDialogBuilder.create();
+		alertDialog.show();
+    } 
+    
+    /**
      * This is specific for Cross River.
      * A dialog displaying a selection of multiple Households for an Individual.
      */
     private void createHouseholdSelectionDialog() {
     	householdSelection = true;
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-		alertDialogBuilder.setTitle("This Individual lives within multiple Households.\nSelect the Household to be used for this Individual.");
+		alertDialogBuilder.setTitle("Select the Household to be used for this Individual.");
 		alertDialogBuilder.setSingleChoiceItems(sf.getSocialGroupsForDialog(), -1, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int clicked) {
 				householdSelection = false;
@@ -528,6 +561,13 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 		AlertDialog alertDialog = alertDialogBuilder.create();
 		alertDialog.show();
+    }
+        
+    /**
+     * This is called from the HouseholdListDialog after a selection is made.
+     */
+    public void loadInMigrationForm() {
+   		new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.INMIGRATION).execute();
     }
     
     /**
@@ -597,7 +637,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				startFilterActivity(UpdateEvent.RELATIONSHIP);
 				break;
 			case R.id.inMigrationBtn:
-				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.INMIGRATION).execute();
+				createInMigrationFormDialog();
 				break;
 			case R.id.outMigrationBtn:
 				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.OUTMIGRATION).execute();
@@ -695,25 +735,28 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			individualLastNameText.setText(sf.getIndividual().getLastName());
 			individualDobText.setText(sf.getIndividual().getDob());
 			
-			// get the socialgroups the individual is a part of
-			List<SocialGroup> list = databaseAdapter.getSocialGroupsForIndividual(sf.getIndividual().getExtId());	
-
-			sf.setSocialgroups(list);
-		
-			// if the individual is in more that one social group then the socialgroup must be specified
-			if (list.size() > 1) 
-				createHouseholdSelectionDialog();
-			else if (list.size() == 1) 
-				sf.setSocialGroupDialogSelection(0);
-			else {
-				Toast.makeText(getApplicationContext(),	getString(R.string.household_not_found), Toast.LENGTH_SHORT).show();
-				sf.setSocialgroup(new SocialGroup());
-			}
-
+			determineSocialGroupForIndividual();
 			setPhase(UpdateEvent.XFORMS);
 		}
 	}
 	
+	private void determineSocialGroupForIndividual() {
+		// get the socialgroups the individual is a part of
+		List<SocialGroup> list = databaseAdapter.getSocialGroupsForIndividual(sf.getIndividual().getExtId());	
+
+		sf.setSocialgroups(list);
+	
+		// if the individual is in more that one social group then the socialgroup must be specified
+		if (list.size() > 1) 
+			createHouseholdSelectionDialog();
+		else if (list.size() == 1) 
+			sf.setSocialGroupDialogSelection(0);
+		else {
+			Toast.makeText(getApplicationContext(),	getString(R.string.household_not_found), Toast.LENGTH_SHORT).show();
+			sf.setSocialgroup(new SocialGroup());
+		}
+	}
+		
 	/**
 	 * Clears all state and returns the phase to Location.
 	 */
@@ -1034,7 +1077,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		householdBtn.setEnabled(value); 
 		relationshipBtn.setEnabled(value);
 		membershipBtn.setEnabled(value);
-		inMigrationBtn.setEnabled(value);
 		outMigrationBtn.setEnabled(value);
 		deathBtn.setEnabled(value);
 		
@@ -1068,6 +1110,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		roundBtn.setEnabled(false);
 		locationBtn.setEnabled(false);
 		individualBtn.setEnabled(false);
+		inMigrationBtn.setEnabled(false);
 		toggleUpdateEventButtons(false);
 	}
 	
@@ -1091,6 +1134,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		roundBtn.setEnabled(false);
 		locationBtn.setEnabled(false);
 		individualBtn.setEnabled(false);
+		inMigrationBtn.setEnabled(false);
 		toggleUpdateEventButtons(false);
 	}
 	
@@ -1114,6 +1158,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		roundBtn.setEnabled(false);
 		locationBtn.setEnabled(false);
 		individualBtn.setEnabled(false);
+		inMigrationBtn.setEnabled(false);
 		toggleUpdateEventButtons(false);
 	}
 	
@@ -1137,6 +1182,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		roundBtn.setEnabled(true);
 		locationBtn.setEnabled(false);
 		individualBtn.setEnabled(false);
+		inMigrationBtn.setEnabled(false);
 		toggleUpdateEventButtons(false);
 	}
 	
@@ -1161,6 +1207,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		roundBtn.setEnabled(false);
 		locationBtn.setEnabled(true);
 		individualBtn.setEnabled(false);
+		inMigrationBtn.setEnabled(false);
 		toggleUpdateEventButtons(false);
 	}
 	
@@ -1185,6 +1232,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		roundBtn.setEnabled(false);
 		locationBtn.setEnabled(false);
 		individualBtn.setEnabled(false);
+		inMigrationBtn.setEnabled(false);
 		toggleUpdateEventButtons(false);
 	}
 	
@@ -1209,6 +1257,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		roundBtn.setEnabled(false);
 		locationBtn.setEnabled(false);
 		individualBtn.setEnabled(true);
+		inMigrationBtn.setEnabled(true);
 		toggleUpdateEventButtons(false);
 	}
 	
@@ -1233,6 +1282,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		roundBtn.setEnabled(false);
 		locationBtn.setEnabled(false);
 		individualBtn.setEnabled(false);
+		inMigrationBtn.setEnabled(false);
 		toggleUpdateEventButtons(true);
 	}
 }
