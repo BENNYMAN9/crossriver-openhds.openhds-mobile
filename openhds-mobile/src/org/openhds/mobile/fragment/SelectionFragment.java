@@ -110,7 +110,7 @@ public class SelectionFragment extends Fragment {
 		String childId;
 		try {
 			motherId = individual.getExtId();
-			String householdSectionId = motherId.substring(9, 11);
+			String householdSectionId = motherId.substring(12, 14);
 			String locationId = individual.getCurrentResidence();
 			childId = locationId + householdSectionId;
 		} catch (Exception e) {
@@ -118,10 +118,10 @@ public class SelectionFragment extends Fragment {
 		}
 		
 		String baseString = childId;
-		Integer partToIncrement = Integer.parseInt(motherId.substring(11, 13));
+		Integer partToIncrement = Integer.parseInt(motherId.substring(14, 16));
 				
 		String child1Id = generateId(partToIncrement, baseString);
-		partToIncrement = Integer.parseInt(child1Id.substring(11, 13));
+		partToIncrement = Integer.parseInt(child1Id.substring(14, 16));
 		String child2Id = generateId(partToIncrement, baseString);
 		
 		this.getPregnancyOutcome().setChild1ExtId(child1Id);
