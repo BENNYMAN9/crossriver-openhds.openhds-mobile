@@ -23,6 +23,11 @@ import android.widget.RadioButton;
 import android.view.View;
 import android.view.View.OnClickListener;
 
+/**
+ * This activity is only used in searching for an Individual.
+ * This activity is launched before creating Relationship and Internal In Migration events.
+ * It's also launched before creating a new Location.
+ */
 public class FilterActivity extends FragmentActivity implements OnClickListener, ValueSelectedListener {
 	
 	private DatabaseAdapter databaseAdapter;

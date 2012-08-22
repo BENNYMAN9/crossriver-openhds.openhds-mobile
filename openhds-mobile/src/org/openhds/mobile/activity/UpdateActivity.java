@@ -75,7 +75,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 	// status flags indicating a dialog, used for restoring the activity
 	private boolean formUnFinished = false;
-	private boolean householdSelection = false;
 	private boolean xFormNotFound = false;
 	
 	// the workflow for this activity is arranged into multiple phases
@@ -269,7 +268,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 							sf.getRelationship().setMaleIndividual(individualExtId);
 							sf.getRelationship().setFemaleIndividual(currentIndividual.getExtId());
 						}
-						new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.RELATIONSHIP).execute();
+						loadForm(UpdateEvent.RELATIONSHIP);
 					}
 					else if (type.equals(UpdateEvent.LOCATION)) {
 						String name = data.getExtras().getString("name");
@@ -278,15 +277,18 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 						sf.createLocation(individualExtId, name);
 						sf.getIndividual().setExtId(individualExtId);
 						
-						new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.LOCATION).execute();
+						loadForm(UpdateEvent.LOCATION);
 					}
 					else if (type.equals(UpdateEvent.INMIGRATION)) {
 						String extId = data.getExtras().getString("extId");
 						Individual individual = databaseAdapter.getIndividualByExtId(extId);
 						sf.setIndividual(individual);
-						determineSocialGroupForIndividual();
+						boolean result = determineSocialGroupForIndividual();
 						
-						new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.INMIGRATION).execute();
+						if (result)
+							createHouseholdSelectionDialog(UpdateEvent.INMIGRATION);
+						else
+							loadForm(UpdateEvent.INMIGRATION);
 					}
 				}
 			}
@@ -311,7 +313,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		outState.putSerializable("socialgroup", sf.getSocialgroup());
 		outState.putString("phase", getPhase());
 		outState.putBoolean("unfinishedFormDialog", formUnFinished);
-		outState.putBoolean("householdSelection", householdSelection);
 		outState.putBoolean("xFormNotFound", xFormNotFound);
 
 		if (contentUri != null)
@@ -342,10 +343,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	    		createXFormNotFoundDialog();
 	    	if (state.getBoolean("unfinishedFormDialog"))
 	    		createUnfinishedFormDialog();
-	    	if (state.getBoolean("householdSelection")) {
-	    		sf.setSocialgroups(databaseAdapter.getSocialGroupsForIndividual(sf.getIndividual().getUuid()));
-	    		createHouseholdSelectionDialog();
-	    	}
     	}
 	}
     
@@ -535,7 +532,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		alertDialogBuilder.setNegativeButton("External", new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
 				sf.setExternalInMigration(true);	
-				HouseholdListDialog householdDialog = new HouseholdListDialog(UpdateActivity.this, sf);
+				HouseholdListDialog householdDialog = new HouseholdListDialog(UpdateActivity.this, sf, UpdateEvent.INMIGRATION);
 				householdDialog.show();
 			}
 		});
@@ -547,29 +544,23 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * This is specific for Cross River.
      * A dialog displaying a selection of multiple Households for an Individual.
      */
-    private void createHouseholdSelectionDialog() {
-    	householdSelection = true;
+    private void createHouseholdSelectionDialog(final String event) {
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 		alertDialogBuilder.setTitle("Select the Household to be used for this Individual.");
 		alertDialogBuilder.setSingleChoiceItems(sf.getSocialGroupsForDialog(), -1, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int clicked) {
-				householdSelection = false;
 				sf.setSocialGroupDialogSelection(clicked);
 				dialog.dismiss();
+				
+				if (event != null)
+					loadForm(event);
 			}
 		});
 	
 		AlertDialog alertDialog = alertDialogBuilder.create();
 		alertDialog.show();
     }
-        
-    /**
-     * This is called from the HouseholdListDialog after a selection is made.
-     */
-    public void loadInMigrationForm() {
-   		new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.INMIGRATION).execute();
-    }
-    
+                
     /**
      * A dialog indicating that an Xform instance could not be found.
      */
@@ -613,7 +604,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				break;
 			case R.id.createVisitBtn: 
 				sf.createVisit();
-				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.VISIT).execute();		
+				loadForm(UpdateEvent.VISIT);	
 				break;
 			case R.id.individualBtn: 
 				loadIndividualValueData();
@@ -628,10 +619,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				reset();
 				break;
 			case R.id.householdBtn:
-				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.SOCIALGROUP).execute();
+				loadForm(UpdateEvent.SOCIALGROUP);
 				break;
 			case R.id.membershipBtn:
-				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.MEMBERSHIP).execute();
+				loadForm(UpdateEvent.MEMBERSHIP);
 				break;
 			case R.id.relationshipBtn:
 				startFilterActivity(UpdateEvent.RELATIONSHIP);
@@ -640,10 +631,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				createInMigrationFormDialog();
 				break;
 			case R.id.outMigrationBtn:
-				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.OUTMIGRATION).execute();
+				loadForm(UpdateEvent.OUTMIGRATION);
 				break;
 			case R.id.pregRegBtn:
-				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.PREGNANCYOBSERVATION).execute();
+				loadForm(UpdateEvent.PREGNANCYOBSERVATION);
 				break;
 			case R.id.birthRegBtn:
 				boolean result = sf.createPregnancyOutcome();
@@ -654,12 +645,19 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				if (result == false)
 					Toast.makeText(getApplicationContext(),	getString(R.string.idGenerationFailure), Toast.LENGTH_SHORT).show();
 				
-				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.BIRTH).execute();
+				loadForm(UpdateEvent.BIRTH);
 				break;
 			case R.id.deathBtn: 
-				new OdkFormLoadTask(this, getContentResolver(), sf, UpdateEvent.DEATH).execute();
+				loadForm(UpdateEvent.DEATH);
 		}	
 	}
+	
+	/**
+	 * Launches the OdkFormLoadTask depending on the specified UpdateEvent
+	 */
+    public void loadForm(String event) {
+   		new OdkFormLoadTask(this, getContentResolver(), sf, event).execute();
+    }
 		
 	/**
 	 * This is called after the OdkFormLoadTask has created an instance of the Xform.
@@ -735,12 +733,15 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			individualLastNameText.setText(sf.getIndividual().getLastName());
 			individualDobText.setText(sf.getIndividual().getDob());
 			
-			determineSocialGroupForIndividual();
+			boolean result = determineSocialGroupForIndividual();
+			if (result)
+				createHouseholdSelectionDialog(null);
+			
 			setPhase(UpdateEvent.XFORMS);
 		}
 	}
 	
-	private void determineSocialGroupForIndividual() {
+	private boolean determineSocialGroupForIndividual() {
 		// get the socialgroups the individual is a part of
 		List<SocialGroup> list = databaseAdapter.getSocialGroupsForIndividual(sf.getIndividual().getExtId());	
 
@@ -748,13 +749,14 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 		// if the individual is in more that one social group then the socialgroup must be specified
 		if (list.size() > 1) 
-			createHouseholdSelectionDialog();
+			return true;
 		else if (list.size() == 1) 
 			sf.setSocialGroupDialogSelection(0);
 		else {
 			Toast.makeText(getApplicationContext(),	getString(R.string.household_not_found), Toast.LENGTH_SHORT).show();
 			sf.setSocialgroup(new SocialGroup());
 		}
+		return false;
 	}
 		
 	/**

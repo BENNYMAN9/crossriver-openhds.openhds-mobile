@@ -19,9 +19,11 @@ public class HouseholdListDialog extends Dialog {
 	private ListView list;
 	private EditText filterText = null;
 	private ArrayAdapter<String> adapter = null;
+	private String event;
 	
-	public HouseholdListDialog(final UpdateActivity context, final SelectionFragment sf) {
+	public HouseholdListDialog(final UpdateActivity context, final SelectionFragment sf, final String event) {
 		super(context);
+		this.event = event;
 
 		setContentView(R.layout.household_dialog);
 	    this.setTitle("Select Household");
@@ -45,7 +47,7 @@ public class HouseholdListDialog extends Dialog {
 	       	   sf.setIndividual(individual);
 			
 	           HouseholdListDialog.this.dismiss();
-	           context.loadInMigrationForm();
+	           context.loadForm(event);
 	        }
 	    });
 	}
