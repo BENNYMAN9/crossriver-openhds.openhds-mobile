@@ -5,8 +5,7 @@ import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.listener.RetrieveFieldWorkersListener;
 import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Result;
-import org.openhds.mobile.task.LoginTask;
-
+import org.openhds.mobile.task.FieldWorkerLoginTask;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -27,7 +26,7 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class LoginActivity extends Activity implements OnClickListener, RetrieveFieldWorkersListener {
+public class FieldWorkerLoginActivity extends Activity implements OnClickListener, RetrieveFieldWorkersListener {
 	
     private static final int LOGIN_ACTIVITY = 1;
 
@@ -40,12 +39,12 @@ public class LoginActivity extends Activity implements OnClickListener, Retrieve
 	private DatabaseAdapter databaseAdapter;
 	private SharedPreferences settings;
 	
-    private LoginTask loginTask = null;
+    private FieldWorkerLoginTask loginTask = null;
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
-	    setContentView(R.layout.login);
+	    setContentView(R.layout.fieldworker_login);
 	    
 	    initializeProgressDialog();
 	    
@@ -100,7 +99,7 @@ public class LoginActivity extends Activity implements OnClickListener, Retrieve
 				dialog.show();
 				SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 				if (loginTask == null)
-					loginTask = new LoginTask(databaseAdapter, settings, this, dialog, extId, password, true);
+					loginTask = new FieldWorkerLoginTask(databaseAdapter, settings, this, dialog, extId, password, true);
 				
 	    		if (loginTask.getStatus() == Status.PENDING) 
 	    			loginTask.execute();	

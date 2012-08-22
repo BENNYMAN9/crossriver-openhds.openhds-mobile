@@ -20,7 +20,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.openhds.mobile.R;
-import org.openhds.mobile.activity.LoginActivity;
+import org.openhds.mobile.activity.FieldWorkerLoginActivity;
 import org.openhds.mobile.activity.ServerPreferencesActivity;
 import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.listener.RetrieveFieldWorkersListener;
@@ -33,7 +33,7 @@ import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 
-public class LoginTask extends AsyncTask<Boolean, Void, Result> {
+public class FieldWorkerLoginTask extends AsyncTask<Boolean, Void, Result> {
 	
 	private DatabaseAdapter databaseAdapter;
 	private SharedPreferences settings;
@@ -49,7 +49,7 @@ public class LoginTask extends AsyncTask<Boolean, Void, Result> {
 	
 	private List<FieldWorker> list;
 		
-	public LoginTask(DatabaseAdapter databaseAdapter, SharedPreferences settings, RetrieveFieldWorkersListener listener, 
+	public FieldWorkerLoginTask(DatabaseAdapter databaseAdapter, SharedPreferences settings, RetrieveFieldWorkersListener listener, 
 			ProgressDialog dialog, String extId, String password, boolean isRegistering) {
 		this.databaseAdapter = databaseAdapter;
 		this.settings = settings;
@@ -99,9 +99,9 @@ public class LoginTask extends AsyncTask<Boolean, Void, Result> {
 	
 	private void invokeWebService() throws AuthenticationException, ClientProtocolException, IOException, XmlPullParserException {
 		
-		String username = settings.getString(ServerPreferencesActivity.OPENHDS_KEY_USERNAME, ((LoginActivity) listener).getString(R.string.username));
-	    String password = settings.getString(ServerPreferencesActivity.OPENHDS_KEY_PASSWORD, ((LoginActivity) listener).getString(R.string.password));
-	    String url = settings.getString(ServerPreferencesActivity.OPENHDS_KEY_SERVER, ((LoginActivity) listener).getString(R.string.default_openhdsserver));
+		String username = settings.getString(ServerPreferencesActivity.OPENHDS_KEY_USERNAME, ((FieldWorkerLoginActivity) listener).getString(R.string.username));
+	    String password = settings.getString(ServerPreferencesActivity.OPENHDS_KEY_PASSWORD, ((FieldWorkerLoginActivity) listener).getString(R.string.password));
+	    String url = settings.getString(ServerPreferencesActivity.OPENHDS_KEY_SERVER, ((FieldWorkerLoginActivity) listener).getString(R.string.default_openhdsserver));
 		
 		creds = new UsernamePasswordCredentials(username, password);
 		 
@@ -148,7 +148,7 @@ public class LoginTask extends AsyncTask<Boolean, Void, Result> {
                     }
                     else if (name.equalsIgnoreCase("fieldworker")) {
                     	processFieldWorkerParams(parser);
-                    	((LoginActivity) listener).runOnUiThread(changeMessageFieldWorker);
+                    	((FieldWorkerLoginActivity) listener).runOnUiThread(changeMessageFieldWorker);
                     }
                     break;
             }

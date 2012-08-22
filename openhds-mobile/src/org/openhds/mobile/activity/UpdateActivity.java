@@ -23,7 +23,7 @@ import org.openhds.mobile.model.SocialGroup;
 import org.openhds.mobile.model.UpdateEvent;
 import org.openhds.mobile.model.UpdateParams;
 import org.openhds.mobile.model.Visit;
-import org.openhds.mobile.task.OdkFormLoadTask;
+import org.openhds.mobile.task.OdkGeneratedFormLoadTask;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -656,7 +656,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 * Launches the OdkFormLoadTask depending on the specified UpdateEvent
 	 */
     public void loadForm(String event) {
-   		new OdkFormLoadTask(this, getContentResolver(), sf, event).execute();
+   		new OdkGeneratedFormLoadTask(this, getContentResolver(), sf, event).execute();
     }
 		
 	/**
