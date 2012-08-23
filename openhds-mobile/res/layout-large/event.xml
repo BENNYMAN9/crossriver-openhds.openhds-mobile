@@ -8,11 +8,21 @@
 	    android:layout_height="match_parent"
 	    android:orientation="vertical" >
 	    
+	     <Button
+	        android:id="@+id/findLocationGeoPointBtn"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginTop="45dp"
+	        android:layout_marginLeft="20dp"
+	        android:layout_gravity="center"
+	        android:text="Find Location with GeoPoint"
+	        android:enabled="true" />
+	    
 	    <Button
 	        android:id="@+id/createLocationBtn"
 	        android:layout_width="150dp"
 	        android:layout_height="wrap_content"
-	        android:layout_marginTop="45dp"
+	        android:layout_marginTop="10dp"
 	        android:layout_marginLeft="20dp"
 	        android:layout_gravity="center"
 	        android:text="Create Location"

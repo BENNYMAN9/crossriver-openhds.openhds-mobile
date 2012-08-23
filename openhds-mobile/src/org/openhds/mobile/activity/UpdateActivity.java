@@ -55,7 +55,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					 locationNameText, locationExtIdText, locationLatitudeText, locationLongitudeText, locationName, locationExtId, locationLatitude, locationLongitude,
 					 individualFirstNameText, individualLastNameText, individualExtIdText, individualDobText, individualFirstName, individualLastName, individualExtId, individualDob;	
 	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, individualBtn, 
-	 			   createLocationBtn, createVisitBtn, clearLocationBtn, clearIndividualBtn,
+	 			   findLocationGeoPointBtn, createLocationBtn, createVisitBtn, clearLocationBtn, clearIndividualBtn,
 	 			   householdBtn, membershipBtn, relationshipBtn, inMigrationBtn, outMigrationBtn, pregRegBtn, birthRegBtn, deathBtn, 
 	 			   finishVisitBtn;
 	
@@ -102,6 +102,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         
         clearIndividualBtn = (Button) findViewById(R.id.clearIndividualBtn);
         clearIndividualBtn.setOnClickListener(this);
+        
+        findLocationGeoPointBtn = (Button) findViewById(R.id.findLocationGeoPointBtn);
+        findLocationGeoPointBtn.setOnClickListener(this);
         
         createLocationBtn = (Button) findViewById(R.id.createLocationBtn);
         createLocationBtn.setOnClickListener(this);
@@ -598,6 +601,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				break;
 			case R.id.locationBtn: 
 				loadLocationValueData();
+				break;
+			case R.id.findLocationGeoPointBtn:
+				Intent intent = new Intent(getApplicationContext(), ShowMapActivity.class);
+				startActivity(intent);
 				break;
 			case R.id.createLocationBtn:
 				startFilterActivity(UpdateEvent.LOCATION);
@@ -1102,6 +1109,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		INDIVIDUAL_PHASE = false;
 		XFORMS_PHASE = false;
 		
+		findLocationGeoPointBtn.setEnabled(true);
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
@@ -1126,6 +1134,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		INDIVIDUAL_PHASE = false;
 		XFORMS_PHASE = false;
 		
+		findLocationGeoPointBtn.setEnabled(false);
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
@@ -1150,6 +1159,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		INDIVIDUAL_PHASE = false;
 		XFORMS_PHASE = false;
 	
+		findLocationGeoPointBtn.setEnabled(false);
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
@@ -1174,6 +1184,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		INDIVIDUAL_PHASE = false;
 		XFORMS_PHASE = false;
 		
+		findLocationGeoPointBtn.setEnabled(false);
 		finishVisitBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
 		clearLocationBtn.setEnabled(false);
@@ -1198,6 +1209,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		INDIVIDUAL_PHASE = false;
 		XFORMS_PHASE = false;
 		
+		findLocationGeoPointBtn.setEnabled(false);
 		finishVisitBtn.setEnabled(false);
 		createLocationBtn.setEnabled(true);
 		createVisitBtn.setEnabled(false);
@@ -1223,6 +1235,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		INDIVIDUAL_PHASE = false;
 		XFORMS_PHASE = false;
 		
+		findLocationGeoPointBtn.setEnabled(false);
 		finishVisitBtn.setEnabled(false);
 		createLocationBtn.setEnabled(false);
 		createVisitBtn.setEnabled(true);
@@ -1248,6 +1261,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		INDIVIDUAL_PHASE = true;
 		XFORMS_PHASE = false;
 		
+		findLocationGeoPointBtn.setEnabled(false);
 		finishVisitBtn.setEnabled(true);
 		createLocationBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
@@ -1273,6 +1287,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		INDIVIDUAL_PHASE = false;
 		XFORMS_PHASE = true;
 		
+		findLocationGeoPointBtn.setEnabled(false);
 		regionBtn.setEnabled(false);
 		finishVisitBtn.setEnabled(true);
 		createLocationBtn.setEnabled(false);
