@@ -40,7 +40,7 @@ public class HouseholdListDialog extends Dialog {
 	           String groupName = (String) list.getItemAtPosition(position);
 	           sf.setSocialGroup(groupName);
 	           
-	       	   String extId = sf.generateId(01, sf.getSocialgroup().getExtId());
+	       	   String extId = sf.generateIndividualId(01, sf.getSocialgroup().getExtId());
 			
 	       	   Individual individual = new Individual();
 	       	   individual.setExtId(extId);

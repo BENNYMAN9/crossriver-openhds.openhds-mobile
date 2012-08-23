@@ -626,6 +626,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				reset();
 				break;
 			case R.id.householdBtn:
+				sf.createSocialGroup();
 				loadForm(UpdateEvent.SOCIALGROUP);
 				break;
 			case R.id.membershipBtn:

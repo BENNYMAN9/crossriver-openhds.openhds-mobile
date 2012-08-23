@@ -77,11 +77,27 @@ public class SelectionFragment extends Fragment {
 				
 		StringBuilder builder = new StringBuilder();
 		builder.append(headId.substring(0, 12));
+		
+		String baseString = builder.toString().substring(0, 9);
+		Integer partToIncrement = Integer.parseInt(builder.toString().substring(9, 12));
+		String locationId = generateLocationId(partToIncrement, baseString);
 
-		location.setExtId(builder.toString());
+		location.setExtId(locationId);
 		location.setHierarchy(village.getExtId());
 		location.setName(groupName);
 		location.setHead(headId);
+	}
+	
+	// an option to create a new social group rather than to reference an existing one
+	public void createSocialGroup() {
+		
+		String headId = individual.getExtId();
+		String baseString = headId.substring(0, 12);
+		Integer partToIncrement = Integer.parseInt(headId.substring(12, 14));
+							
+		String socialgroupId = generateSocialGroupId(partToIncrement, baseString);
+
+		socialgroup.setExtId(socialgroupId);
 	}
 	
 	// this logic is specific for Cross River
@@ -128,16 +144,16 @@ public class SelectionFragment extends Fragment {
 		String baseString = childId;
 		Integer partToIncrement = Integer.parseInt(motherId.substring(14, 16));
 				
-		String child1Id = generateId(partToIncrement, baseString);
+		String child1Id = generateIndividualId(partToIncrement, baseString);
 		partToIncrement = Integer.parseInt(child1Id.substring(14, 16));
-		String child2Id = generateId(partToIncrement, baseString);
+		String child2Id = generateIndividualId(partToIncrement, baseString);
 		
 		this.getPregnancyOutcome().setChild1ExtId(child1Id);
 		this.getPregnancyOutcome().setChild2ExtId(child2Id);
 		return true;
 	}
 	
-	public String generateId(Integer partToIncrement, String baseString) {
+	public String generateIndividualId(Integer partToIncrement, String baseString) {
 		String temp = "";
 		do {
 			StringBuilder builder = new StringBuilder();
@@ -148,6 +164,40 @@ public class SelectionFragment extends Fragment {
 				builder.append(partToIncrement.toString());
 			temp = baseString.concat(builder.toString());
 		} while (databaseAdapter.getIndividualByExtId(temp) != null);
+		
+		baseString = temp;
+		return baseString;
+	}
+	
+	public String generateLocationId(Integer partToIncrement, String baseString) {
+		String temp = "";
+		do {
+			StringBuilder builder = new StringBuilder();
+			partToIncrement++;
+			if (partToIncrement.toString().length() == 1) 
+				builder.append("00").append(partToIncrement.toString());
+			else if (partToIncrement.toString().length() == 2)
+				builder.append("0").append(partToIncrement.toString());
+			else if (partToIncrement.toString().length() == 3)
+				builder.append(partToIncrement.toString());
+			temp = baseString.concat(builder.toString());
+		} while (databaseAdapter.getLocationByExtId(temp) != null);
+		
+		baseString = temp;
+		return baseString;
+	}
+	
+	public String generateSocialGroupId(Integer partToIncrement, String baseString) {
+		String temp = "";
+		do {
+			StringBuilder builder = new StringBuilder();
+			partToIncrement++;
+			if (partToIncrement.toString().length() == 1) 
+				builder.append("0").append(partToIncrement.toString());
+			else if (partToIncrement.toString().length() == 2)
+				builder.append(partToIncrement.toString());
+			temp = baseString.concat(builder.toString());
+		} while (databaseAdapter.getSocialGroupByExtId(temp) != null);
 		
 		baseString = temp;
 		return baseString;

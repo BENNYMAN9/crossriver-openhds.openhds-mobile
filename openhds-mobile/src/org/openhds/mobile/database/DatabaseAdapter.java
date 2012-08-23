@@ -376,6 +376,48 @@ public class DatabaseAdapter {
 		 close();
 		 return individual;
 	 }
+	 
+	 public Location getLocationByExtId(String extId) {
+		 open();
+		 String query = "select * from location where extId = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {extId});
+		 
+		 Location location = null;
+		 if (cursor.moveToFirst()) {
+			 location = new Location();
+			 location.setUuid(cursor.getString(0));
+			 location.setHead(cursor.getString(1));
+			 location.setName(cursor.getString(2));
+			 location.setLatitude(cursor.getString(3));
+			 location.setLongitude(cursor.getString(4));
+			 location.setHierarchy(cursor.getString(5));
+			 location.setStatus(cursor.getString(6));
+		 }
+		 		 
+		 cursor.close();
+		 close();
+		 return location;
+	 }
+	 
+	 public SocialGroup getSocialGroupByExtId(String extId) {
+		 open();
+		 String query = "select * from socialgroup where extId = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {extId});
+		 
+		 SocialGroup group = null;
+		 if (cursor.moveToFirst()) {
+			 group = new SocialGroup();
+			 group.setUuid(cursor.getString(0));
+			 group.setExtId(cursor.getString(1));
+			 group.setGroupName(cursor.getString(2));
+			 group.setGroupHead(cursor.getString(3));
+			 group.setStatus(cursor.getString(4));
+		 }
+		 		 
+		 cursor.close();
+		 close();
+		 return group;
+	 }
 	 	 	 
 	 public FieldWorker getFieldWorker(String extId, String password) {
 		 open();
