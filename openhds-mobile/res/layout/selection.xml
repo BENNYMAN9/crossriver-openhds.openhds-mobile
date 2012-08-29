@@ -166,76 +166,8 @@
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 	        </TableRow> 
 		</TableLayout>
-	    
+	    	        
 	    <Button
-	        android:id="@+id/roundBtn"
-	        android:layout_width="150dp"
-	        android:layout_height="wrap_content"
-	        android:layout_marginLeft="20dp"
-	        android:text="Select Round"
-	        android:enabled="false" />
-	    
-	       <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	           android:layout_width="fill_parent"
-	           android:layout_height="wrap_content">  
-	        <TableRow> 
-	            <TextView
-			        android:id="@+id/roundNumber"
-			        android:layout_width="wrap_content"
-			        android:layout_height="wrap_content"
-			        android:layout_marginLeft="20dp"
-			        android:text="Round Number:"
-			        android:visibility="invisible"
-			        android:textAppearance="?android:attr/textAppearanceSmall"  />
-	
-		    	<TextView
-			        android:id="@+id/roundNumberText"
-			        android:layout_width="wrap_content"
-			        android:layout_height="wrap_content"
-			        android:layout_marginLeft="20dp"
-			        android:inputType="text"
-			        android:textAppearance="?android:attr/textAppearanceSmall"  />
-	       	</TableRow>
-	        <TableRow>
-	            <TextView
-			        android:id="@+id/roundStartDate"
-			        android:layout_width="wrap_content"
-			        android:layout_height="wrap_content"
-			        android:layout_marginLeft="20dp"
-			        android:text="Start Date:"
-			        android:visibility="invisible"
-			        android:textAppearance="?android:attr/textAppearanceSmall"  />
-		    
-		     	<TextView
-			        android:id="@+id/roundStartDateText"
-			        android:layout_width="wrap_content"
-			        android:layout_height="wrap_content"
-			        android:layout_marginLeft="20dp"
-			        android:inputType="text"
-			        android:textAppearance="?android:attr/textAppearanceSmall"  />
-	    	</TableRow> 
-	    	<TableRow>
-	            <TextView
-			        android:id="@+id/roundEndDate"
-			        android:layout_width="wrap_content"
-			        android:layout_height="wrap_content"
-			        android:layout_marginLeft="20dp"
-			        android:text="End Date:"
-			        android:visibility="invisible"
-			        android:textAppearance="?android:attr/textAppearanceSmall"  />
-		    
-		     	<TextView
-			        android:id="@+id/roundEndDateText"
-			        android:layout_width="wrap_content"
-			        android:layout_height="wrap_content"
-			        android:layout_marginLeft="20dp"
-			        android:paddingBottom="10dp"
-			        android:inputType="text"
-			        android:textAppearance="?android:attr/textAppearanceSmall"  />
-	    	</TableRow> 
-		</TableLayout>
-	        
-	     <Button
 	        android:id="@+id/locationBtn"
 	        android:layout_width="150dp"
 	        android:layout_height="wrap_content"
@@ -312,6 +244,74 @@
 		    
 		     	<TextView
 			        android:id="@+id/locationLongitudeText"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_marginLeft="20dp"
+			        android:paddingBottom="10dp"
+			        android:inputType="text"
+			        android:textAppearance="?android:attr/textAppearanceSmall"  />
+	    	</TableRow> 
+		</TableLayout>
+		
+	    <Button
+	        android:id="@+id/roundBtn"
+	        android:layout_width="150dp"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="20dp"
+	        android:text="Select Round"
+	        android:enabled="false" />
+	    
+	       <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	           android:layout_width="fill_parent"
+	           android:layout_height="wrap_content">  
+	        <TableRow> 
+	            <TextView
+			        android:id="@+id/roundNumber"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_marginLeft="20dp"
+			        android:text="Round Number:"
+			        android:visibility="invisible"
+			        android:textAppearance="?android:attr/textAppearanceSmall"  />
+	
+		    	<TextView
+			        android:id="@+id/roundNumberText"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_marginLeft="20dp"
+			        android:inputType="text"
+			        android:textAppearance="?android:attr/textAppearanceSmall"  />
+	       	</TableRow>
+	        <TableRow>
+	            <TextView
+			        android:id="@+id/roundStartDate"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_marginLeft="20dp"
+			        android:text="Start Date:"
+			        android:visibility="invisible"
+			        android:textAppearance="?android:attr/textAppearanceSmall"  />
+		    
+		     	<TextView
+			        android:id="@+id/roundStartDateText"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_marginLeft="20dp"
+			        android:inputType="text"
+			        android:textAppearance="?android:attr/textAppearanceSmall"  />
+	    	</TableRow> 
+	    	<TableRow>
+	            <TextView
+			        android:id="@+id/roundEndDate"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_marginLeft="20dp"
+			        android:text="End Date:"
+			        android:visibility="invisible"
+			        android:textAppearance="?android:attr/textAppearanceSmall"  />
+		    
+		     	<TextView
+			        android:id="@+id/roundEndDateText"
 			        android:layout_width="wrap_content"
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"

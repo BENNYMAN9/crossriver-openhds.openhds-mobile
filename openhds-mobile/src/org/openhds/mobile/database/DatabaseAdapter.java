@@ -386,17 +386,38 @@ public class DatabaseAdapter {
 		 if (cursor.moveToFirst()) {
 			 location = new Location();
 			 location.setUuid(cursor.getString(0));
-			 location.setHead(cursor.getString(1));
-			 location.setName(cursor.getString(2));
-			 location.setLatitude(cursor.getString(3));
-			 location.setLongitude(cursor.getString(4));
-			 location.setHierarchy(cursor.getString(5));
-			 location.setStatus(cursor.getString(6));
+			 location.setExtId(cursor.getString(1));
+			 location.setHead(cursor.getString(2));
+			 location.setName(cursor.getString(3));
+			 location.setLatitude(cursor.getString(4));
+			 location.setLongitude(cursor.getString(5));
+			 location.setHierarchy(cursor.getString(6));
+			 location.setStatus(cursor.getString(7));
 		 }
 		 		 
 		 cursor.close();
 		 close();
 		 return location;
+	 }
+	 
+	 public LocationHierarchy getLocationHierarchyByExtId(String extId) {
+		 open();
+		 String query = "select * from hierarchy where extId = ?;";
+		 Cursor cursor = database.rawQuery(query, new String[] {extId});
+		 
+		 LocationHierarchy hierarchy = null;
+		 if (cursor.moveToFirst()) {
+			 hierarchy = new LocationHierarchy();
+			 hierarchy.setUuid(cursor.getString(0));
+			 hierarchy.setExtId(cursor.getString(1));
+			 hierarchy.setName(cursor.getString(2));
+			 hierarchy.setParent(cursor.getString(3));
+			 hierarchy.setLevel(cursor.getString(4));
+		 }
+		 		 
+		 cursor.close();
+		 close();
+		 return hierarchy;
 	 }
 	 
 	 public SocialGroup getSocialGroupByExtId(String extId) {

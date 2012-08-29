@@ -54,7 +54,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					 roundNumberText, roundStartDateText, roundEndDateText, roundNumber, roundStartDate, roundEndDate, 
 					 locationNameText, locationExtIdText, locationLatitudeText, locationLongitudeText, locationName, locationExtId, locationLatitude, locationLongitude,
 					 individualFirstNameText, individualLastNameText, individualExtIdText, individualDobText, individualFirstName, individualLastName, individualExtId, individualDob;	
-	private Button regionBtn, subRegionBtn, villageBtn, roundBtn, locationBtn, individualBtn, 
+	private Button regionBtn, subRegionBtn, villageBtn, locationBtn, roundBtn, individualBtn, 
 	 			   findLocationGeoPointBtn, createLocationBtn, createVisitBtn, clearLocationBtn, clearIndividualBtn,
 	 			   householdBtn, membershipBtn, relationshipBtn, inMigrationBtn, outMigrationBtn, pregRegBtn, birthRegBtn, deathBtn, 
 	 			   finishVisitBtn;
@@ -82,8 +82,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	private boolean REGION_PHASE = true;
 	private boolean SUB_REGION_PHASE = false;
 	private boolean VILLAGE_PHASE = false;
-	private boolean ROUND_PHASE = false;
 	private boolean LOCATION_PHASE = false;
+	private boolean ROUND_PHASE = false;
 	private boolean VISIT_PHASE = false;
 	private boolean INDIVIDUAL_PHASE = false;
 	private boolean XFORMS_PHASE = false;
@@ -157,16 +157,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         villageExtIdText = (TextView) findViewById(R.id.villageExtIdText);
         villageName = (TextView) findViewById(R.id.villageName);
         villageExtId = (TextView) findViewById(R.id.villageExtId);
-        
-        roundBtn = (Button) findViewById(R.id.roundBtn);
-        roundBtn.setOnClickListener(this);
-        roundNumberText = (TextView) findViewById(R.id.roundNumberText);
-        roundStartDateText = (TextView) findViewById(R.id.roundStartDateText);
-        roundEndDateText = (TextView) findViewById(R.id.roundEndDateText);
-        roundNumber = (TextView) findViewById(R.id.roundNumber);
-        roundStartDate = (TextView) findViewById(R.id.roundStartDate);
-        roundEndDate = (TextView) findViewById(R.id.roundEndDate);
-        
+                
         locationBtn = (Button) findViewById(R.id.locationBtn);
         locationBtn.setOnClickListener(this);
         locationNameText = (TextView) findViewById(R.id.locationNameText);
@@ -177,6 +168,15 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         locationExtId = (TextView) findViewById(R.id.locationExtId);
         locationLatitude = (TextView) findViewById(R.id.locationLatitude);
         locationLongitude = (TextView) findViewById(R.id.locationLongitude);
+        
+        roundBtn = (Button) findViewById(R.id.roundBtn);
+        roundBtn.setOnClickListener(this);
+        roundNumberText = (TextView) findViewById(R.id.roundNumberText);
+        roundStartDateText = (TextView) findViewById(R.id.roundStartDateText);
+        roundEndDateText = (TextView) findViewById(R.id.roundEndDateText);
+        roundNumber = (TextView) findViewById(R.id.roundNumber);
+        roundStartDate = (TextView) findViewById(R.id.roundStartDate);
+        roundEndDate = (TextView) findViewById(R.id.roundEndDate);
         
         individualBtn = (Button) findViewById(R.id.individualBtn);
         individualBtn.setOnClickListener(this);
@@ -243,7 +243,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 						
 						if (getPhase().equals(UpdateEvent.LOCATION)) {
 							displayLocationState();
-							setPhase(UpdateEvent.VISIT);
+							setPhase(UpdateEvent.ROUND);
 						}
 						else {
 							setPhase(UpdateEvent.INDIVIDUAL);
@@ -299,13 +299,23 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			}
 			case LOCATION_GEOPOINT: {
 				if (resultCode == RESULT_OK) {
-					String name = data.getExtras().getString("name");
 					String extId = data.getExtras().getString("extId");
 					// a few things need to happen here:
 					// * get the location by extId
+					Location location = databaseAdapter.getLocationByExtId(extId);
+					
 					// * figure out the parent location hierarchy
+					LocationHierarchy village = databaseAdapter.getLocationHierarchyByExtId(location.getHierarchy());
+					LocationHierarchy subRegion = databaseAdapter.getLocationHierarchyByExtId(village.getParent());
+					LocationHierarchy region = databaseAdapter.getLocationHierarchyByExtId(subRegion.getParent());
+										
 					// * set the location hierarchy region, district, and village in selectionFragment
-					// * load the Location XForm		
+					sf.setRegion(region);
+					sf.setSubRegion(subRegion);
+					sf.setVillage(village);
+					sf.setLocation(location);
+	
+					restorePhase(UpdateEvent.ROUND);
 				}
 			}
 		}
@@ -609,11 +619,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			case R.id.villageBtn: 
 				loadVillageValueData();
 				break;
-			case R.id.roundBtn: 
-				loadRoundValueData();
-				break;
 			case R.id.locationBtn: 
 				loadLocationValueData();
+				break;
+			case R.id.roundBtn: 
+				loadRoundValueData();
 				break;
 			case R.id.findLocationGeoPointBtn:
 				Intent intent = new Intent(getApplicationContext(), ShowMapActivity.class);
@@ -725,6 +735,11 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			villageExtId.setVisibility(View.VISIBLE);
 			villageNameText.setText(sf.getVillage().getName());
 			villageExtIdText.setText(sf.getVillage().getExtId());
+			setPhase(UpdateEvent.LOCATION);
+		}
+		else if (phase.equals(UpdateEvent.LOCATION)) {
+			sf.setLocation(sf.getLocations().get(position));
+			displayLocationState();
 			setPhase(UpdateEvent.ROUND);
 		}
 		else if (phase.equals(UpdateEvent.ROUND)) {
@@ -735,11 +750,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			roundNumberText.setText(sf.getRound().getRoundNumber());
 			roundStartDateText.setText(sf.getRound().getStartDate());
 			roundEndDateText.setText(sf.getRound().getEndDate());
-			setPhase(UpdateEvent.LOCATION);
-		}
-		else if (phase.equals(UpdateEvent.LOCATION)) {
-			sf.setLocation(sf.getLocations().get(position));
-			displayLocationState();
 			setPhase(UpdateEvent.VISIT);
 		}
 		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
@@ -800,10 +810,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			return UpdateEvent.INDIVIDUAL;
 		else if (VISIT_PHASE)
 			return UpdateEvent.VISIT;
-		else if (LOCATION_PHASE)
-			return UpdateEvent.LOCATION;
 		else if (ROUND_PHASE)
 			return UpdateEvent.ROUND;
+		else if (LOCATION_PHASE)
+			return UpdateEvent.LOCATION;
 		else if (VILLAGE_PHASE)
 			return UpdateEvent.VILLAGE;
 		else if (SUB_REGION_PHASE)
@@ -829,20 +839,20 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			restoreRegionTextFields();
 			restoreSubRegionTextFields();
 		}
-		else if (phase.equals(UpdateEvent.ROUND)) {
-			setStateRound();
-			
-			restoreRegionTextFields();
-			restoreSubRegionTextFields();
-			restoreVillageTextFields();
-		}
 		else if (phase.equals(UpdateEvent.LOCATION)) {
 			setStateLocation();
 			
 			restoreRegionTextFields();
 			restoreSubRegionTextFields();
 			restoreVillageTextFields();
-			restoreRoundTextFields();
+		}
+		else if (phase.equals(UpdateEvent.ROUND)) {
+			setStateRound();
+			
+			restoreRegionTextFields();
+			restoreSubRegionTextFields();
+			restoreVillageTextFields();
+			restoreLocationTextFields();
 		}
 		else if (phase.equals(UpdateEvent.VISIT)) {
 			setStateVisit();
@@ -850,8 +860,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			restoreRegionTextFields();
 			restoreSubRegionTextFields();
 			restoreVillageTextFields();
-			restoreRoundTextFields();
 			restoreLocationTextFields();
+			restoreRoundTextFields();
 		}
 		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
 			setStateIndividual();
@@ -859,8 +869,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			restoreRegionTextFields();
 			restoreSubRegionTextFields();
 			restoreVillageTextFields();
-			restoreRoundTextFields();
 			restoreLocationTextFields();
+			restoreRoundTextFields();
 		}
 		else if (phase.equals(UpdateEvent.XFORMS)) {
 			setStateFinish();
@@ -868,8 +878,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			restoreRegionTextFields();
 			restoreSubRegionTextFields();
 			restoreVillageTextFields();
-			restoreRoundTextFields();
 			restoreLocationTextFields();
+			restoreRoundTextFields();
 			restoreIndividualTextFields();
 		}
 	}
@@ -884,15 +894,15 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			clearRegionTextFields();
 			clearSubRegionTextFields();
 			clearVillageTextFields();
-			clearRoundTextFields();
 			clearLocationTextFields();
+			clearRoundTextFields();
 			clearIndividualTextFields();
 		
 			sf.setRegion(new LocationHierarchy());
 			sf.setSubRegion(new LocationHierarchy());
 			sf.setVillage(new LocationHierarchy());
-			sf.setRound(new Round());
 			sf.setLocation(new Location());
+			sf.setRound(new Round());
 			sf.setIndividual(new Individual());
 			sf.setRelationship(new Relationship());
 			sf.setPregnancyOutcome(new PregnancyOutcome());
@@ -902,14 +912,14 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			
 			clearSubRegionTextFields();
 			clearVillageTextFields();
-			clearRoundTextFields();
 			clearLocationTextFields();
+			clearRoundTextFields();
 			clearIndividualTextFields();
 			
 			sf.setSubRegion(new LocationHierarchy());
 			sf.setVillage(new LocationHierarchy());
-			sf.setRound(new Round());
 			sf.setLocation(new Location());
+			sf.setRound(new Round());
 			sf.setIndividual(new Individual());
 			sf.setRelationship(new Relationship());
 			sf.setPregnancyOutcome(new PregnancyOutcome());
@@ -918,26 +928,13 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			setStateVillage();
 			
 			clearVillageTextFields();
-			clearRoundTextFields();
 			clearLocationTextFields();
+			clearRoundTextFields();
 			clearIndividualTextFields();
 			
 			sf.setVillage(new LocationHierarchy());
-			sf.setRound(new Round());
 			sf.setLocation(new Location());
-			sf.setIndividual(new Individual());
-			sf.setRelationship(new Relationship());
-			sf.setPregnancyOutcome(new PregnancyOutcome());
-		}
-		else if (phase.equals(UpdateEvent.ROUND)) {
-			setStateRound();
-			
-			clearRoundTextFields();
-			clearLocationTextFields();
-			clearIndividualTextFields();
-			
 			sf.setRound(new Round());
-			sf.setLocation(new Location());
 			sf.setIndividual(new Individual());
 			sf.setRelationship(new Relationship());
 			sf.setPregnancyOutcome(new PregnancyOutcome());
@@ -946,9 +943,22 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			setStateLocation();
 			
 			clearLocationTextFields();
+			clearRoundTextFields();
 			clearIndividualTextFields();
 			
 			sf.setLocation(new Location());
+			sf.setRound(new Round());
+			sf.setIndividual(new Individual());
+			sf.setRelationship(new Relationship());
+			sf.setPregnancyOutcome(new PregnancyOutcome());
+		}
+		else if (phase.equals(UpdateEvent.ROUND)) {
+			setStateRound();
+			
+			clearRoundTextFields();
+			clearIndividualTextFields();
+			
+			sf.setRound(new Round());
 			sf.setIndividual(new Individual());
 			sf.setRelationship(new Relationship());
 			sf.setPregnancyOutcome(new PregnancyOutcome());
@@ -1187,32 +1197,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		inMigrationBtn.setEnabled(false);
 		toggleUpdateEventButtons(false);
 	}
-	
-	private void setStateRound() {
-		REGION_PHASE = false;
-		SUB_REGION_PHASE = false;
-		VILLAGE_PHASE = false;
-		ROUND_PHASE = true;
-		LOCATION_PHASE = false;
-		VISIT_PHASE = false;
-		INDIVIDUAL_PHASE = false;
-		XFORMS_PHASE = false;
 		
-		findLocationGeoPointBtn.setEnabled(false);
-		finishVisitBtn.setEnabled(false);
-		createVisitBtn.setEnabled(false);
-		clearLocationBtn.setEnabled(false);
-		clearIndividualBtn.setEnabled(false);
-		regionBtn.setEnabled(false);
-		subRegionBtn.setEnabled(false);
-		villageBtn.setEnabled(false);
-		roundBtn.setEnabled(true);
-		locationBtn.setEnabled(false);
-		individualBtn.setEnabled(false);
-		inMigrationBtn.setEnabled(false);
-		toggleUpdateEventButtons(false);
-	}
-	
 	private void setStateLocation() {
 		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
@@ -1239,6 +1224,32 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		toggleUpdateEventButtons(false);
 	}
 	
+	private void setStateRound() {
+		REGION_PHASE = false;
+		SUB_REGION_PHASE = false;
+		VILLAGE_PHASE = false;
+		ROUND_PHASE = true;
+		LOCATION_PHASE = false;
+		VISIT_PHASE = false;
+		INDIVIDUAL_PHASE = false;
+		XFORMS_PHASE = false;
+		
+		findLocationGeoPointBtn.setEnabled(false);
+		finishVisitBtn.setEnabled(false);
+		createLocationBtn.setEnabled(false);
+		createVisitBtn.setEnabled(false);
+		clearLocationBtn.setEnabled(true);
+		clearIndividualBtn.setEnabled(false);
+		regionBtn.setEnabled(false);
+		subRegionBtn.setEnabled(false);
+		villageBtn.setEnabled(false);
+		roundBtn.setEnabled(true);
+		locationBtn.setEnabled(false);
+		individualBtn.setEnabled(false);
+		inMigrationBtn.setEnabled(false);
+		toggleUpdateEventButtons(false);
+	}
+	
 	private void setStateVisit() { 
 		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
@@ -1253,7 +1264,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(false);
 		createLocationBtn.setEnabled(false);
 		createVisitBtn.setEnabled(true);
-		clearLocationBtn.setEnabled(true);
+		clearLocationBtn.setEnabled(false);
 		clearIndividualBtn.setEnabled(false);
 		regionBtn.setEnabled(false);
 		subRegionBtn.setEnabled(false);
