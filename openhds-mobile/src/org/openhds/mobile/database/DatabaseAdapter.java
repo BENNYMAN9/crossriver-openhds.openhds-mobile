@@ -511,7 +511,7 @@ public class DatabaseAdapter {
 		 List<LocationHierarchy> subRegions = new ArrayList<LocationHierarchy>();
 		 
 		 String query = "select * from hierarchy where parent = ?;";
-		 Cursor cursor = database.rawQuery(query, new String[] {region.getUuid()});
+		 Cursor cursor = database.rawQuery(query, new String[] {region.getExtId()});
 		 
 		 if (cursor.moveToFirst()) {
 			 do {
@@ -648,6 +648,31 @@ public class DatabaseAdapter {
 		 cursor.close();
 		 close(); 
 		 return visits;
+	 }
+	 
+	 public List<Location> getAllLocations() {
+		 open();
+		 List<Location> locations = new ArrayList<Location>();
+		 
+		 String query = "select * from location;";
+		 Cursor cursor = database.rawQuery(query, null);
+		 
+		 if (cursor.moveToFirst()) {
+			 do {
+				 Location loc = new Location();
+				 loc.setUuid(cursor.getString(0));
+				 loc.setExtId(cursor.getString(1));
+				 loc.setHead(cursor.getString(2));
+				 loc.setName(cursor.getString(3));
+				 loc.setLatitude(cursor.getString(4));
+				 loc.setLongitude(cursor.getString(5));
+				 loc.setHierarchy(cursor.getString(6));
+				 locations.add(loc);
+			 } while (cursor.moveToNext());
+		 }
+		 cursor.close();
+		 close(); 
+		 return locations;
 	 }
 	 
 	 public List<Relationship> getAllRelationshipsForFemale(String extId) {

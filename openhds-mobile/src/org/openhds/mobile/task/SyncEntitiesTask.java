@@ -96,8 +96,6 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 			databaseAdapter.getDatabase().setTransactionSuccessful();
 		 } 
 		 catch (Exception e) {
-			databaseAdapter.getDatabase().endTransaction();
-			databaseAdapter.close();
 			return false;
 		 }
 		 finally {

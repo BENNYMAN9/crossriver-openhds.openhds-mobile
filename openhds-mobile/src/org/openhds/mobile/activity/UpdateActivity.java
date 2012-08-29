@@ -69,6 +69,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 	private final int SELECTED_XFORM = 1;
 	private final int FILTER = 2;
+	private final int LOCATION_GEOPOINT = 3;
 	
 	// the uri of the last viewed xform
 	private Uri contentUri;
@@ -293,6 +294,18 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 						else
 							loadForm(UpdateEvent.INMIGRATION);
 					}
+				}
+				break;
+			}
+			case LOCATION_GEOPOINT: {
+				if (resultCode == RESULT_OK) {
+					String name = data.getExtras().getString("name");
+					String extId = data.getExtras().getString("extId");
+					// a few things need to happen here:
+					// * get the location by extId
+					// * figure out the parent location hierarchy
+					// * set the location hierarchy region, district, and village in selectionFragment
+					// * load the Location XForm		
 				}
 			}
 		}
@@ -604,7 +617,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				break;
 			case R.id.findLocationGeoPointBtn:
 				Intent intent = new Intent(getApplicationContext(), ShowMapActivity.class);
-				startActivity(intent);
+				startActivityForResult(intent, LOCATION_GEOPOINT);
 				break;
 			case R.id.createLocationBtn:
 				startFilterActivity(UpdateEvent.LOCATION);
