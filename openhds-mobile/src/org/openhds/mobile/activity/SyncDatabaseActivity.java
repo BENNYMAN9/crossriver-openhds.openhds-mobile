@@ -37,7 +37,7 @@ public class SyncDatabaseActivity extends Activity implements CollectEntitiesLis
 	public void onCreate(Bundle savedInstanceState) {
 		 super.onCreate(savedInstanceState);
 		 setTitle(getString(R.string.app_name) + " > " + getString(R.string.syncDatabase));
-		 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		 //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		 setContentView(R.layout.sync_database);
 		 
 		 PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
