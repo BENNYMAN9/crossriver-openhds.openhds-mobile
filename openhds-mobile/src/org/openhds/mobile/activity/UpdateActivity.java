@@ -243,7 +243,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 						
 						if (getPhase().equals(UpdateEvent.LOCATION)) {
 							displayLocationState();
-							setPhase(UpdateEvent.ROUND);
+							setPhase(UpdateEvent.VISIT);
 						}
 						else {
 							setPhase(UpdateEvent.INDIVIDUAL);
@@ -735,12 +735,12 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			villageExtId.setVisibility(View.VISIBLE);
 			villageNameText.setText(sf.getVillage().getName());
 			villageExtIdText.setText(sf.getVillage().getExtId());
-			setPhase(UpdateEvent.LOCATION);
+			setPhase(UpdateEvent.ROUND);
 		}
 		else if (phase.equals(UpdateEvent.LOCATION)) {
 			sf.setLocation(sf.getLocations().get(position));
 			displayLocationState();
-			setPhase(UpdateEvent.ROUND);
+			setPhase(UpdateEvent.VISIT);
 		}
 		else if (phase.equals(UpdateEvent.ROUND)) {
 			sf.setRound(sf.getRounds().get(position));
@@ -750,7 +750,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			roundNumberText.setText(sf.getRound().getRoundNumber());
 			roundStartDateText.setText(sf.getRound().getStartDate());
 			roundEndDateText.setText(sf.getRound().getEndDate());
-			setPhase(UpdateEvent.VISIT);
+			setPhase(UpdateEvent.LOCATION);
 		}
 		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
 			
@@ -943,11 +943,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			setStateLocation();
 			
 			clearLocationTextFields();
-			clearRoundTextFields();
 			clearIndividualTextFields();
 			
 			sf.setLocation(new Location());
-			sf.setRound(new Round());
 			sf.setIndividual(new Individual());
 			sf.setRelationship(new Relationship());
 			sf.setPregnancyOutcome(new PregnancyOutcome());
@@ -1238,7 +1236,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(false);
 		createLocationBtn.setEnabled(false);
 		createVisitBtn.setEnabled(false);
-		clearLocationBtn.setEnabled(true);
+		clearLocationBtn.setEnabled(false);
 		clearIndividualBtn.setEnabled(false);
 		regionBtn.setEnabled(false);
 		subRegionBtn.setEnabled(false);
@@ -1264,7 +1262,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		finishVisitBtn.setEnabled(false);
 		createLocationBtn.setEnabled(false);
 		createVisitBtn.setEnabled(true);
-		clearLocationBtn.setEnabled(false);
+		clearLocationBtn.setEnabled(true);
 		clearIndividualBtn.setEnabled(false);
 		regionBtn.setEnabled(false);
 		subRegionBtn.setEnabled(false);
