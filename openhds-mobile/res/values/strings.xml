@@ -40,6 +40,7 @@
 	<string name="sync_entities_failure">Failed to Collect OpenHDS Entities</string>
 	<string name="sync_entities_successful">OpenHDS Entities Collected Successfully</string>
     <string name="sync_interrupted">Collecting OpenHDS Entities has been interrupted</string>
+    <string name="sync_restarting">Sync restarting</string>
     <string name="unable_to_connect">Unable to connect</string>
     <string name="url_error">Sorry, invalid URL!</string>
     <string name="update">Update</string>

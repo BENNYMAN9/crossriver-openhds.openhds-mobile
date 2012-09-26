@@ -4,6 +4,7 @@ import org.openhds.mobile.R;
 import org.openhds.mobile.listener.CollectEntitiesListener;
 import org.openhds.mobile.task.SyncEntitiesTask;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -42,25 +43,21 @@ public class SyncDatabaseActivity extends Activity implements CollectEntitiesLis
 		 
 		 PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 		 wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "DoNotDimScreen");
-	   	     	     
+	   	 
 	     initializeProgressDialog();
- 
+	     
 		 settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 	     url = settings.getString(ServerPreferencesActivity.OPENHDS_KEY_SERVER, getString(R.string.default_openhdsserver));
 	     username = settings.getString(ServerPreferencesActivity.OPENHDS_KEY_USERNAME, getString(R.string.username));
 	     password = settings.getString(ServerPreferencesActivity.OPENHDS_KEY_PASSWORD, getString(R.string.password));
-	     		 
+	     
 	     Button syncButton = (Button) findViewById(R.id.syncButton);
 	     syncButton.setOnClickListener(new OnClickListener() {
 	    	 public void onClick(View v) {  
-	    		 if (entitiesTask == null) {
-	    			 dialog.show();
-	    			 entitiesTask = new SyncEntitiesTask(url, username, password, dialog, getBaseContext(), SyncDatabaseActivity.this);
-	    		 }
-	    		 if (entitiesTask.getStatus() == Status.PENDING) 
-	    			 entitiesTask.execute();	
+	    		 startSync();
 	    	 }
 	     });
+
 	}
 	
 	private void initializeProgressDialog() {
@@ -70,6 +67,43 @@ public class SyncDatabaseActivity extends Activity implements CollectEntitiesLis
         dialog.setMessage("Do not interrupt");
         dialog.setCancelable(true);
         dialog.setOnCancelListener(new MyOnCancelListener());
+	}
+	
+	private void initializeAlertDialog(){
+		
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage("Are you sure you want to stop sync?")
+		       .setCancelable(false)
+		       .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+		           public void onClick(DialogInterface d, int id) {
+		        	   entitiesTask.cancel(true); 
+		        	   finish();
+		   			Toast.makeText(getApplicationContext(),	getString(R.string.sync_interrupted), Toast.LENGTH_SHORT).show();
+		   			
+		           }
+		       })
+		       .setNegativeButton("No", new DialogInterface.OnClickListener() {
+		           public void onClick(DialogInterface d, int id) {
+		                //dialog.cancel();
+		        	Toast.makeText(getApplicationContext(),	getString(R.string.sync_restarting), Toast.LENGTH_SHORT).show();
+			   		startSync();
+		        	dialog.show();
+		        	//entitiesTask.execute();
+		           }
+		       });
+		AlertDialog alert = builder.create();
+		alert.show();
+	}
+	
+	private void startSync(){
+
+		 if (entitiesTask == null) {
+			 dialog.show();
+			 entitiesTask = new SyncEntitiesTask(url, username, password, dialog, getBaseContext(), SyncDatabaseActivity.this);
+		 }
+		 if (entitiesTask.getStatus() == Status.PENDING) 
+			 entitiesTask.execute();	
+
 	}
 	
 	@Override
@@ -113,10 +147,10 @@ public class SyncDatabaseActivity extends Activity implements CollectEntitiesLis
 		
 	private class MyOnCancelListener implements OnCancelListener {
 		public void onCancel(DialogInterface dialog) {
-			if (entitiesTask != null)
-				entitiesTask.cancel(true);
-			finish();
-			Toast.makeText(getApplicationContext(),	getString(R.string.sync_interrupted), Toast.LENGTH_SHORT).show();
+			if (entitiesTask != null){
+				dialog.dismiss();
+				initializeAlertDialog();
+			}
 		}	
 	}
 }
