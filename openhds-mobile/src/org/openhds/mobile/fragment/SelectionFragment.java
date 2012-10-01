@@ -5,6 +5,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+
+import org.openhds.mobile.FieldWorkerProvider;
 import org.openhds.mobile.R;
 import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.model.FieldWorker;
@@ -16,15 +18,35 @@ import org.openhds.mobile.model.Relationship;
 import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.SocialGroup;
 import org.openhds.mobile.model.Visit;
+
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
 
-public class SelectionFragment extends Fragment {
+public class SelectionFragment extends Fragment implements OnClickListener {
+    
+    public static interface Listener {
+        void onRegion();
+        
+        void onSubRegion();
+        
+        void onVillage();
+        
+        void onLocation();
+        
+        void onRound();
+        
+        void onIndividual();
+    }
 	
 	private DatabaseAdapter databaseAdapter;
+	private Listener listener;
 	
 	private FieldWorker fieldWorker;
 	private LocationHierarchy region;
@@ -48,6 +70,24 @@ public class SelectionFragment extends Fragment {
 	
 	private boolean isExternalInMigration = false;
 	
+	private Button regionBtn, subRegionBtn, villageBtn, locationBtn, roundBtn, individualBtn;
+
+	// text widgets, these become enabled and disabled according to the current phase
+	private TextView loginGreetingText,
+					 regionNameText, regionExtIdText, regionName, regionExtId, 
+					 subRegionNameText, subRegionExtIdText, subRegionName, subRegionExtId,
+					 villageNameText, villageExtIdText, villageName, villageExtId,
+					 roundNumberText, roundStartDateText, roundEndDateText, roundNumber, roundStartDate, roundEndDate, 
+					 locationNameText, locationExtIdText, locationLatitudeText, locationLongitudeText, locationName, locationExtId, locationLatitude, locationLongitude,
+					 individualFirstNameText, individualLastNameText, individualExtIdText, individualDobText, individualFirstName, individualLastName, individualExtId, individualDob;	
+	
+	
+	@Override
+	public void onAttach(Activity activity) {
+	    super.onAttach(activity);
+	    listener = (Listener)activity;
+	}
+	
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		fieldWorker = new FieldWorker();
@@ -63,8 +103,73 @@ public class SelectionFragment extends Fragment {
         relationship = new Relationship();
 
         databaseAdapter = new DatabaseAdapter(getActivity().getBaseContext());
-        return inflater.inflate(R.layout.selection, container, false);
+        View view = inflater.inflate(R.layout.selection, container, false);
+        bindViews(view);
+        setFieldWorkerText(view);
+        return view;
     }
+
+    private void setFieldWorkerText(View view) {
+        FieldWorkerProvider provider = (FieldWorkerProvider) getActivity();
+        fieldWorker = provider.getFieldWorker();
+        loginGreetingText = (TextView) view.findViewById(R.id.loginGreetingText);
+        loginGreetingText.setText("Hello, " + fieldWorker.getFirstName() + " " + fieldWorker.getLastName());
+    }
+
+	private void bindViews(View view) {
+        regionBtn = (Button) view.findViewById(R.id.regionBtn);
+        regionBtn.setOnClickListener(this);
+        regionNameText = (TextView) view.findViewById(R.id.regionNameText);
+        regionExtIdText = (TextView) view.findViewById(R.id.regionExtIdText);
+        regionName = (TextView) view.findViewById(R.id.regionName);
+        regionExtId = (TextView) view.findViewById(R.id.regionExtId);
+	    
+        subRegionBtn = (Button) view.findViewById(R.id.subRegionBtn);
+        subRegionBtn.setOnClickListener(this);
+        subRegionNameText = (TextView) view.findViewById(R.id.subRegionNameText);
+        subRegionExtIdText = (TextView) view.findViewById(R.id.subRegionExtIdText);
+        subRegionName = (TextView) view.findViewById(R.id.subRegionName);
+        subRegionExtId = (TextView) view.findViewById(R.id.subRegionExtId);
+	    
+        villageBtn = (Button) view.findViewById(R.id.villageBtn);
+        villageBtn.setOnClickListener(this);
+        villageNameText = (TextView) view.findViewById(R.id.villageNameText);
+        villageExtIdText = (TextView) view.findViewById(R.id.villageExtIdText);
+        villageName = (TextView) view.findViewById(R.id.villageName);
+        villageExtId = (TextView) view.findViewById(R.id.villageExtId);
+                
+        locationBtn = (Button) view.findViewById(R.id.locationBtn);
+        locationBtn.setOnClickListener(this);
+        locationNameText = (TextView) view.findViewById(R.id.locationNameText);
+        locationExtIdText = (TextView) view.findViewById(R.id.locationExtIdText);
+        locationLatitudeText = (TextView) view.findViewById(R.id.locationLatitudeText);
+        locationLongitudeText = (TextView) view.findViewById(R.id.locationLongitudeText);
+        locationName = (TextView) view.findViewById(R.id.locationName);
+        locationExtId = (TextView) view.findViewById(R.id.locationExtId);
+        locationLatitude = (TextView) view.findViewById(R.id.locationLatitude);
+        locationLongitude = (TextView) view.findViewById(R.id.locationLongitude);
+        
+        roundBtn = (Button) view.findViewById(R.id.roundBtn);
+        roundBtn.setOnClickListener(this);
+        roundNumberText = (TextView) view.findViewById(R.id.roundNumberText);
+        roundStartDateText = (TextView) view.findViewById(R.id.roundStartDateText);
+        roundEndDateText = (TextView) view.findViewById(R.id.roundEndDateText);
+        roundNumber = (TextView) view.findViewById(R.id.roundNumber);
+        roundStartDate = (TextView) view.findViewById(R.id.roundStartDate);
+        roundEndDate = (TextView) view.findViewById(R.id.roundEndDate);
+        
+        individualBtn = (Button) view.findViewById(R.id.individualBtn);
+        individualBtn.setOnClickListener(this);
+        individualExtIdText = (TextView) view.findViewById(R.id.individualExtIdText);
+        individualFirstNameText = (TextView) view.findViewById(R.id.individualFirstNameText);
+        individualLastNameText = (TextView) view.findViewById(R.id.individualLastNameText);
+        individualDobText = (TextView) view.findViewById(R.id.individualDobText);
+        individualExtId = (TextView) view.findViewById(R.id.individualExtId);
+        individualFirstName = (TextView) view.findViewById(R.id.individualFirstName);
+        individualLastName = (TextView) view.findViewById(R.id.individualLastName);
+        individualDob = (TextView) view.findViewById(R.id.individualDob);
+		
+	}
 	
 	// called when the household_dialog is displayed and is used for external inmigrations
 	public void setSocialGroup(String groupName) {
@@ -313,27 +418,163 @@ public class SelectionFragment extends Fragment {
 	
 	public void setRegion(LocationHierarchy region) {
 		this.region = region;
+        regionName.setVisibility(View.VISIBLE);
+        regionExtId.setVisibility(View.VISIBLE);
+        regionNameText.setText(region.getName());
+        regionExtIdText.setText(region.getExtId());
 	}
 
 	public void setSubRegion(LocationHierarchy subRegion) {
 		this.subRegion = subRegion;
+        subRegionName.setVisibility(View.VISIBLE);
+        subRegionExtId.setVisibility(View.VISIBLE);
+        subRegionNameText.setText(subRegion.getName());
+        subRegionExtIdText.setText(subRegion.getExtId());
 	}
 
 	public void setVillage(LocationHierarchy village) {
 		this.village = village;
+        villageName.setVisibility(View.VISIBLE);
+        villageExtId.setVisibility(View.VISIBLE);
+        villageNameText.setText(village.getName());
+        villageExtIdText.setText(village.getExtId());    
 	}
 
 	public void setRound(Round round) {
 		this.round = round;
+        roundNumber.setVisibility(View.VISIBLE);
+        roundStartDate.setVisibility(View.VISIBLE);
+        roundEndDate.setVisibility(View.VISIBLE);
+        roundNumberText.setText(round.getRoundNumber());
+        roundStartDateText.setText(round.getStartDate());
+        roundEndDateText.setText(round.getEndDate());
 	}
 
 	public void setLocation(Location location) {
 		this.location = location;
+        locationName.setVisibility(View.VISIBLE);
+        locationExtId.setVisibility(View.VISIBLE);
+        locationLatitude.setVisibility(View.VISIBLE);
+        locationLongitude.setVisibility(View.VISIBLE);
+        displayLocationInfo();
 	}
 
 	public void setIndividual(Individual individual) {
 		this.individual = individual;
+        individualExtId.setVisibility(View.VISIBLE);
+        individualFirstName.setVisibility(View.VISIBLE);
+        individualLastName.setVisibility(View.VISIBLE);
+        individualDob.setVisibility(View.VISIBLE);
+        individualExtIdText.setText(individual.getExtId());
+        individualFirstNameText.setText(individual.getFirstName());
+        individualLastNameText.setText(individual.getLastName());
+        individualDobText.setText(individual.getDob());
 	}
+	
+    public void clearRegionTextFields() {
+        regionNameText.setText("");
+        regionExtIdText.setText("");
+        regionName.setVisibility(View.INVISIBLE);
+        regionExtId.setVisibility(View.INVISIBLE);
+    }
+    
+    public void clearSubRegionTextFields() {
+        subRegionNameText.setText("");
+        subRegionExtIdText.setText("");
+        subRegionName.setVisibility(View.INVISIBLE);
+        subRegionExtId.setVisibility(View.INVISIBLE);
+    }
+    
+    public void clearVillageTextFields() {
+        villageNameText.setText("");
+        villageExtIdText.setText("");
+        villageName.setVisibility(View.INVISIBLE);
+        villageExtId.setVisibility(View.INVISIBLE);
+    }
+    
+    public void clearRoundTextFields() {
+        roundNumberText.setText("");
+        roundStartDateText.setText("");
+        roundEndDateText.setText("");
+        roundNumber.setVisibility(View.INVISIBLE);
+        roundStartDate.setVisibility(View.INVISIBLE);
+        roundEndDate.setVisibility(View.INVISIBLE);
+    }
+    
+    public void clearLocationTextFields() {
+        locationNameText.setText("");
+        locationExtIdText.setText("");
+        locationLatitudeText.setText("");
+        locationLongitudeText.setText("");
+        locationName.setVisibility(View.INVISIBLE);
+        locationExtId.setVisibility(View.INVISIBLE);
+        locationLatitude.setVisibility(View.INVISIBLE);
+        locationLongitude.setVisibility(View.INVISIBLE);
+    }
+    
+    public void clearIndividualTextFields() {
+        individualExtIdText.setText("");
+        individualFirstNameText.setText("");
+        individualLastNameText.setText("");
+        individualDobText.setText("");
+        individualExtId.setVisibility(View.INVISIBLE);
+        individualFirstName.setVisibility(View.INVISIBLE);
+        individualLastName.setVisibility(View.INVISIBLE);
+        individualDob.setVisibility(View.INVISIBLE);
+    }
+    
+    public void restoreRegionTextFields() {
+        regionNameText.setText(region.getName());
+        regionExtIdText.setText(region.getExtId());
+        regionName.setVisibility(View.VISIBLE);
+        regionExtId.setVisibility(View.VISIBLE);
+    }
+    
+    public void restoreSubRegionTextFields() {
+        subRegionNameText.setText(subRegion.getName());
+        subRegionExtIdText.setText(subRegion.getExtId());
+        subRegionName.setVisibility(View.VISIBLE);
+        subRegionExtId.setVisibility(View.VISIBLE);
+    }
+    
+    public void restoreVillageTextFields() {
+        villageNameText.setText(village.getName());
+        villageExtIdText.setText(village.getExtId());
+        villageName.setVisibility(View.VISIBLE);
+        villageExtId.setVisibility(View.VISIBLE);
+    }
+    
+    public void restoreRoundTextFields() {
+        roundNumberText.setText(round.getRoundNumber());
+        roundStartDateText.setText(round.getStartDate());
+        roundEndDateText.setText(round.getEndDate());
+        roundNumber.setVisibility(View.VISIBLE);
+        roundStartDate.setVisibility(View.VISIBLE);
+        roundEndDate.setVisibility(View.VISIBLE);
+    }
+    
+    public void restoreLocationTextFields() {
+        locationNameText.setText(location.getName());
+        locationExtIdText.setText(location.getExtId());
+        locationLatitudeText.setText(location.getLatitude());
+        locationLongitudeText.setText(location.getLongitude());
+        locationName.setVisibility(View.VISIBLE);
+        locationExtId.setVisibility(View.VISIBLE);
+        locationLatitude.setVisibility(View.VISIBLE);
+        locationLongitude.setVisibility(View.VISIBLE);
+    }
+    
+    public void restoreIndividualTextFields() {
+        individualExtIdText.setText(individual.getExtId());
+        individualFirstNameText.setText(individual.getFirstName());
+        individualLastNameText.setText(individual.getLastName());
+        individualDobText.setText(individual.getDob());
+        individualExtId.setVisibility(View.VISIBLE);
+        individualFirstName.setVisibility(View.VISIBLE);
+        individualLastName.setVisibility(View.VISIBLE);
+        individualDob.setVisibility(View.VISIBLE);
+    }
+
 	
 	public Visit getVisit() {
 		return visit;
@@ -406,4 +647,106 @@ public class SelectionFragment extends Fragment {
 	public void setExternalInMigration(boolean isExternalInMigration) {
 		this.isExternalInMigration = isExternalInMigration;
 	}
+
+	public void onClick(View view) {
+        switch (view.getId()) {
+        case R.id.regionBtn: 
+            listener.onRegion();
+            break;
+        case R.id.subRegionBtn: 
+            listener.onSubRegion();
+            break;
+        case R.id.villageBtn: 
+            listener.onVillage();
+            break;
+        case R.id.locationBtn: 
+            listener.onLocation();
+            break;
+        case R.id.roundBtn: 
+            listener.onRound();
+            break;
+        case R.id.individualBtn: 
+            listener.onIndividual();
+            break;
+        }		
+	}
+
+    public void setRegionState() {
+        regionBtn.setEnabled(true);
+        subRegionBtn.setEnabled(false);
+        villageBtn.setEnabled(false);
+        roundBtn.setEnabled(false);
+        locationBtn.setEnabled(false);
+        individualBtn.setEnabled(false);        
+    }
+
+    public void setSubRegionState() {
+        regionBtn.setEnabled(false);
+        subRegionBtn.setEnabled(true);
+        villageBtn.setEnabled(false);
+        roundBtn.setEnabled(false);
+        locationBtn.setEnabled(false);
+        individualBtn.setEnabled(false);        
+    }
+
+    public void setVillageState() {
+        regionBtn.setEnabled(false);
+        subRegionBtn.setEnabled(false);
+        villageBtn.setEnabled(true);
+        roundBtn.setEnabled(false);
+        locationBtn.setEnabled(false);
+        individualBtn.setEnabled(false);        
+    }
+
+    public void setLocationState() {
+        regionBtn.setEnabled(false);
+        subRegionBtn.setEnabled(false);
+        villageBtn.setEnabled(false);
+        roundBtn.setEnabled(false);
+        locationBtn.setEnabled(true);
+        individualBtn.setEnabled(false);        
+    }
+
+    public void setRoundState() {
+        regionBtn.setEnabled(false);
+        subRegionBtn.setEnabled(false);
+        villageBtn.setEnabled(false);
+        roundBtn.setEnabled(true);
+        locationBtn.setEnabled(false);
+        individualBtn.setEnabled(false);        
+    }
+
+    public void setVisitState() {
+        regionBtn.setEnabled(false);
+        subRegionBtn.setEnabled(false);
+        villageBtn.setEnabled(false);
+        roundBtn.setEnabled(false);
+        locationBtn.setEnabled(false);
+        individualBtn.setEnabled(false);        
+    }
+
+    public void setIndividualState() {
+        regionBtn.setEnabled(false);
+        subRegionBtn.setEnabled(false);
+        villageBtn.setEnabled(false);
+        roundBtn.setEnabled(false);
+        locationBtn.setEnabled(false);
+        individualBtn.setEnabled(true);        
+    }
+
+    public void setFinishState() {
+        regionBtn.setEnabled(false);
+        subRegionBtn.setEnabled(false);
+        villageBtn.setEnabled(false);
+        roundBtn.setEnabled(false);
+        locationBtn.setEnabled(false);
+        individualBtn.setEnabled(false);        
+    }
+
+    public void displayLocationInfo() {
+        locationNameText.setText(location.getName());
+        locationExtIdText.setText(location.getExtId());
+        locationLatitudeText.setText(location.getLatitude());
+        locationLongitudeText.setText(location.getLongitude());
+    }
 }
