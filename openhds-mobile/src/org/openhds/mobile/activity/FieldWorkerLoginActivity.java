@@ -1,5 +1,8 @@
 package org.openhds.mobile.activity;
 
+import org.openhds.mobile.Converter;
+import org.openhds.mobile.OpenHDS;
+import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
 import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.listener.RetrieveFieldWorkersListener;
@@ -13,6 +16,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.DialogInterface.OnCancelListener;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.os.AsyncTask.Status;
 import android.preference.PreferenceManager;
@@ -99,15 +103,15 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
 				dialog.show();
 				SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 				if (loginTask == null)
-					loginTask = new FieldWorkerLoginTask(databaseAdapter, settings, this, dialog, extId, password, true);
+					loginTask = new FieldWorkerLoginTask(this, settings, this, dialog, extId, password, true);
 				
 	    		if (loginTask.getStatus() == Status.PENDING) 
 	    			loginTask.execute();	
 			}
 			else {
-				boolean result = databaseAdapter.findFieldWorker(extId, password);
-				if (result) {
-					FieldWorker fieldWorker = databaseAdapter.getFieldWorker(extId, password);
+				if (Queries.hasFieldWorker(getContentResolver(), extId, password)) {
+				    Cursor cursor = Queries.getFieldWorkByExtId(getContentResolver(), extId);
+					FieldWorker fieldWorker = Converter.toFieldWorker(cursor);
 					startUpdateActivity(fieldWorker);
 				}
 				else {
@@ -117,8 +121,8 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
 			break;
 		}
 	}
-	
-	private void startUpdateActivity(FieldWorker fieldWorker) {
+
+    private void startUpdateActivity(FieldWorker fieldWorker) {
 		Intent intent = new Intent(getApplicationContext(), UpdateActivity.class);
         intent.putExtra("fieldWorker", fieldWorker);
         passwordText.setText("");

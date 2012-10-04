@@ -3,8 +3,10 @@ package org.openhds.mobile.activity;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openhds.mobile.Converter;
 import org.openhds.mobile.FieldWorkerProvider;
 import org.openhds.mobile.InstanceProviderAPI;
+import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
 import org.openhds.mobile.cell.ValueFragmentCell;
 import org.openhds.mobile.database.DatabaseAdapter;
@@ -29,6 +31,7 @@ import org.openhds.mobile.task.OdkGeneratedFormLoadTask;
 
 import android.app.ActionBar;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -225,7 +228,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					}
 					else if (type.equals(UpdateEvent.INMIGRATION)) {
 						String extId = data.getExtras().getString("extId");
-						Individual individual = databaseAdapter.getIndividualByExtId(extId);
+						Cursor cursor = Queries.getIndividualByExtId(getContentResolver(), extId);
+						Individual individual = Converter.toIndividual(cursor);
 						sf.setIndividual(individual);
 						boolean result = determineSocialGroupForIndividual();
 						
@@ -240,14 +244,21 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			case LOCATION_GEOPOINT: {
 				if (resultCode == RESULT_OK) {
 					String extId = data.getExtras().getString("extId");
+					ContentResolver resolver = getContentResolver();
 					// a few things need to happen here:
 					// * get the location by extId
-					Location location = databaseAdapter.getLocationByExtId(extId);
+					Cursor cursor = Queries.getLocationByExtId(resolver, extId);
+					Location location = Converter.toLocation(cursor);
 					
 					// * figure out the parent location hierarchy
-					LocationHierarchy village = databaseAdapter.getLocationHierarchyByExtId(location.getHierarchy());
-					LocationHierarchy subRegion = databaseAdapter.getLocationHierarchyByExtId(village.getParent());
-					LocationHierarchy region = databaseAdapter.getLocationHierarchyByExtId(subRegion.getParent());
+					cursor = Queries.getHierarchyByExtId(resolver, location.getHierarchy());
+					LocationHierarchy village = Converter.toHierarhcy(cursor);
+					
+					cursor = Queries.getHierarchyByExtId(resolver, village.getParent());
+					LocationHierarchy subRegion = Converter.toHierarhcy(cursor);
+					
+					cursor = Queries.getHierarchyByExtId(resolver, subRegion.getParent());
+					LocationHierarchy region = Converter.toHierarhcy(cursor);
 										
 					// * set the location hierarchy region, district, and village in selectionFragment
 					sf.setRegion(region);
@@ -345,7 +356,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Regions.
      */
     private void loadRegionValueData() {
-    	List<LocationHierarchy> regions = databaseAdapter.getAllRegions(UpdateParams.HIERARCHY_TOP_LEVEL);
+        Cursor cursor = Queries.getHierarchysByLevel(getContentResolver(), UpdateParams.HIERARCHY_TOP_LEVEL);
+    	List<LocationHierarchy> regions = Converter.toHierarchyList(cursor);
     	sf.setRegions(regions);
     	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
@@ -361,7 +373,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Sub Regions within the selected Region.
      */
     private void loadSubRegionValueData() {
-    	List<LocationHierarchy> subRegions = databaseAdapter.getAllSubRegionsOfRegion(sf.getRegion());
+        Cursor cursor = Queries.getHierarchysByParent(getContentResolver(), sf.getRegion().getExtId());
+    	List<LocationHierarchy> subRegions = Converter.toHierarchyList(cursor);
       	sf.setSubRegions(subRegions);
     	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
@@ -377,7 +390,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Villages within the selection Sub Region.
      */
     private void loadVillageValueData() {
-      	List<LocationHierarchy> villages = databaseAdapter.getAllSubRegionsOfRegion(sf.getSubRegion());
+        Cursor cursor = Queries.getHierarchysByParent(getContentResolver(), sf.getSubRegion().getExtId());
+      	List<LocationHierarchy> villages = Converter.toHierarchyList(cursor);
     	sf.setVillages(villages);
       	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
@@ -393,7 +407,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Locations within the selected Village.
      */
     private void loadLocationValueData() {
-    	List<Location> locations = databaseAdapter.getAllLocationsOfVillage(sf.getVillage().getExtId());
+        Cursor cursor = Queries.getLocationsByHierachy(getContentResolver(), sf.getVillage().getExtId());
+    	List<Location> locations = Converter.toLocationList(cursor);
       	sf.setLocations(locations);
     	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
@@ -409,7 +424,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Rounds.
      */
     private void loadRoundValueData() {
-    	List<Round> rounds = databaseAdapter.getAllRounds();
+        Cursor cursor = Queries.allRounds(getContentResolver());
+    	List<Round> rounds = Converter.toRoundList(cursor);
       	sf.setRounds(rounds);
     	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
@@ -425,7 +441,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Loads the value fragment with a list of Individuals within the selected Location.
      */
     private void loadIndividualValueData() {
-    	List<Individual> individuals = databaseAdapter.getIndividualsAtLocation(sf.getLocation());
+        Cursor cursor = Queries.getIndividualsByResidency(getContentResolver(), sf.getLocation().getExtId());
+    	List<Individual> individuals = Converter.toIndividualList(cursor);
       	sf.setIndividuals(individuals);
     	if (vf != null) {
     		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
@@ -658,7 +675,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 	private boolean determineSocialGroupForIndividual() {
 		// get the socialgroups the individual is a part of
-		List<SocialGroup> list = databaseAdapter.getSocialGroupsForIndividual(sf.getIndividual().getExtId());	
+	    Cursor cursor = Queries.getSocialGroupsByIndividualExtId(getContentResolver(), sf.getIndividual().getExtId());
+		List<SocialGroup> list = Converter.toSocialGroupList(cursor);	
 
 		sf.setSocialgroups(list);
 	

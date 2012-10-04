@@ -6,7 +6,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import org.openhds.mobile.Converter;
 import org.openhds.mobile.FieldWorkerProvider;
+import org.openhds.mobile.OpenHDS;
+import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
 import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.model.FieldWorker;
@@ -20,6 +23,8 @@ import org.openhds.mobile.model.SocialGroup;
 import org.openhds.mobile.model.Visit;
 
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -173,7 +178,8 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 	
 	// called when the household_dialog is displayed and is used for external inmigrations
 	public void setSocialGroup(String groupName) {
-		SocialGroup group = databaseAdapter.getSocialGroupByGroupName(groupName);
+		Cursor cursor = Queries.getSocialGroupByName(getActivity().getContentResolver(), groupName);
+	    SocialGroup group = Converter.toSocialGroup(cursor);
 		this.socialgroup = group;
 	}
 	
@@ -216,8 +222,8 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 			increment++;
 			builder.append("V" + location.getExtId().substring(0, 9) + 
 					round.getRoundNumber() + Integer.toString(increment) + location.getExtId().substring(9));
-			result = databaseAdapter.findVisitByExtId(builder.toString());
-		} while (!result);	
+			result = findVisitByExtId(builder.toString());
+		} while (result);	
 		
 		visit.setExtId(builder.toString());
 		
@@ -227,7 +233,21 @@ public class SelectionFragment extends Fragment implements OnClickListener {
         visit.setDate(date);
 	}
 	
-	// this logic is specific for the Cross River birth registration
+    private boolean findVisitByExtId(String string) {
+        Cursor cursor = getActivity().getContentResolver().query(OpenHDS.Visits.CONTENT_ID_URI_BASE,
+                new String[] { OpenHDS.Visits.COLUMN_VISIT_EXTID }, OpenHDS.Visits.COLUMN_VISIT_EXTID + " = ?",
+                new String[] { string }, null);
+
+        boolean hasVisit = false;
+        if (cursor.moveToFirst()) {
+            hasVisit = true;
+        }
+        cursor.close();
+
+        return hasVisit;
+    }
+
+    // this logic is specific for the Cross River birth registration
 	public boolean createPregnancyOutcome() {
 		
 		Individual father = determinePregnancyOutcomeFather(individual);
@@ -260,6 +280,7 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 	
 	public String generateIndividualId(Integer partToIncrement, String baseString) {
 		String temp = "";
+		ContentResolver resolver = getActivity().getContentResolver();
 		do {
 			StringBuilder builder = new StringBuilder();
 			partToIncrement++;
@@ -268,7 +289,7 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 			if (partToIncrement.toString().length() == 2)
 				builder.append(partToIncrement.toString());
 			temp = baseString.concat(builder.toString());
-		} while (databaseAdapter.getIndividualByExtId(temp) != null);
+		} while (Queries.individualByExtId(resolver, temp));
 		
 		baseString = temp;
 		return baseString;
@@ -286,7 +307,7 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 			else if (partToIncrement.toString().length() == 3)
 				builder.append(partToIncrement.toString());
 			temp = baseString.concat(builder.toString());
-		} while (databaseAdapter.getLocationByExtId(temp) != null);
+		} while (Queries.hasLocationByExtId(getActivity().getContentResolver(), temp));
 		
 		baseString = temp;
 		return baseString;
@@ -302,15 +323,15 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 			else if (partToIncrement.toString().length() == 2)
 				builder.append(partToIncrement.toString());
 			temp = baseString.concat(builder.toString());
-		} while (databaseAdapter.getSocialGroupByExtId(temp) != null);
+		} while (Queries.hasSocialGroupByExtId(getActivity().getContentResolver(), temp));
 		
 		baseString = temp;
 		return baseString;
 	}
 	
 	private Individual determinePregnancyOutcomeFather(Individual mother) {
-		
-		List<Relationship> rels = databaseAdapter.getAllRelationshipsForFemale(mother.getExtId());
+		Cursor cursor = Queries.getRelationshipByFemale(getActivity().getContentResolver(), mother.getExtId());
+		List<Relationship> rels = Converter.toRelationshipList(cursor);
 		DateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
 		
 		Relationship current = null;
@@ -335,7 +356,8 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 			return null;
 		else  {
 			String fatherId = current.getMaleIndividual();
-			return databaseAdapter.getIndividualByExtId(fatherId);
+			cursor = Queries.getIndividualByExtId(getActivity().getContentResolver(), fatherId);
+			return Converter.toIndividual(cursor);
 		}
 	}
 	
@@ -348,7 +370,8 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 	}
 	
 	public String[] getAllSocialGroupsForDialog() {
-		List<SocialGroup> groups = databaseAdapter.getAllSocialGroups();
+	    Cursor cursor = Queries.allSocialGroups(getActivity().getContentResolver());
+		List<SocialGroup> groups = Converter.toSocialGroupList(cursor);
 		String[] names = new String[groups.size()];
 		for (int i = 0; i < groups.size(); i++) 
 			names[i] = groups.get(i).getGroupName();

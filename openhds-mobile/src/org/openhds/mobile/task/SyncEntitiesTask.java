@@ -3,8 +3,9 @@ package org.openhds.mobile.task;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthenticationException;
@@ -17,487 +18,473 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.openhds.mobile.OpenHDS;
 import org.openhds.mobile.activity.SyncDatabaseActivity;
-import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.listener.CollectEntitiesListener;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
+
 import android.app.ProgressDialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.os.AsyncTask;
 
 /**
- * An AsyncTask to upload all OpenHDS data from the web service configured in ServerPreferences.
+ * AsyncTask responsible for downloading the OpenHDS "database", that is a subset of the OpenHDS database records. It
+ * does the downloading incrementally, by downloading parts of the data one at a time. For example, it gets all
+ * locations and then retrieves all individuals. Ordering is somewhat important here, because the database has a few
+ * foreign key references that must be satisfied (e.g. individual references a location location)
  */
 public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
-		
-	private CollectEntitiesListener listener;
-	private SyncDatabaseActivity activity;
-	private DatabaseAdapter databaseAdapter;
-	
-	private UsernamePasswordCredentials creds;
-	private ProgressDialog dialog;
-	private HttpGet httpGet;
-	private HttpClient client;
-	
-	private String baseurl;
-	private String username;
-	private String password;
-	
-	public SyncEntitiesTask(String url, String username, String password, ProgressDialog dialog,
-			Context context, CollectEntitiesListener listener) {
-		this.baseurl = url;
-		this.username = username;
-		this.password = password;
-		this.dialog = dialog;
-		this.listener = listener;
-		this.activity = (SyncDatabaseActivity) listener;
-		databaseAdapter = new DatabaseAdapter(context);
-	}
 
-	@Override
-	protected Boolean doInBackground(Void... params) {
-		
-		 creds = new UsernamePasswordCredentials(username, password);
-		 
-		 HttpParams httpParameters = new BasicHttpParams();
-		 HttpConnectionParams.setConnectionTimeout(httpParameters, 100000);
-		 HttpConnectionParams.setSoTimeout(httpParameters, 100000);
-		 HttpConnectionParams.setSocketBufferSize(httpParameters, 240);
-		 client = new DefaultHttpClient(httpParameters);
-		 
-		 try {		 
-			databaseAdapter.open();
-			databaseAdapter.getDatabase().beginTransaction();
-			setupDB();
-						 
-			processUrl(baseurl + "/individual");	
-			resetDialogParams();
-			 
-			processUrl(baseurl + "/locationhierarchy");
-			resetDialogParams();
+    private CollectEntitiesListener listener;
+    private SyncDatabaseActivity activity;
+    private ContentResolver resolver;
 
-			processUrl(baseurl + "/location");
-			resetDialogParams();
-			
-			processUrl(baseurl + "/round");
-			resetDialogParams();
-			
-			processUrl(baseurl + "/visit");
-			resetDialogParams();
-			
-			processUrl(baseurl + "/socialgroup");
-			resetDialogParams();
-			
-			processUrl(baseurl + "/relationship");
-			resetDialogParams();
-			
-			databaseAdapter.getDatabase().setTransactionSuccessful();
-		 } 
-		 catch (Exception e) {
-			return false;
-		 }
-		 finally {
-			 databaseAdapter.getDatabase().endTransaction();
-			 databaseAdapter.close();
-		 }
-		 return true;
-	}
-	
-	private void processUrl(String url) throws Exception {
-		httpGet = new HttpGet(url);
-		processResponse();
-	}
-		
-    protected void onProgressUpdate(Integer... progress) {
-    	dialog.incrementProgressBy(progress[0]);
-    	if (dialog.getProgress() > dialog.getMax()) {
-    		dialog.dismiss();
-    		dialog.setProgress(0);
-    		dialog.setMax(0);
-    	}
+    private UsernamePasswordCredentials creds;
+    private ProgressDialog dialog;
+    private HttpGet httpGet;
+    private HttpClient client;
+
+    private String baseurl;
+    private String username;
+    private String password;
+
+    private final List<ContentValues> values = new ArrayList<ContentValues>();
+    private final ContentValues[] emptyArray = new ContentValues[] {};
+
+    public SyncEntitiesTask(String url, String username, String password, ProgressDialog dialog, Context context,
+            CollectEntitiesListener listener) {
+        this.baseurl = url;
+        this.username = username;
+        this.password = password;
+        this.dialog = dialog;
+        this.listener = listener;
+        this.activity = (SyncDatabaseActivity) listener;
+        this.resolver = context.getContentResolver();
     }
-	
-	private void processResponse() throws Exception {
-		InputStream inputStream = getResponse();
+
+    @Override
+    protected Boolean doInBackground(Void... params) {
+        creds = new UsernamePasswordCredentials(username, password);
+
+        HttpParams httpParameters = new BasicHttpParams();
+        HttpConnectionParams.setConnectionTimeout(httpParameters, 100000);
+        HttpConnectionParams.setSoTimeout(httpParameters, 100000);
+        HttpConnectionParams.setSocketBufferSize(httpParameters, 240);
+        client = new DefaultHttpClient(httpParameters);
+
+        // at this point, we don't care to be smart about which data to download, we simply download it all
+        deleteAllTables();
+
+        try {
+            processUrl(baseurl + "/locationhierarchy");
+            resetDialogParams();
+
+            processUrl(baseurl + "/location");
+            resetDialogParams();
+
+            processUrl(baseurl + "/round");
+            resetDialogParams();
+
+            processUrl(baseurl + "/visit");
+            resetDialogParams();
+
+            processUrl(baseurl + "/relationship");
+            resetDialogParams();
+
+            processUrl(baseurl + "/individual");
+            resetDialogParams();
+
+            processUrl(baseurl + "/socialgroup");
+            resetDialogParams();
+        } catch (Exception e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void deleteAllTables() {
+        // ordering is somewhat important during delete. a few tables have foreign keys
+        resolver.delete(OpenHDS.IndividualGroups.CONTENT_ID_URI_BASE, null, null);
+        resolver.delete(OpenHDS.Rounds.CONTENT_ID_URI_BASE, null, null);
+        resolver.delete(OpenHDS.Visits.CONTENT_ID_URI_BASE, null, null);
+        resolver.delete(OpenHDS.Relationships.CONTENT_ID_URI_BASE, null, null);
+        resolver.delete(OpenHDS.SocialGroups.CONTENT_ID_URI_BASE, null, null);
+        resolver.delete(OpenHDS.HierarchyItems.CONTENT_ID_URI_BASE, null, null);
+        resolver.delete(OpenHDS.Individuals.CONTENT_ID_URI_BASE, null, null);
+        resolver.delete(OpenHDS.Locations.CONTENT_ID_URI_BASE, null, null);
+    }
+
+    private void processUrl(String url) throws Exception {
+        httpGet = new HttpGet(url);
+        processResponse();
+    }
+
+    protected void onProgressUpdate(Integer... progress) {
+        dialog.incrementProgressBy(progress[0]);
+        if (dialog.getProgress() > dialog.getMax()) {
+            dialog.dismiss();
+            dialog.setProgress(0);
+            dialog.setMax(0);
+        }
+    }
+
+    private void processResponse() throws Exception {
+        InputStream inputStream = getResponse();
         if (inputStream != null)
-        	processXMLDocument(inputStream);
-	}
-	
+            processXMLDocument(inputStream);
+    }
+
     private InputStream getResponse() throws AuthenticationException, ClientProtocolException, IOException {
         HttpResponse response = null;
-        
+
         httpGet.addHeader(new BasicScheme().authenticate(creds, httpGet));
         httpGet.addHeader("content-type", "application/xml");
         response = client.execute(httpGet);
-       
-        HttpEntity entity = response.getEntity();  
+
+        HttpEntity entity = response.getEntity();
         return entity.getContent();
     }
-		
-	private void setupDB() {	
-		databaseAdapter.getDatabase().delete("individual", null, null);
-		databaseAdapter.getDatabase().delete("location", null, null);
-		databaseAdapter.getDatabase().delete("hierarchy", null, null);
-		databaseAdapter.getDatabase().delete("round", null, null);
-		databaseAdapter.getDatabase().delete("visit", null, null);
-		databaseAdapter.getDatabase().delete("relationship", null, null);
-		databaseAdapter.getDatabase().delete("socialgroup", null, null);
-		databaseAdapter.getDatabase().delete("individual_socialgroup", null, null);
-	}
-	
-	/**
-	 * The response from the OpenHDS web service is an xml document
-	 * so it must be parsed.
-	 */
-	private void processXMLDocument(InputStream content) throws Exception  {
-		
-	    XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+
+    private void processXMLDocument(InputStream content) throws Exception {
+
+        XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
         factory.setNamespaceAware(true);
-       
+
         XmlPullParser parser = factory.newPullParser();
         parser.setInput(new InputStreamReader(content));
-                      
+
         int eventType = parser.getEventType();
         while (eventType != XmlPullParser.END_DOCUMENT && !isCancelled()) {
             String name = null;
-           
-            switch(eventType) {            		
-                case XmlPullParser.START_TAG:
-                    name = parser.getName();
-                              
-                    if (name.equalsIgnoreCase("count")) {
-                    	parser.next();
-                    	int count = Integer.parseInt(parser.getText());
-                    	dialog.setMax(count);
-                    	parser.nextTag();
-                    }
-                    else if (name.equalsIgnoreCase("individual")) {
-                    	processIndividualParams(parser);
-                    	activity.runOnUiThread(changeMessageIndividual);
-                    }
-                    else if (name.equalsIgnoreCase("location")) {
-                    	processLocationParams(parser);
-                    	activity.runOnUiThread(changeMessageLocation);
-                    }
-                    else if (name.equalsIgnoreCase("hierarchy")) {
-                    	processHierarchyParams(parser);
-                    	activity.runOnUiThread(changeMessageHierarchy);
-                    }
-                    else if (name.equalsIgnoreCase("round")) {
-                    	processRoundParams(parser);
-                    	activity.runOnUiThread(changeMessageRound);
-                    }
-                    else if (name.equalsIgnoreCase("visit")) {
-                    	processVisitParams(parser);
-                    	activity.runOnUiThread(changeMessageVisit);
-                    }
-                    else if (name.equalsIgnoreCase("socialgroup")) {
-                    	processSocialGroupParams(parser);
-                    	activity.runOnUiThread(changeMessageSocialGroup);
-                    }
-                    else if (name.equalsIgnoreCase("relationship")) {
-                    	processRelationshipParams(parser);
-                    	activity.runOnUiThread(changeMessageRelationship);
-                    }
-                    break;
+
+            switch (eventType) {
+            case XmlPullParser.START_TAG:
+                name = parser.getName();
+                if (name.equalsIgnoreCase("count")) {
+                    parser.next();
+                    int count = Integer.parseInt(parser.getText());
+                    dialog.setMax(count);
+                    parser.nextTag();
+                } else if (name.equalsIgnoreCase("individual")) {
+                    processIndividualParams(parser);
+                    activity.runOnUiThread(changeMessageIndividual);
+                } else if (name.equalsIgnoreCase("location")) {
+                    processLocationParams(parser);
+                    activity.runOnUiThread(changeMessageLocation);
+                } else if (name.equalsIgnoreCase("hierarchy")) {
+                    processHierarchyParams(parser);
+                    activity.runOnUiThread(changeMessageHierarchy);
+                } else if (name.equalsIgnoreCase("round")) {
+                    processRoundParams(parser);
+                    activity.runOnUiThread(changeMessageRound);
+                } else if (name.equalsIgnoreCase("visit")) {
+                    processVisitParams(parser);
+                    activity.runOnUiThread(changeMessageVisit);
+                } else if (name.equalsIgnoreCase("socialgroup")) {
+                    processSocialGroupParams(parser);
+                    activity.runOnUiThread(changeMessageSocialGroup);
+                } else if (name.equalsIgnoreCase("relationship")) {
+                    processRelationshipParams(parser);
+                    activity.runOnUiThread(changeMessageRelationship);
+                }
+                break;
             }
             eventType = parser.next();
         }
-	}
-	
-	private Runnable changeMessageIndividual = new Runnable() {
-	    public void run() {
-	        dialog.setMessage("Downloading Individuals");
-	    }
-	};
-	
-	private Runnable changeMessageLocation = new Runnable() {
-	    public void run() {
-	        dialog.setMessage("Downloading Locations");
-	    }
-	};
-	
-	private Runnable changeMessageHierarchy = new Runnable() {
-	    public void run() {
-	        dialog.setMessage("Downloading Hierarchy");
-	    }
-	};
-	
-	private Runnable changeMessageRound = new Runnable() {
-	    public void run() {
-	        dialog.setMessage("Downloading Rounds");
-	    }
-	};
-	
-	private Runnable changeMessageVisit = new Runnable() {
-	    public void run() {
-	        dialog.setMessage("Downloading Visits");
-	    }
-	};
-	
-	private Runnable changeMessageSocialGroup = new Runnable() {
-	    public void run() {
-	        dialog.setMessage("Downloading Social Groups");
-	    }
-	};
-	
-	private Runnable changeMessageRelationship = new Runnable() {
-	    public void run() {
-	        dialog.setMessage("Downloading Relationships");
-	    }
-	};
-	
-	private void processHierarchyParams(XmlPullParser parser) throws XmlPullParserException, IOException {
-		String name = "";
-		Map<String, String> paramMap = new HashMap<String, String>();
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("extId", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("level", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("name", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("parent", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("uuid", parser.nextText());
-        parser.nextTag();
-        
-        saveHierarchyToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("name"), 
-        		paramMap.get("parent"), paramMap.get("level"));
-        
-        dialog.incrementProgressBy(1);
-	}
+    }
 
-	private void processLocationParams(XmlPullParser parser) throws XmlPullParserException, IOException {
-		String name = "";
-		Map<String, String> paramMap = new HashMap<String, String>();
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("extId", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("head", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("hierarchy", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("latitude", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("longitude", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("name", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("status", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("uuid", parser.nextText());
-        parser.nextTag();
-        
-        saveLocationToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("head"), paramMap.get("name"), 
-        		paramMap.get("latitude"), paramMap.get("longitude"), paramMap.get("hierarchy"), paramMap.get("status"));
-        
-        dialog.incrementProgressBy(1);
-	}
-	
-	private void processIndividualParams(XmlPullParser parser) throws XmlPullParserException, IOException {
-		String[] groups;
-		String name = "";
-		Map<String, String> paramMap = new HashMap<String, String>();
-		parser.nextTag();
-		name = parser.getName();
-		paramMap.put("currentResidence", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("dob", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("extId", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("father", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("firstName", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("gender", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        groups = parser.nextText().split(",");
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("lastName", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("mother", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("status", parser.nextText());       
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("uuid", parser.nextText());
-        parser.nextTag();
-        
-        for (String item : groups) {
-        	databaseAdapter.createIndividualSocialGroupLink(paramMap.get("extId"), item);
+    private Runnable changeMessageIndividual = new Runnable() {
+        public void run() {
+            dialog.setMessage("Downloading Individuals");
         }
-        
-        saveIndividualToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("firstName"), 
-        		paramMap.get("lastName"), paramMap.get("gender"), paramMap.get("dob"), paramMap.get("mother"),
-        		paramMap.get("father"), paramMap.get("currentResidence"), paramMap.get("status"));
-        
-        dialog.incrementProgressBy(1);
-	}
-	
-	private void processRoundParams(XmlPullParser parser) throws XmlPullParserException, IOException {
-		String name = "";
-		Map<String, String> paramMap = new HashMap<String, String>();
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("endDate", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("remarks", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("roundNumber", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("startDate", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("uuid", parser.nextText());
-        parser.nextTag();
-          
-        saveRoundToDB(paramMap.get("uuid"), paramMap.get("startDate"), paramMap.get("endDate"), 
-        		paramMap.get("roundNumber"), paramMap.get("remarks"));
-        
-        dialog.incrementProgressBy(1);
-	}
-	
-	private void processVisitParams(XmlPullParser parser) throws XmlPullParserException, IOException {
-		String name = "";
-		Map<String, String> paramMap = new HashMap<String, String>();
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("extId", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("roundNumber", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("status", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("uuid", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("visitDate", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("visitLocation", parser.nextText());
-        parser.nextTag();
-          
-        saveVisitToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("roundNumber"), 
-        		paramMap.get("visitDate"), paramMap.get("visitLocation"), paramMap.get("status"));
-        
-        dialog.incrementProgressBy(1);
-	}
-	
-	private void processSocialGroupParams(XmlPullParser parser) throws XmlPullParserException, IOException {
-		String name = "";
-		Map<String, String> paramMap = new HashMap<String, String>();
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("extId", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("groupHead", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("groupName", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("status", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("uuid", parser.nextText());
-        parser.nextTag();
-        
-        saveSocialGroupToDB(paramMap.get("uuid"), paramMap.get("extId"), paramMap.get("groupHead"), 
-        		paramMap.get("groupName"), paramMap.get("status"));
-        
-        dialog.incrementProgressBy(1);
-	}
-	
-	private void processRelationshipParams(XmlPullParser parser) throws XmlPullParserException, IOException {
-		String name = "";
-		Map<String, String> paramMap = new HashMap<String, String>();
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("femaleIndividual", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("maleIndividual", parser.nextText());
-        parser.nextTag();
-        name = parser.getName();
-        paramMap.put("startDate", parser.nextText());
-        parser.nextTag();
-                
-        saveRelationshipToDB(paramMap.get("femaleIndividual"), paramMap.get("maleIndividual"), paramMap.get("startDate"));
-        dialog.incrementProgressBy(1);
-	}
-	
-	private void resetDialogParams() {
-		dialog.setProgress(0);
-		dialog.setMax(0);
-	}
-	
-	protected void onPostExecute(final Boolean result) {
-		if (databaseAdapter.getDatabase().isOpen())
-			databaseAdapter.close();
-		dialog.setProgress(0);
-	    listener.collectionComplete(result);
-	}
-	
-	public void saveIndividualToDB(String uuid, String extId, String firstName, String lastName, String gender, String dob, 
-			String mother, String father, String residence, String status) {
-	    databaseAdapter.createIndividual(uuid, extId, firstName, lastName, gender, dob, mother, father, residence, status);
-	}
-	
-	public void saveLocationToDB(String uuid, String extId, String head, String name, String latitude, String longitude, 
-			String hierarchy, String status) {
-	    databaseAdapter.createLocation(uuid, extId, head, name, latitude, longitude, hierarchy, status);
-	}
-	
-	public void saveHierarchyToDB(String uuid, String extId, String name, String parent, String level) {
-	    databaseAdapter.createHierarchy(uuid, extId, name, parent, level);
-	}
-	
-	public void saveRoundToDB(String uuid, String startDate, String endDate, String roundNumber, String remarks) {
-	    databaseAdapter.createRound(uuid, startDate, endDate, roundNumber, remarks);
-	}
-	
-	public void saveVisitToDB(String uuid, String extId, String roundNumber, String date, String location, String status) {
-	    databaseAdapter.createVisit(uuid, extId, roundNumber, date, location, status);
-	}
-	
-	public void saveSocialGroupToDB(String uuid, String extId, String groupHead, String groupName, String status) {
-	    databaseAdapter.createSocialGroup(uuid, extId, groupName, groupHead, status);
-	}
-	
-	public void saveRelationshipToDB(String femaleIndividual, String maleIndividual, String startDate) {
-	    databaseAdapter.createRelationship(maleIndividual, femaleIndividual, startDate);
-	}
+    };
+
+    private Runnable changeMessageLocation = new Runnable() {
+        public void run() {
+            dialog.setMessage("Downloading Locations");
+        }
+    };
+
+    private Runnable changeMessageHierarchy = new Runnable() {
+        public void run() {
+            dialog.setMessage("Downloading Hierarchy");
+        }
+    };
+
+    private Runnable changeMessageRound = new Runnable() {
+        public void run() {
+            dialog.setMessage("Downloading Rounds");
+        }
+    };
+
+    private Runnable changeMessageVisit = new Runnable() {
+        public void run() {
+            dialog.setMessage("Downloading Visits");
+        }
+    };
+
+    private Runnable changeMessageSocialGroup = new Runnable() {
+        public void run() {
+            dialog.setMessage("Downloading Social Groups");
+        }
+    };
+
+    private Runnable changeMessageRelationship = new Runnable() {
+        public void run() {
+            dialog.setMessage("Downloading Relationships");
+        }
+    };
+
+    private void processHierarchyParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+        values.clear();
+        while (notEndOfXmlDoc("hierarchys", parser)) {
+            ContentValues cv = new ContentValues();
+
+            parser.nextTag();
+            cv.put(OpenHDS.HierarchyItems.COLUMN_HIERARCHY_EXTID, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.HierarchyItems.COLUMN_HIERARCHY_LEVEL, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.HierarchyItems.COLUMN_HIERARCHY_NAME, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.HierarchyItems.COLUMN_HIERARCHY_PARENT, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.HierarchyItems.COLUMN_HIERARCHY_UUID, parser.nextText());
+
+            values.add(cv);
+
+            parser.nextTag(); // </hierarchy>
+            parser.nextTag(); // <hierarchy> or </hiearchys>
+        }
+
+        resolver.bulkInsert(OpenHDS.HierarchyItems.CONTENT_URI, values.toArray(emptyArray));
+    }
+
+    private boolean notEndOfXmlDoc(String element, XmlPullParser parser) throws XmlPullParserException {
+        return !element.equals(parser.getName()) && parser.getEventType() != XmlPullParser.END_TAG && !isCancelled();
+    }
+
+    private void processLocationParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+        values.clear();
+        while (notEndOfXmlDoc("locations", parser)) {
+            ContentValues cv = new ContentValues();
+            parser.nextTag();
+            cv.put(OpenHDS.Locations.COLUMN_LOCATION_EXTID, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Locations.COLUMN_LOCATION_HEAD, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Locations.COLUMN_LOCATION_HIERARCHY, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Locations.COLUMN_LOCATION_LATITUDE, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Locations.COLUMN_LOCATION_LONGITUDE, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Locations.COLUMN_LOCATION_NAME, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Locations.COLUMN_LOCATION_STATUS, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Locations.COLUMN_LOCATION_UUID, parser.nextText());
+
+            values.add(cv);
+
+            parser.nextTag(); // </location>
+            parser.nextTag(); // <location> or </locations>
+        }
+
+        resolver.bulkInsert(OpenHDS.Locations.CONTENT_ID_URI_BASE, values.toArray(emptyArray));
+    }
+
+    private void processIndividualParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+        values.clear();
+        List<ContentValues> individualSocialGroups = new ArrayList<ContentValues>();
+        while (notEndOfXmlDoc("individuals", parser)) {
+            ContentValues cv = new ContentValues();
+
+            parser.nextTag();
+            cv.put(OpenHDS.Individuals.COLUMN_INDIVIDUAL_RESIDENCE, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Individuals.COLUMN_INDIVIDUAL_DOB, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Individuals.COLUMN_INDIVIDUAL_EXTID, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Individuals.COLUMN_INDIVIDUAL_FATHER, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Individuals.COLUMN_INDIVIDUAL_FIRSTNAME, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Individuals.COLUMN_INDIVIDUAL_GENDER, parser.nextText());
+
+            parser.nextTag();
+            String[] groups = parser.nextText().split(",");
+
+            parser.nextTag();
+            cv.put(OpenHDS.Individuals.COLUMN_INDIVIDUAL_LASTNAME, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Individuals.COLUMN_INDIVIDUAL_MOTHER, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Individuals.COLUMN_INDIVIDUAL_STATUS, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Individuals.COLUMN_INDIVIDUAL_UUID, parser.nextText());
+
+            values.add(cv);
+
+            for (String item : groups) {
+                ContentValues socialGroups = new ContentValues();
+                socialGroups.put(OpenHDS.IndividualGroups.COLUMN_INDIVIDUALUUID, cv.getAsString(OpenHDS.Individuals.COLUMN_INDIVIDUAL_EXTID));
+                socialGroups.put(OpenHDS.IndividualGroups.COLUMN_SOCIALGROUPUUID, item);
+                individualSocialGroups.add(socialGroups);
+            }
+
+            parser.nextTag(); // </individual>
+            parser.nextTag(); // </individuals> or <individual>
+        }
+
+        resolver.bulkInsert(OpenHDS.Individuals.CONTENT_ID_URI_BASE, values.toArray(emptyArray));
+        resolver.bulkInsert(OpenHDS.IndividualGroups.CONTENT_ID_URI_BASE, individualSocialGroups.toArray(emptyArray));
+    }
+
+    private void processRoundParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+        values.clear();
+        while (notEndOfXmlDoc("rounds", parser)) {
+            ContentValues cv = new ContentValues();
+
+            parser.nextTag();
+            cv.put(OpenHDS.Rounds.COLUMN_ROUND_ENDDATE, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Rounds.COLUMN_ROUND_REMARKS, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Rounds.COLUMN_ROUND_NUMBER, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Rounds.COLUMN_ROUND_STARTDATE, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Rounds.COLUMN_ROUND_UUID, parser.nextText());
+
+            values.add(cv);
+
+            parser.nextTag(); // </round>
+            parser.nextTag(); // </rounds> or <round>
+        }
+
+        resolver.bulkInsert(OpenHDS.Rounds.CONTENT_ID_URI_BASE, values.toArray(emptyArray));
+    }
+
+    private void processVisitParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+        values.clear();
+        while (notEndOfXmlDoc("visits", parser)) {
+            ContentValues cv = new ContentValues();
+
+            parser.nextTag();
+            cv.put(OpenHDS.Visits.COLUMN_VISIT_EXTID, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Visits.COLUMN_VISIT_ROUND, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Visits.COLUMN_VISIT_STATUS, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Visits.COLUMN_VISIT_UUID, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Visits.COLUMN_VISIT_DATE, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Visits.COLUMN_VISIT_LOCATION, parser.nextText());
+
+            values.add(cv);
+
+            parser.nextTag(); // </visit>
+            parser.nextTag(); // </visits> or <visit>
+        }
+
+        resolver.bulkInsert(OpenHDS.Visits.CONTENT_ID_URI_BASE, values.toArray(emptyArray));
+    }
+
+    private void processSocialGroupParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+        values.clear();
+        while (notEndOfXmlDoc("socialGroups", parser)) {
+            ContentValues cv = new ContentValues();
+
+            parser.nextTag();
+            cv.put(OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_EXTID, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_GROUPHEAD, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_GROUPNAME, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_STATUS, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_UUID, parser.nextText());
+
+            values.add(cv);
+
+            parser.nextTag(); // </socialGroup>
+            parser.nextTag(); // </socialGroups> or <socialGroup>
+        }
+
+        resolver.bulkInsert(OpenHDS.SocialGroups.CONTENT_ID_URI_BASE, values.toArray(emptyArray));
+    }
+
+    private void processRelationshipParams(XmlPullParser parser) throws XmlPullParserException, IOException {
+        values.clear();
+        while (notEndOfXmlDoc("relationships", parser)) {
+            ContentValues cv = new ContentValues();
+            parser.nextTag();
+            cv.put(OpenHDS.Relationships.COLUMN_RELATIONSHIP_FEMALEINDIVIDUAL, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Relationships.COLUMN_RELATIONSHIP_MALEINDIVIDUAL, parser.nextText());
+
+            parser.nextTag();
+            cv.put(OpenHDS.Relationships.COLUMN_RELATIONSHIP_STARTDATE, parser.nextText());
+
+            values.add(cv);
+
+            parser.nextTag(); // </relationship>
+            parser.nextTag(); // </relationships> or <relationship>
+        }
+
+        resolver.bulkInsert(OpenHDS.Relationships.CONTENT_ID_URI_BASE, values.toArray(emptyArray));
+    }
+
+    private void resetDialogParams() {
+        dialog.setProgress(0);
+        dialog.setMax(0);
+    }
+
+    protected void onPostExecute(final Boolean result) {
+        dialog.setProgress(0);
+        listener.collectionComplete(result);
+    }
 }

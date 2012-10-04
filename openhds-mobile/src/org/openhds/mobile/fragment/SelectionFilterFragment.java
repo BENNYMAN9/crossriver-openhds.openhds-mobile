@@ -1,6 +1,9 @@
 package org.openhds.mobile.fragment;
 
 import java.util.List;
+
+import org.openhds.mobile.Converter;
+import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
 import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.model.Individual;
@@ -8,6 +11,7 @@ import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.UpdateParams;
 
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -47,7 +51,8 @@ public class SelectionFilterFragment extends Fragment {
     }
 	
 	public CharSequence[] getRegionsDialog() {
-		regions = databaseAdapter.getAllRegions(UpdateParams.HIERARCHY_TOP_LEVEL);
+	    Cursor cursor = Queries.getHierarchysByLevel(getActivity().getContentResolver(), UpdateParams.HIERARCHY_TOP_LEVEL);
+		regions = Converter.toHierarchyList(cursor);
 		CharSequence[] names = new CharSequence[regions.size()];
 		for (int i = 0; i < regions.size(); i++) 
 			names[i] = regions.get(i).getName();
@@ -56,7 +61,8 @@ public class SelectionFilterFragment extends Fragment {
 	}
 	
 	public CharSequence[] getSubRegionsDialog() {
-		subRegions = databaseAdapter.getAllSubRegionsOfRegion(region);
+	    Cursor cursor = Queries.getHierarchysByParent(getActivity().getContentResolver(), region.getExtId());
+		subRegions = Converter.toHierarchyList(cursor);
 		CharSequence[] names = new CharSequence[subRegions.size()];
 		for (int i = 0; i < subRegions.size(); i++) 
 			names[i] = subRegions.get(i).getName();
@@ -65,7 +71,8 @@ public class SelectionFilterFragment extends Fragment {
 	}
 	
 	public CharSequence[] getVillagesDialog() {
-		villages = databaseAdapter.getAllSubRegionsOfRegion(subRegion);
+	    Cursor cursor = Queries.getHierarchysByParent(getActivity().getContentResolver(), subRegion.getExtId());
+		villages = Converter.toHierarchyList(cursor);
 		CharSequence[] names = new CharSequence[villages.size()];
 		for (int i = 0; i < villages.size(); i++) 
 			names[i] = villages.get(i).getName();
@@ -74,7 +81,8 @@ public class SelectionFilterFragment extends Fragment {
 	}
 	
 	public CharSequence[] getLocationsDialog() {
-		locations = databaseAdapter.getAllLocationsOfVillage(village.getExtId());
+	    Cursor cursor = Queries.getLocationsByHierachy(getActivity().getContentResolver(), village.getExtId());
+		locations = Converter.toLocationList(cursor);
 		CharSequence[] names = new CharSequence[locations.size()];
 		for (int i = 0; i < locations.size(); i++) 
 			names[i] = locations.get(i).getName();

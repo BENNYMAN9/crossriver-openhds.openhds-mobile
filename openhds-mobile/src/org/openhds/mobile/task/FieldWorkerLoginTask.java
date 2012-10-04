@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthenticationException;
@@ -19,23 +20,28 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.openhds.mobile.OpenHDS;
 import org.openhds.mobile.R;
 import org.openhds.mobile.activity.FieldWorkerLoginActivity;
 import org.openhds.mobile.activity.ServerPreferencesActivity;
-import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.listener.RetrieveFieldWorkersListener;
 import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Result;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
+
 import android.app.ProgressDialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 
 public class FieldWorkerLoginTask extends AsyncTask<Boolean, Void, Result> {
 	
-	private DatabaseAdapter databaseAdapter;
 	private SharedPreferences settings;
 	private RetrieveFieldWorkersListener listener ;
 	
@@ -48,10 +54,11 @@ public class FieldWorkerLoginTask extends AsyncTask<Boolean, Void, Result> {
 	private boolean isRegistering;
 	
 	private List<FieldWorker> list;
+    private ContentResolver resolver;
 		
-	public FieldWorkerLoginTask(DatabaseAdapter databaseAdapter, SharedPreferences settings, RetrieveFieldWorkersListener listener, 
+	public FieldWorkerLoginTask(Context context, SharedPreferences settings, RetrieveFieldWorkersListener listener, 
 			ProgressDialog dialog, String extId, String password, boolean isRegistering) {
-		this.databaseAdapter = databaseAdapter;
+		this.resolver = context.getContentResolver();
 		this.settings = settings;
 		this.listener = listener;
 		this.dialog = dialog;
@@ -200,9 +207,22 @@ public class FieldWorkerLoginTask extends AsyncTask<Boolean, Void, Result> {
 	}
 	
 	private boolean createFieldWorker(FieldWorker fieldWorker) {
-		databaseAdapter.open();
-		boolean result = databaseAdapter.createFieldWorker(extId, password, fieldWorker.getFirstName(), fieldWorker.getLastName());
-		databaseAdapter.close();
-		return result;
+	    Cursor cusor = resolver.query(OpenHDS.FieldWorkers.CONTENT_ID_URI_BASE, new String[]{OpenHDS.FieldWorkers._ID}, OpenHDS.FieldWorkers.COLUMN_FIELDWORKER_EXTID + " = ?", new String[]{fieldWorker.getExtId()}, null);
+	    boolean found = cusor != null ? cusor.getCount() > 0 : false;
+	    cusor.close();
+	    
+	    if (found) {
+	        return false;
+	    }
+	    
+	    ContentValues cv = new ContentValues();
+	    cv.put(OpenHDS.FieldWorkers.COLUMN_FIELDWORKER_EXTID, extId);
+	    cv.put(OpenHDS.FieldWorkers.COLUMN_FIELDWORKER_FIRSTNAME, fieldWorker.getFirstName());
+	    cv.put(OpenHDS.FieldWorkers.COLUMN_FIELDWORKER_LASTNAME, fieldWorker.getLastName());
+	    cv.put(OpenHDS.FieldWorkers.COLUMN_FIELDWORKER_PASSWORD, password);
+	    
+	    Uri uri = resolver.insert(OpenHDS.FieldWorkers.CONTENT_ID_URI_BASE, cv);
+	    
+		return uri != null;
 	}
 }

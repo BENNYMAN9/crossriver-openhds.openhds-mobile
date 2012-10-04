@@ -2,6 +2,9 @@ package org.openhds.mobile.activity;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.openhds.mobile.Converter;
+import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
 import org.openhds.mobile.adapter.AdapterContent;
 import org.openhds.mobile.adapter.MapAdapter;
@@ -11,6 +14,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -97,7 +101,8 @@ public class ShowMapActivity extends MapActivity implements OnItemClickListener 
 		
 		List<org.openhds.mobile.model.Location> nearestLocations = new ArrayList<org.openhds.mobile.model.Location>();
 		
-		List<org.openhds.mobile.model.Location> locations = databaseAdapter.getAllLocations();
+		Cursor cursor = Queries.allLocations(getContentResolver());
+		List<org.openhds.mobile.model.Location> locations = Converter.toLocationList(cursor);
 		for (org.openhds.mobile.model.Location loc : locations) {
 			
 			if (loc.getLatitude().equals("Unknown") || loc.getLongitude().equals("Unknown") || 
