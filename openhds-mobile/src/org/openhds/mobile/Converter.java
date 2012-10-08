@@ -68,15 +68,23 @@ public class Converter {
         location.setUuid(cursor.getString(cursor.getColumnIndex(OpenHDS.Locations.COLUMN_LOCATION_UUID)));
     }
 
-    public static LocationHierarchy toHierarhcy(Cursor cursor) {
+    public static LocationHierarchy toHierarhcy(Cursor cursor, boolean close) {
         LocationHierarchy hierarchy = new LocationHierarchy();
 
         if (cursor.moveToNext()) {
             populateHierarchy(cursor, hierarchy);
         }
 
-        cursor.close();
+        if (close) {
+            cursor.close();
+        }
 
+        return hierarchy;
+    }
+    
+    public static LocationHierarchy convertToHierarchy(Cursor cursor) {
+        LocationHierarchy hierarchy = new LocationHierarchy();
+        populateHierarchy(cursor, hierarchy);
         return hierarchy;
     }
 
@@ -215,5 +223,29 @@ public class Converter {
         cursor.close();
 
         return relationships;
+    }
+
+    public static Round convertToRound(Cursor cursor) {
+        Round round = new Round();
+        round.setEndDate(cursor.getString(cursor.getColumnIndex(OpenHDS.Rounds.COLUMN_ROUND_ENDDATE)));
+        round.setRemarks(cursor.getString(cursor.getColumnIndex(OpenHDS.Rounds.COLUMN_ROUND_REMARKS)));
+        round.setRoundNumber(cursor.getString(cursor.getColumnIndex(OpenHDS.Rounds.COLUMN_ROUND_NUMBER)));
+        round.setStartDate(cursor.getString(cursor.getColumnIndex(OpenHDS.Rounds.COLUMN_ROUND_STARTDATE)));
+        
+        return round;
+    }
+
+    public static Location convertToLocation(Cursor cursor) {
+        Location location = new Location();
+        populateLocation(cursor, location);
+
+        return location;
+    }
+
+    public static Individual convertToIndividual(Cursor cursor) {
+        Individual individual = new Individual();
+        populateIndividual(cursor, individual);
+
+        return individual;
     }
 }

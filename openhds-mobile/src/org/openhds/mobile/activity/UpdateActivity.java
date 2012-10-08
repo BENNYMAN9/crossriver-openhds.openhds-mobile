@@ -9,13 +9,11 @@ import org.openhds.mobile.InstanceProviderAPI;
 import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
 import org.openhds.mobile.cell.ValueFragmentCell;
-import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.dialog.HouseholdListDialog;
 import org.openhds.mobile.fragment.EventFragment;
 import org.openhds.mobile.fragment.SelectionFragment;
 import org.openhds.mobile.fragment.ValueFragment;
 import org.openhds.mobile.listener.OdkFormLoadListener;
-import org.openhds.mobile.listener.ValueSelectedListener;
 import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
@@ -25,7 +23,6 @@ import org.openhds.mobile.model.Relationship;
 import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.SocialGroup;
 import org.openhds.mobile.model.UpdateEvent;
-import org.openhds.mobile.model.UpdateParams;
 import org.openhds.mobile.model.Visit;
 import org.openhds.mobile.task.OdkGeneratedFormLoadTask;
 
@@ -46,11 +43,8 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.Toast;
 
-public class UpdateActivity extends FragmentActivity implements OnClickListener, ValueSelectedListener,
+public class UpdateActivity extends FragmentActivity implements OnClickListener, ValueFragment.ValueListener,
         OdkFormLoadListener, FieldWorkerProvider, SelectionFragment.Listener {
-	
-	// datasource
-	private DatabaseAdapter databaseAdapter;
 	
 	private Button findLocationGeoPointBtn, createLocationBtn, createVisitBtn, clearLocationBtn, clearIndividualBtn,
 	 			   householdBtn, membershipBtn, relationshipBtn, inMigrationBtn, outMigrationBtn, pregRegBtn, birthRegBtn, deathBtn, 
@@ -90,8 +84,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.main);    	   
 	   
-        databaseAdapter = new DatabaseAdapter(getBaseContext());
-                
         finishVisitBtn = (Button) findViewById(R.id.finishVisitBtn);
         finishVisitBtn.setOnClickListener(this);
         
@@ -252,13 +244,13 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 					
 					// * figure out the parent location hierarchy
 					cursor = Queries.getHierarchyByExtId(resolver, location.getHierarchy());
-					LocationHierarchy village = Converter.toHierarhcy(cursor);
+					LocationHierarchy village = Converter.toHierarhcy(cursor, true);
 					
 					cursor = Queries.getHierarchyByExtId(resolver, village.getParent());
-					LocationHierarchy subRegion = Converter.toHierarhcy(cursor);
+					LocationHierarchy subRegion = Converter.toHierarhcy(cursor, true);
 					
 					cursor = Queries.getHierarchyByExtId(resolver, subRegion.getParent());
-					LocationHierarchy region = Converter.toHierarhcy(cursor);
+					LocationHierarchy region = Converter.toHierarhcy(cursor, true);
 										
 					// * set the location hierarchy region, district, and village in selectionFragment
 					sf.setRegion(region);
@@ -352,106 +344,28 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		startActivityForResult(i, FILTER);
 	}
     
-    /**
-     * Loads the value fragment with a list of Regions.
-     */
     private void loadRegionValueData() {
-        Cursor cursor = Queries.getHierarchysByLevel(getContentResolver(), UpdateParams.HIERARCHY_TOP_LEVEL);
-    	List<LocationHierarchy> regions = Converter.toHierarchyList(cursor);
-    	sf.setRegions(regions);
-    	if (vf != null) {
-    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
-    		for (LocationHierarchy item : regions) {
-    			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
-    			list.add(cell);
-    		}
-    		vf.setContent(list);
-    	}
+        vf.loadLocationHierarchy();
     }
     
-    /**
-     * Loads the value fragment with a list of Sub Regions within the selected Region.
-     */
     private void loadSubRegionValueData() {
-        Cursor cursor = Queries.getHierarchysByParent(getContentResolver(), sf.getRegion().getExtId());
-    	List<LocationHierarchy> subRegions = Converter.toHierarchyList(cursor);
-      	sf.setSubRegions(subRegions);
-    	if (vf != null) {
-    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
-    		for (LocationHierarchy item : subRegions) {
-    			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
-    			list.add(cell);
-    		}
-    		vf.setContent(list);
-    	}
+        vf.loadSubRegion(sf.getRegion().getExtId());
     }
     
-    /**
-     * Loads the value fragment with a list of Villages within the selection Sub Region.
-     */
     private void loadVillageValueData() {
-        Cursor cursor = Queries.getHierarchysByParent(getContentResolver(), sf.getSubRegion().getExtId());
-      	List<LocationHierarchy> villages = Converter.toHierarchyList(cursor);
-    	sf.setVillages(villages);
-      	if (vf != null) {
-    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
-    		for (LocationHierarchy item : villages) {
-    			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
-    			list.add(cell);
-    		}
-    		vf.setContent(list);
-    	}
+        vf.loadVillage(sf.getSubRegion().getExtId());
     }
-        
-    /**
-     * Loads the value fragment with a list of Locations within the selected Village.
-     */
+
     private void loadLocationValueData() {
-        Cursor cursor = Queries.getLocationsByHierachy(getContentResolver(), sf.getVillage().getExtId());
-    	List<Location> locations = Converter.toLocationList(cursor);
-      	sf.setLocations(locations);
-    	if (vf != null) {
-    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
-    		for (Location item : locations) {
-    			ValueFragmentCell cell = new ValueFragmentCell(item.getName(), item.getExtId());
-    			list.add(cell);
-    		}
-    		vf.setContent(list);
-    	}
+        vf.loadLocations(sf.getVillage().getExtId());
     }
     
-    /**
-     * Loads the value fragment with a list of Rounds.
-     */
     private void loadRoundValueData() {
-        Cursor cursor = Queries.allRounds(getContentResolver());
-    	List<Round> rounds = Converter.toRoundList(cursor);
-      	sf.setRounds(rounds);
-    	if (vf != null) {
-    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
-    		for (Round item : rounds) {
-    			ValueFragmentCell cell = new ValueFragmentCell("Round: " + item.getRoundNumber(), "");
-    			list.add(cell);
-    		}
-    		vf.setContent(list);
-    	}
+        vf.loadRounds();
     }
     
-    /**
-     * Loads the value fragment with a list of Individuals within the selected Location.
-     */
     private void loadIndividualValueData() {
-        Cursor cursor = Queries.getIndividualsByResidency(getContentResolver(), sf.getLocation().getExtId());
-    	List<Individual> individuals = Converter.toIndividualList(cursor);
-      	sf.setIndividuals(individuals);
-    	if (vf != null) {
-    		List<ValueFragmentCell> list = new ArrayList<ValueFragmentCell>();
-    		for (Individual item : individuals) {
-    			ValueFragmentCell cell = new ValueFragmentCell(item.getFirstName() + " " + item.getLastName(), item.getExtId());
-    			list.add(cell);
-    		}
-    		vf.setContent(list);
-    	}
+        vf.loadIndividuals(sf.getLocation().getExtId());
     }
     
     /**
@@ -635,43 +549,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	public void onOdkFormLoadFailure() {
 		createXFormNotFoundDialog();
 	}
-		
-	/**
-	 * This is called when an item has been selected from the selection fragment.
-	 * Based on what was selected, various widgets will be enabled or disabled and progress the phase one step further.
-	 */
-	public void onValueSelected(int position) {
-		String phase = getPhase();
-		if (phase.equals(UpdateEvent.REGION)) {
-			sf.setRegion(sf.getRegions().get(position));
-			setPhase(UpdateEvent.SUBREGION);
-		}
-		else if (phase.equals(UpdateEvent.SUBREGION)) {
-			sf.setSubRegion(sf.getSubRegions().get(position));
-			setPhase(UpdateEvent.VILLAGE);
-		}
-		else if (phase.equals(UpdateEvent.VILLAGE)) {
-			sf.setVillage(sf.getVillages().get(position));
-			setPhase(UpdateEvent.ROUND);
-		}
-		else if (phase.equals(UpdateEvent.LOCATION)) {
-			sf.setLocation(sf.getLocations().get(position));
-			setPhase(UpdateEvent.VISIT);
-		}
-		else if (phase.equals(UpdateEvent.ROUND)) {
-			sf.setRound(sf.getRounds().get(position));
-			setPhase(UpdateEvent.LOCATION);
-		}
-		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
-			sf.setIndividual(sf.getIndividuals().get(position));
-			
-			boolean result = determineSocialGroupForIndividual();
-			if (result)
-				createHouseholdSelectionDialog(null);
-			
-			setPhase(UpdateEvent.XFORMS);
-		}
-	}
 	
 	private boolean determineSocialGroupForIndividual() {
 		// get the socialgroups the individual is a part of
@@ -697,9 +574,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 */
 	public void reset() {
 		setPhase(UpdateEvent.LOCATION);	
-		if (vf != null) {
-			vf.reset();
-		}
 	}
 	
 	/**
@@ -1097,5 +971,40 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 
     public void onIndividual() {
         loadIndividualValueData();
+    }
+
+    public void onHierarchySelected(LocationHierarchy hierarchy) {
+        sf.setRegion(hierarchy);
+        setPhase(UpdateEvent.SUBREGION);
+    }
+
+    public void onSubRegionSelected(LocationHierarchy subregion) {
+        sf.setSubRegion(subregion);
+        setPhase(UpdateEvent.VILLAGE);
+    }
+
+    public void onVillageSelected(LocationHierarchy village) {
+        sf.setVillage(village);
+        setPhase(UpdateEvent.ROUND);        
+    }
+
+    public void onRoundSelected(Round round) {
+        sf.setRound(round);
+        setPhase(UpdateEvent.LOCATION);
+    }
+
+    public void onLocationSelected(Location location) {
+        sf.setLocation(location);
+        setPhase(UpdateEvent.VISIT);        
+    }
+
+    public void onIndividualSelected(Individual individual) {
+        sf.setIndividual(individual);
+        
+        boolean result = determineSocialGroupForIndividual();
+        if (result)
+            createHouseholdSelectionDialog(null);
+        
+        setPhase(UpdateEvent.XFORMS);
     }
 }

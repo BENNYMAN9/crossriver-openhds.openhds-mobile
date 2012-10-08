@@ -37,6 +37,7 @@ public class OpenHDS {
         public static final String COLUMN_INDIVIDUAL_EXTID = "extId";
         public static final String COLUMN_INDIVIDUAL_FIRSTNAME = "firstName";
         public static final String COLUMN_INDIVIDUAL_LASTNAME = "lastName";
+        public static final String COLUMN_INDIVIDUAL_FULLNAME = "fullname";
         public static final String COLUMN_INDIVIDUAL_DOB = "dob";
         public static final String COLUMN_INDIVIDUAL_GENDER = "gender";
         public static final String COLUMN_INDIVIDUAL_MOTHER = "mother";

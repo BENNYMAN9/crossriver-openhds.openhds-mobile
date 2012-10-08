@@ -4,6 +4,7 @@ import org.openhds.mobile.Converter;
 import org.openhds.mobile.OpenHDS;
 import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
+import org.openhds.mobile.activity.FieldWorkerLoginActivity.AuthenticateFieldWorker.Listener;
 import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.listener.RetrieveFieldWorkersListener;
 import org.openhds.mobile.model.FieldWorker;
@@ -12,11 +13,13 @@ import org.openhds.mobile.task.FieldWorkerLoginTask;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.DialogInterface.OnCancelListener;
 import android.database.Cursor;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.AsyncTask.Status;
 import android.preference.PreferenceManager;
@@ -40,8 +43,6 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
 	private CheckBox registerChkBox;
 	
 	private ProgressDialog dialog;
-	private DatabaseAdapter databaseAdapter;
-	private SharedPreferences settings;
 	
     private FieldWorkerLoginTask loginTask = null;
 	
@@ -51,9 +52,6 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
 	    setContentView(R.layout.fieldworker_login);
 	    
 	    initializeProgressDialog();
-	    
-        databaseAdapter = new DatabaseAdapter(getBaseContext());
-		settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 	    
         extIdText = (TextView) findViewById(R.id.extIdText);
         passwordText = (TextView) findViewById(R.id.passwordText);
@@ -109,17 +107,58 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
 	    			loginTask.execute();	
 			}
 			else {
-				if (Queries.hasFieldWorker(getContentResolver(), extId, password)) {
-				    Cursor cursor = Queries.getFieldWorkByExtId(getContentResolver(), extId);
-					FieldWorker fieldWorker = Converter.toFieldWorker(cursor);
-					startUpdateActivity(fieldWorker);
-				}
-				else {
-					Toast.makeText(getApplicationContext(),	getString(R.string.bad_authentication), Toast.LENGTH_SHORT).show();
-				}
+                dialog = ProgressDialog.show(this, "Authenticating...", "Please Wait");
+                new AuthenticateFieldWorker(getContentResolver(), extId, password, new Listener() {
+
+                    public void onAuthenticated(FieldWorker fw) {
+                        dialog.dismiss();
+                        if (fw == null) {
+                            Toast.makeText(getApplicationContext(), getString(R.string.bad_authentication),
+                                    Toast.LENGTH_LONG).show();
+                        } else {
+                            startUpdateActivity(fw);
+                        }
+                    }
+
+                }).execute();
 			}
 			break;
 		}
+	}
+	
+	static class AuthenticateFieldWorker extends AsyncTask<Void, Void, FieldWorker> {
+
+	    private ContentResolver resolver;
+        private String extId;
+        private String password;
+        private Listener listener;
+	    
+	    interface Listener {
+	        void onAuthenticated(FieldWorker fw);
+	    }
+
+        public AuthenticateFieldWorker(ContentResolver resolver, String extId, String password, Listener listener) {
+	        this.resolver = resolver;
+	        this.extId = extId;
+	        this.password = password;
+	        this.listener = listener;
+	    }
+	    
+        @Override
+        protected FieldWorker doInBackground(Void... arg0) {
+            if (Queries.hasFieldWorker(resolver, extId, password)) {
+                Cursor cursor = Queries.getFieldWorkByExtId(resolver, extId);
+                return Converter.toFieldWorker(cursor);
+            } else {
+                return null;
+            }
+        }
+        
+        @Override
+        protected void onPostExecute(FieldWorker result) {
+            listener.onAuthenticated(result);
+        }
+	    
 	}
 
     private void startUpdateActivity(FieldWorker fieldWorker) {
