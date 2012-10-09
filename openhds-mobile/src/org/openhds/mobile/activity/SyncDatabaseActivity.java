@@ -3,6 +3,7 @@ package org.openhds.mobile.activity;
 import org.openhds.mobile.R;
 import org.openhds.mobile.listener.CollectEntitiesListener;
 import org.openhds.mobile.task.SyncEntitiesTask;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -11,7 +12,6 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.os.AsyncTask.Status;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -62,9 +62,6 @@ public class SyncDatabaseActivity extends Activity implements CollectEntitiesLis
 	
 	private void initializeProgressDialog() {
         dialog = new ProgressDialog(this);
-        dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        dialog.setTitle("Working...");
-        dialog.setMessage("Do not interrupt");
         dialog.setCancelable(true);
         dialog.setOnCancelListener(new MyOnCancelListener());
 	}
@@ -95,14 +92,18 @@ public class SyncDatabaseActivity extends Activity implements CollectEntitiesLis
 		alert.show();
 	}
 	
-	private void startSync(){
+	private void startSync() {
 
-		 if (entitiesTask == null) {
-			 dialog.show();
-			 entitiesTask = new SyncEntitiesTask(url, username, password, dialog, getBaseContext(), SyncDatabaseActivity.this);
-		 }
-		 if (entitiesTask.getStatus() == Status.PENDING) 
-			 entitiesTask.execute();	
+		if (entitiesTask == null) {
+			dialog.setTitle("Working...");
+			dialog.setMessage("Do not interrupt");
+			dialog.show();
+			
+			entitiesTask = new SyncEntitiesTask(url, username, password,
+					dialog, getBaseContext(), SyncDatabaseActivity.this);
+		}
+		if (entitiesTask.getStatus() == Status.PENDING)
+			entitiesTask.execute();
 
 	}
 	

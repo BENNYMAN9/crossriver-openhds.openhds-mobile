@@ -19,7 +19,6 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.openhds.mobile.OpenHDS;
-import org.openhds.mobile.activity.SyncDatabaseActivity;
 import org.openhds.mobile.listener.CollectEntitiesListener;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -37,10 +36,9 @@ import android.os.AsyncTask;
  * locations and then retrieves all individuals. Ordering is somewhat important here, because the database has a few
  * foreign key references that must be satisfied (e.g. individual references a location location)
  */
-public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
+public class SyncEntitiesTask extends AsyncTask<Void, Integer, Boolean> {
 
     private CollectEntitiesListener listener;
-    private SyncDatabaseActivity activity;
     private ContentResolver resolver;
 
     private UsernamePasswordCredentials creds;
@@ -54,6 +52,17 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
 
     private final List<ContentValues> values = new ArrayList<ContentValues>();
     private final ContentValues[] emptyArray = new ContentValues[] {};
+    
+    private State state;
+    private Entity entity;
+    
+    private enum State {
+    	DOWNLOADING, SAVING
+    }
+    
+    private enum Entity {
+    	LOCATION_HIERARCHY, LOCATION, ROUND, VISIT, RELATIONSHIP, INDIVIDUAL, SOCIALGROUP
+    }
 
     public SyncEntitiesTask(String url, String username, String password, ProgressDialog dialog, Context context,
             CollectEntitiesListener listener) {
@@ -62,8 +71,50 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         this.password = password;
         this.dialog = dialog;
         this.listener = listener;
-        this.activity = (SyncDatabaseActivity) listener;
         this.resolver = context.getContentResolver();
+    }
+    
+    @Override
+    protected void onProgressUpdate(Integer... values) {
+    	StringBuilder builder = new StringBuilder();
+    	switch(state) {
+    	case DOWNLOADING:
+    		builder.append("Downloading ");
+    		break;
+    	case SAVING:
+    		builder.append("Saving ");
+    		break;
+    	}
+    	
+    	switch(entity) {
+    	case INDIVIDUAL:
+    		builder.append(" Individuals.");
+    		break;
+    	case LOCATION:
+    		builder.append(" Locations.");
+    		break;
+    	case LOCATION_HIERARCHY:
+    		builder.append(" Location Hierarchy.");
+    		break;
+    	case RELATIONSHIP:
+    		builder.append(" Relationships.");
+    		break;
+    	case ROUND:
+    		builder.append(" Rounds.");
+    		break;
+    	case SOCIALGROUP:
+    		builder.append(" Social Groups.");
+    		break;
+    	case VISIT:
+    		builder.append(" Visits.");
+    		break;
+    	}
+    	
+    	if (values.length > 0) {
+    		builder.append(" Found " + values[0] + " items");
+    	}
+    	
+    	dialog.setMessage(builder.toString());
     }
 
     @Override
@@ -80,26 +131,26 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         deleteAllTables();
 
         try {
+        	entity = Entity.LOCATION_HIERARCHY;
             processUrl(baseurl + "/locationhierarchy");
-            resetDialogParams();
 
+            entity = Entity.LOCATION;
             processUrl(baseurl + "/location");
-            resetDialogParams();
 
+            entity = Entity.ROUND;
             processUrl(baseurl + "/round");
-            resetDialogParams();
 
+            entity = Entity.VISIT;
             processUrl(baseurl + "/visit");
-            resetDialogParams();
 
+            entity = Entity.RELATIONSHIP;
             processUrl(baseurl + "/relationship");
-            resetDialogParams();
 
+            entity = Entity.INDIVIDUAL;
             processUrl(baseurl + "/individual");
-            resetDialogParams();
 
+            entity = Entity.SOCIALGROUP;
             processUrl(baseurl + "/socialgroup");
-            resetDialogParams();
         } catch (Exception e) {
             return false;
         }
@@ -120,17 +171,11 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
     }
 
     private void processUrl(String url) throws Exception {
+    	state = State.DOWNLOADING;
+    	publishProgress();
+
         httpGet = new HttpGet(url);
         processResponse();
-    }
-
-    protected void onProgressUpdate(Integer... progress) {
-        dialog.incrementProgressBy(progress[0]);
-        if (dialog.getProgress() > dialog.getMax()) {
-            dialog.dismiss();
-            dialog.setProgress(0);
-            dialog.setMax(0);
-        }
     }
 
     private void processResponse() throws Exception {
@@ -151,7 +196,8 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
     }
 
     private void processXMLDocument(InputStream content) throws Exception {
-
+    	state = State.SAVING;
+    	
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
         factory.setNamespaceAware(true);
 
@@ -167,78 +213,29 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
                 name = parser.getName();
                 if (name.equalsIgnoreCase("count")) {
                     parser.next();
-                    int count = Integer.parseInt(parser.getText());
-                    dialog.setMax(count);
+                    int cnt = Integer.parseInt(parser.getText());
+                    publishProgress(cnt);
                     parser.nextTag();
                 } else if (name.equalsIgnoreCase("individual")) {
                     processIndividualParams(parser);
-                    activity.runOnUiThread(changeMessageIndividual);
                 } else if (name.equalsIgnoreCase("location")) {
                     processLocationParams(parser);
-                    activity.runOnUiThread(changeMessageLocation);
                 } else if (name.equalsIgnoreCase("hierarchy")) {
                     processHierarchyParams(parser);
-                    activity.runOnUiThread(changeMessageHierarchy);
                 } else if (name.equalsIgnoreCase("round")) {
                     processRoundParams(parser);
-                    activity.runOnUiThread(changeMessageRound);
                 } else if (name.equalsIgnoreCase("visit")) {
                     processVisitParams(parser);
-                    activity.runOnUiThread(changeMessageVisit);
                 } else if (name.equalsIgnoreCase("socialgroup")) {
                     processSocialGroupParams(parser);
-                    activity.runOnUiThread(changeMessageSocialGroup);
                 } else if (name.equalsIgnoreCase("relationship")) {
                     processRelationshipParams(parser);
-                    activity.runOnUiThread(changeMessageRelationship);
                 }
                 break;
             }
             eventType = parser.next();
         }
     }
-
-    private Runnable changeMessageIndividual = new Runnable() {
-        public void run() {
-            dialog.setMessage("Downloading Individuals");
-        }
-    };
-
-    private Runnable changeMessageLocation = new Runnable() {
-        public void run() {
-            dialog.setMessage("Downloading Locations");
-        }
-    };
-
-    private Runnable changeMessageHierarchy = new Runnable() {
-        public void run() {
-            dialog.setMessage("Downloading Hierarchy");
-        }
-    };
-
-    private Runnable changeMessageRound = new Runnable() {
-        public void run() {
-            dialog.setMessage("Downloading Rounds");
-        }
-    };
-
-    private Runnable changeMessageVisit = new Runnable() {
-        public void run() {
-            dialog.setMessage("Downloading Visits");
-        }
-    };
-
-    private Runnable changeMessageSocialGroup = new Runnable() {
-        public void run() {
-            dialog.setMessage("Downloading Social Groups");
-        }
-    };
-
-    private Runnable changeMessageRelationship = new Runnable() {
-        public void run() {
-            dialog.setMessage("Downloading Relationships");
-        }
-    };
 
     private void processHierarchyParams(XmlPullParser parser) throws XmlPullParserException, IOException {
         values.clear();
@@ -478,13 +475,7 @@ public class SyncEntitiesTask extends AsyncTask<Void, String, Boolean> {
         resolver.bulkInsert(OpenHDS.Relationships.CONTENT_ID_URI_BASE, values.toArray(emptyArray));
     }
 
-    private void resetDialogParams() {
-        dialog.setProgress(0);
-        dialog.setMax(0);
-    }
-
     protected void onPostExecute(final Boolean result) {
-        dialog.setProgress(0);
         listener.collectionComplete(result);
     }
 }
