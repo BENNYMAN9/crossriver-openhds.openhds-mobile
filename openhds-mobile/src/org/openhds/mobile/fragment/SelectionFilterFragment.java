@@ -1,220 +1,163 @@
 package org.openhds.mobile.fragment;
 
-import java.util.List;
-
-import org.openhds.mobile.Converter;
-import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
-import org.openhds.mobile.database.DatabaseAdapter;
-import org.openhds.mobile.model.Individual;
-import org.openhds.mobile.model.Location;
-import org.openhds.mobile.model.LocationHierarchy;
-import org.openhds.mobile.model.UpdateParams;
 
-import android.database.Cursor;
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.RadioButton;
+import android.widget.TextView;
 
-public class SelectionFilterFragment extends Fragment {
+public class SelectionFilterFragment extends Fragment implements OnClickListener {
 	
-	private DatabaseAdapter databaseAdapter;
+	public interface Listener {
+		void onSeeListRegion();
+		
+		void onSeeListSubRegion(String region);
+		
+		void onSeeListVillage(String subregion);
+		
+		void onSeeListLocation(String village);
 	
-	private LocationHierarchy region;
-	private LocationHierarchy subRegion;
-	private LocationHierarchy village;
-	private Location location;
-	private Individual individual;
+		void onSearch(String location, String firstName, String lastName, String gender);
+	}
 	
-	private String firstName;
-	private String lastName;
-	private String gender;
+	// keep track of the original values - these may be set by an activity
+	// these will be used if user presses the 'clear' button
+	private String region = "";
+	private String subregion = "";
+	private String village = "";
+	private String location = "";
 	
-	private List<LocationHierarchy> regions;
-	private List<LocationHierarchy> subRegions;
-	private List<LocationHierarchy> villages;
-	private List<Location> locations;
-	private List<Individual> individuals;
+	private Button regionBtn, subRegionBtn, villageBtn, locationBtn;
+	private TextView regionTxt, subregionTxt, villageTxt, locationTxt, firstNameTxt, lastNameTxt;
+	private RadioButton maleBtn, femaleBtn;
+	private Button clearBtn, searchBtn;
+	private Listener listener;
 	
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        region = new LocationHierarchy();
-        subRegion = new LocationHierarchy();
-        village = new LocationHierarchy();
-        location = new Location();
-        individual = new Individual();
+		View view = inflater.inflate(R.layout.selection_filter, container, false);
+		
+		regionBtn = (Button) view.findViewById(R.id.region_see_list);
+	    regionBtn.setOnClickListener(this);
+	    
+	    subRegionBtn = (Button) view.findViewById(R.id.subregion_see_list);
+	    subRegionBtn.setOnClickListener(this);
+	    
+	    villageBtn = (Button) view.findViewById(R.id.village_see_list);
+	    villageBtn.setOnClickListener(this);
+	    
+	    locationBtn = (Button) view.findViewById(R.id.location_see_list);
+	    locationBtn.setOnClickListener(this);
+	    
+	    clearBtn = (Button) view.findViewById(R.id.clearFilterBtn);
+	    clearBtn.setOnClickListener(this);
+	    
+	    searchBtn = (Button) view.findViewById(R.id.searchFilterBtn);
+	    searchBtn.setOnClickListener(this);   
+	    
+	    regionTxt = (TextView) view.findViewById(R.id.regionTxt); 
+	    subregionTxt = (TextView) view.findViewById(R.id.subRegionTxt); 
+	    villageTxt = (TextView) view.findViewById(R.id.villageTxt);
+	    locationTxt = (TextView) view.findViewById(R.id.locationTxt);
+	    firstNameTxt = (TextView) view.findViewById(R.id.firstNameTxt);
+	    lastNameTxt = (TextView) view.findViewById(R.id.lastNameTxt);
+	    
+	    maleBtn = (RadioButton) view.findViewById(R.id.maleBtn);
+	    femaleBtn = (RadioButton) view.findViewById(R.id.femaleBtn);
        
-        databaseAdapter = new DatabaseAdapter(getActivity().getBaseContext());
-        return inflater.inflate(R.layout.selection_filter, container, false);
+        return view;
     }
 	
-	public CharSequence[] getRegionsDialog() {
-	    Cursor cursor = Queries.getHierarchysByLevel(getActivity().getContentResolver(), UpdateParams.HIERARCHY_TOP_LEVEL);
-		regions = Converter.toHierarchyList(cursor);
-		CharSequence[] names = new CharSequence[regions.size()];
-		for (int i = 0; i < regions.size(); i++) 
-			names[i] = regions.get(i).getName();
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
 		
-		return names;
+		try {
+			listener = (Listener)activity;
+		} catch(ClassCastException e) {
+			throw new ClassCastException("The activity must implement the " + Listener.class.getName() + " interface");
+		}
 	}
 	
-	public CharSequence[] getSubRegionsDialog() {
-	    Cursor cursor = Queries.getHierarchysByParent(getActivity().getContentResolver(), region.getExtId());
-		subRegions = Converter.toHierarchyList(cursor);
-		CharSequence[] names = new CharSequence[subRegions.size()];
-		for (int i = 0; i < subRegions.size(); i++) 
-			names[i] = subRegions.get(i).getName();
+	public void onClick(View view) {
+		switch (view.getId()) {
+			case R.id.region_see_list:
+				listener.onSeeListRegion();
+				break;
+			case R.id.subregion_see_list:
+				listener.onSeeListSubRegion(regionTxt.getText().toString());
+				break;
+			case R.id.village_see_list:
+				listener.onSeeListVillage(subregionTxt.getText().toString());
+				break;
+			case R.id.location_see_list:
+				listener.onSeeListLocation(villageTxt.getText().toString());
+				break;
+			case R.id.searchFilterBtn:
+				String gender = "";
+				if (maleBtn.isChecked() || femaleBtn.isChecked()) {
+					gender = maleBtn.isChecked() ? "Male" : "Female";
+				}
+				listener.onSearch(locationTxt.getText().toString(), firstNameTxt.getText().toString(), lastNameTxt.getText().toString(), gender);
+				break;
+			case R.id.clearFilterBtn:
+				clear();
+				break;
+		}
+	}
+	
+	private void clear() {
+		regionTxt.setText(region);
+		subregionTxt.setText(subregion);
+		villageTxt.setText(village);
+		locationTxt.setText(location);
 		
-		return names;
-	}
-	
-	public CharSequence[] getVillagesDialog() {
-	    Cursor cursor = Queries.getHierarchysByParent(getActivity().getContentResolver(), subRegion.getExtId());
-		villages = Converter.toHierarchyList(cursor);
-		CharSequence[] names = new CharSequence[villages.size()];
-		for (int i = 0; i < villages.size(); i++) 
-			names[i] = villages.get(i).getName();
-		
-		return names;
-	}
-	
-	public CharSequence[] getLocationsDialog() {
-	    Cursor cursor = Queries.getLocationsByHierachy(getActivity().getContentResolver(), village.getExtId());
-		locations = Converter.toLocationList(cursor);
-		CharSequence[] names = new CharSequence[locations.size()];
-		for (int i = 0; i < locations.size(); i++) 
-			names[i] = locations.get(i).getName();
-		
-		return names;
-	}
-	
-	public void setRegionDialogSelection(int index) {
-		this.region = regions.get(index);
-	}
-	
-	public void setSubRegionDialogSelection(int index) {
-		this.subRegion = subRegions.get(index);
-	}
-	
-	public void setVillageDialogSelection(int index) {
-		this.village = villages.get(index);
-	}
-	
-	public void setLocationDialogSelection(int index) {
-		this.location = locations.get(index);
-	}
-	
-	public DatabaseAdapter getDatabaseAdapter() {
-		return databaseAdapter;
+		firstNameTxt.setText("");
+		lastNameTxt.setText("");
+		maleBtn.setChecked(false);
+		femaleBtn.setChecked(false);
 	}
 
-	public void setDatabaseAdapter(DatabaseAdapter databaseAdapter) {
-		this.databaseAdapter = databaseAdapter;
-	}
-
-	public LocationHierarchy getRegion() {
-		return region;
-	}
-
-	public void setRegion(LocationHierarchy region) {
+	public void setRegion(String region) {
 		this.region = region;
+		updateRegionText(region);
 	}
 
-	public LocationHierarchy getSubRegion() {
-		return subRegion;
+	public void setSubregion(String subregion) {
+		this.subregion = subregion;
+		updateSubregionText(subregion);
 	}
 
-	public void setSubRegion(LocationHierarchy subRegion) {
-		this.subRegion = subRegion;
-	}
-
-	public LocationHierarchy getVillage() {
-		return village;
-	}
-
-	public void setVillage(LocationHierarchy village) {
+	public void setVillage(String village) {
 		this.village = village;
+		updateVillageText(village);
 	}
 
-	public Location getLocation() {
-		return location;
-	}
-
-	public void setLocation(Location location) {
+	public void setLocation(String location) {
 		this.location = location;
-	}
-
-	public Individual getIndividual() {
-		return individual;
-	}
-
-	public void setIndividual(Individual individual) {
-		this.individual = individual;
-	}
-
-	public String getFirstName() {
-		return firstName;
-	}
-
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-	public String getLastName() {
-		return lastName;
-	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
-
-	public String getGender() {
-		return gender;
-	}
-
-	public void setGender(String gender) {
-		this.gender = gender;
+		updateLocationText(location);
 	}
 	
-	public List<LocationHierarchy> getRegions() {
-		return regions;
+	public void updateRegionText(String text) {
+		regionTxt.setText(text);
 	}
-
-	public void setRegions(List<LocationHierarchy> regions) {
-		this.regions = regions;
+	
+	public void updateSubregionText(String text) {
+		subregionTxt.setText(text);
 	}
-
-	public List<LocationHierarchy> getSubRegions() {
-		return subRegions;
+	
+	public void updateVillageText(String text) {
+		villageTxt.setText(text);
 	}
-
-	public void setSubRegions(List<LocationHierarchy> subRegions) {
-		this.subRegions = subRegions;
-	}
-
-	public List<LocationHierarchy> getVillages() {
-		return villages;
-	}
-
-	public void setVillages(List<LocationHierarchy> villages) {
-		this.villages = villages;
-	}
-
-	public List<Location> getLocations() {
-		return locations;
-	}
-
-	public void setLocations(List<Location> locations) {
-		this.locations = locations;
-	}
-
-	public List<Individual> getIndividuals() {
-		return individuals;
-	}
-
-	public void setIndividuals(List<Individual> individuals) {
-		this.individuals = individuals;
+	
+	public void updateLocationText(String text) {
+		locationTxt.setText(text);
 	}
 }

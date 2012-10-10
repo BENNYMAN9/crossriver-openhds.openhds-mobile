@@ -46,5 +46,22 @@
     <string name="update">Update</string>
     <string name="username">Username</string>
     <string name="view_forms_btn">View My Forms</string>
-
+	<string name="see_list">See List</string>
+    <string name="region_lbl">Region:</string>
+    <string name="region_hint_lbl">Region External Id</string>
+    <string name="subregion_lbl">Sub Region:</string>
+    <string name="subregion_hint_lbl">Sub Region External Id</string>
+    <string name="village_lbl">Village:</string>
+    <string name="village_hint_lbl">Village External Id</string>
+    <string name="location_hint_lbl">Location External Id</string>
+    <string name="firstname_lbl">First Name:</string>
+    <string name="firstname_hint_lbl">First Name</string>
+    <string name="lastname_lbl">Last Name:</string>
+    <string name="lastname_hint_lbl">Last Name</string>
+    <string name="gender_lbl">Gender:</string>
+    <string name="male_lbl">Male</string>
+    <string name="female_lbl">Female</string>
+    <string name="clear_lbl">Clear</string>
+    <string name="search_lbl">Search</string>
+    <string name="search_individual_lbl">Search for an Individual</string>
 </resources>

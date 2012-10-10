@@ -12,6 +12,7 @@ import org.openhds.mobile.model.Round;
 
 import android.app.Activity;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
@@ -23,8 +24,9 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
 /**
- * ValueFragment is responsible for showing a list of entities, and then notifying the activity using this fragment
- * which entity has been selected. An entity can be defined as: Region, Sub Region, Village, Round, Location and
+ * ValueFragment is responsible for showing a list of entities, and then
+ * notifying the activity using this fragment which entity has been selected. An
+ * entity can be defined as: Region, Sub Region, Village, Round, Location and
  * Individual
  */
 public class ValueFragment extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -37,6 +39,7 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
     private static final int INDIVIDUAL_LOADER = 4;
     private static final int INDIVIDUAL_FILTER_LOADER = 5;
 
+    // create the column mappings so they don't need to be recreated on every load
     private static final String[] REGION_COLUMNS = new String[] { OpenHDS.HierarchyItems.COLUMN_HIERARCHY_NAME,
             OpenHDS.HierarchyItems.COLUMN_HIERARCHY_EXTID };
     private static final String[] ROUNDS_COLUMNS = new String[] { OpenHDS.Rounds.COLUMN_ROUND_NUMBER,
@@ -58,7 +61,7 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
     private enum Displayed {
         HIERARCHY, SUBREGION, VILLAGE, ROUND, LOCATION, INDIVIDUAL;
     }
-    
+
     public interface ValueListener {
         void onHierarchySelected(LocationHierarchy hierarchy);
 
@@ -69,7 +72,7 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
         void onRoundSelected(Round round);
 
         void onLocationSelected(Location location);
-        
+
         void onIndividualSelected(Individual individual);
     }
 
@@ -86,11 +89,6 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
         adapter = new SimpleCursorAdapter(getActivity(), android.R.layout.simple_list_item_2, null, REGION_COLUMNS,
                 VIEW_BINDINGS, 0);
         setListAdapter(adapter);
-    }
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
     }
 
     @Override
@@ -143,6 +141,10 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
         getLoaderManager().restartLoader(REGION_LOADER, bundle, this);
     }
 
+    /**
+     * Load a village optionally filtered by a parent external id
+     * @param parentExtId the parent ext it to filter on, or null to list all villages
+     */
     public void loadVillage(String parentExtId) {
         listCurrentlyDisplayed = Displayed.VILLAGE;
         loadHierarchyItemsFromParent(parentExtId);
@@ -155,17 +157,13 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
                     OpenHDS.HierarchyItems.COLUMN_HIERARCHY_LEVEL + " = ?", new String[] { "LGA" }, null);
         case REGION_LOADER:
             adapter.changeCursorAndColumns(null, REGION_COLUMNS, VIEW_BINDINGS);
-            return new CursorLoader(getActivity(), OpenHDS.HierarchyItems.CONTENT_ID_URI_BASE, null,
-                    OpenHDS.HierarchyItems.COLUMN_HIERARCHY_PARENT + " = ?",
-                    new String[] { arg1.getString("parentExtId") }, null);
+            return buildRegionCursorLoader(arg1);
         case ROUND_LOADER:
             adapter.changeCursorAndColumns(null, ROUNDS_COLUMNS, VIEW_BINDINGS);
             return new CursorLoader(getActivity(), OpenHDS.Rounds.CONTENT_ID_URI_BASE, null, null, null, null);
         case LOCATION_LOADER:
             adapter.changeCursorAndColumns(null, LOCATION_COLUMNS, VIEW_BINDINGS);
-            return new CursorLoader(getActivity(), OpenHDS.Locations.CONTENT_ID_URI_BASE, null,
-                    OpenHDS.Locations.COLUMN_LOCATION_HIERARCHY + " = ?",
-                    new String[] { arg1.getString("hierarchyExtId") }, null);
+            return buildLocationCursorLoader(arg1);
         case INDIVIDUAL_LOADER:
             adapter.changeCursorAndColumns(null, INDIVIDUAL_COLUMNS, VIEW_BINDINGS);
             return new CursorLoader(getActivity(), OpenHDS.Individuals.CONTENT_ID_URI_BASE, null,
@@ -173,10 +171,10 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
                     new String[] { arg1.getString("locationExtId") }, null);
         case INDIVIDUAL_FILTER_LOADER:
             adapter.changeCursorAndColumns(null, INDIVIDUAL_COLUMNS, VIEW_BINDINGS);
-            
+
             String filter = buildFitler(arg1);
             String[] args = buildArguments(arg1);
-            
+
             return new CursorLoader(getActivity(), OpenHDS.Individuals.CONTENT_ID_URI_BASE, null, filter, args,
                     OpenHDS.Individuals.COLUMN_INDIVIDUAL_EXTID + " ASC");
         }
@@ -184,9 +182,37 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
         return null;
     }
 
+    private Loader<Cursor> buildLocationCursorLoader(Bundle arg1) {
+        if (TextUtils.isEmpty(arg1.getString("hierarchyExtId"))) {
+            return buildCursorLoader(OpenHDS.Locations.CONTENT_ID_URI_BASE, null, null);
+        } else {
+            return buildCursorLoader(OpenHDS.Locations.CONTENT_ID_URI_BASE, OpenHDS.Locations.COLUMN_LOCATION_HIERARCHY
+                    + " = ?", new String[] { arg1.getString("hierarchyExtId") });
+        }
+    }
+
+    private Loader<Cursor> buildRegionCursorLoader(Bundle arg1) {
+        if (TextUtils.isEmpty(arg1.getString("parentExtId"))) {
+            return buildCursorLoader(OpenHDS.HierarchyItems.CONTENT_ID_URI_BASE, null, null);
+        } else {
+            return buildCursorLoader(OpenHDS.HierarchyItems.CONTENT_ID_URI_BASE,
+                    OpenHDS.HierarchyItems.COLUMN_HIERARCHY_PARENT + " = ?",
+                    new String[] { arg1.getString("parentExtId") });
+        }
+    }
+
+    private Loader<Cursor> buildCursorLoader(Uri uri, String where, String[] args) {
+        return new CursorLoader(getActivity(), uri, null, where, args, null);
+    }
+
+    /**
+     * Builds an array of strings that will be used as the arguments to an SQL query
+     * @param arg1
+     * @return
+     */
     private String[] buildArguments(Bundle arg1) {
         List<String> args = new ArrayList<String>();
-        
+
         if (!TextUtils.isEmpty(arg1.getString("location"))) {
             args.add(arg1.getString("location"));
         }
@@ -199,13 +225,18 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
         if (!TextUtils.isEmpty(arg1.getString("gender"))) {
             args.add(arg1.getString("gender"));
         }
-        
-        return args.toArray(new String[]{});
+
+        return args.toArray(new String[] {});
     }
 
+    /**
+     * Constructs the filtering SQL clause for getting a list of individuals
+     * @param arg1 bundle which contains possible filtering options
+     * @return
+     */
     private String buildFitler(Bundle arg1) {
         StringBuilder builder = new StringBuilder();
-        
+
         if (!TextUtils.isEmpty(arg1.getString("location"))) {
             builder.append(OpenHDS.Individuals.COLUMN_INDIVIDUAL_RESIDENCE + " = ?");
         }
@@ -217,14 +248,14 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
         if (!TextUtils.isEmpty(arg1.getString("lastName"))) {
             if (builder.length() > 0)
                 builder.append(" AND ");
-            builder.append(OpenHDS.Individuals.COLUMN_INDIVIDUAL_LASTNAME +  " LIKE ?");
+            builder.append(OpenHDS.Individuals.COLUMN_INDIVIDUAL_LASTNAME + " LIKE ?");
         }
         if (!TextUtils.isEmpty(arg1.getString("gender"))) {
             if (builder.length() > 0)
                 builder.append(" AND ");
             builder.append(OpenHDS.Individuals.COLUMN_INDIVIDUAL_GENDER + " = ?");
         }
-        
+
         return builder.toString();
     }
 
@@ -236,11 +267,18 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
         adapter.swapCursor(null);
     }
 
+    /**
+     * Loads all rounds
+     */
     public void loadRounds() {
         listCurrentlyDisplayed = Displayed.ROUND;
         getLoaderManager().restartLoader(ROUND_LOADER, null, this);
     }
 
+    /**
+     * Loads a list of locations that can optionally be filtered by a hierarchy ext id
+     * @param hierarchyExtId the hierarchy to filter, or null to get a list of all locations
+     */
     public void loadLocations(String hierarchyExtId) {
         listCurrentlyDisplayed = Displayed.LOCATION;
         Bundle bundle = new Bundle();
@@ -248,13 +286,24 @@ public class ValueFragment extends ListFragment implements LoaderManager.LoaderC
         getLoaderManager().restartLoader(LOCATION_LOADER, bundle, this);
     }
 
+    /**
+     * Load a list of individuals based on their current residency
+     * @param extId filter by the location ext id (current residency) of the individual
+     */
     public void loadIndividuals(String extId) {
         listCurrentlyDisplayed = Displayed.INDIVIDUAL;
         Bundle bundle = new Bundle();
         bundle.putString("locationExtId", extId);
         getLoaderManager().restartLoader(INDIVIDUAL_LOADER, bundle, this);
     }
-    
+
+    /**
+     * Loads a list of individuals that are filtered by the arguments
+     * @param location the location id to filter, or null to ignore filtering on location
+     * @param firstName matches on first name of individual (using SQL LIKE), null to ignore first name matching
+     * @param lastName matches on last name of individual (using SQL LIKE), null to ignore last name matching
+     * @param gender filters by individual gender, null to ignore gender filtering
+     */
     public void loadFilteredIndividuals(String location, String firstName, String lastName, String gender) {
         listCurrentlyDisplayed = Displayed.INDIVIDUAL;
         Bundle bundle = new Bundle();
