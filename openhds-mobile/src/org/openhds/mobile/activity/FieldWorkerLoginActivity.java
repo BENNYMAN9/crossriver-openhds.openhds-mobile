@@ -1,27 +1,26 @@
 package org.openhds.mobile.activity;
 
 import org.openhds.mobile.Converter;
-import org.openhds.mobile.OpenHDS;
 import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
 import org.openhds.mobile.activity.FieldWorkerLoginActivity.AuthenticateFieldWorker.Listener;
-import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.listener.RetrieveFieldWorkersListener;
 import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Result;
 import org.openhds.mobile.task.FieldWorkerLoginTask;
+
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.DialogInterface.OnCancelListener;
 import android.database.Cursor;
 import android.os.AsyncTask;
-import android.os.Bundle;
 import android.os.AsyncTask.Status;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuInflater;
