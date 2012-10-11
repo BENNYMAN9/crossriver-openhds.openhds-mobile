@@ -102,8 +102,9 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
 				if (loginTask == null)
 					loginTask = new FieldWorkerLoginTask(this, settings, this, dialog, extId, password, true);
 				
-	    		if (loginTask.getStatus() == Status.PENDING) 
-	    			loginTask.execute();	
+	    		if (loginTask.getStatus() == Status.PENDING) {
+                    loginTask.execute();
+                }
 			}
 			else {
                 dialog = ProgressDialog.show(this, "Authenticating...", "Please Wait");
@@ -125,7 +126,7 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
 		}
 	}
 	
-	static class AuthenticateFieldWorker extends AsyncTask<Void, Void, FieldWorker> {
+	public static class AuthenticateFieldWorker extends android.os.AsyncTask<Void, Void, org.openhds.mobile.model.FieldWorker> {
 
 	    private ContentResolver resolver;
         private String extId;
