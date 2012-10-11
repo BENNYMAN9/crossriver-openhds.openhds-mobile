@@ -5,5 +5,7 @@
 	<classpathentry kind="lib" path="libs"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="src" path="test"/>
+	<classpathentry kind="lib" path="deps/junit-4.10.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
