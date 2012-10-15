@@ -1,16 +1,11 @@
 package org.openhds.mobile.activity;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.openhds.mobile.Converter;
 import org.openhds.mobile.FieldWorkerProvider;
 import org.openhds.mobile.InstanceProviderAPI;
+import org.openhds.mobile.OpenHDS;
 import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
-import org.openhds.mobile.cell.ValueFragmentCell;
-import org.openhds.mobile.dialog.HouseholdListDialog;
-import org.openhds.mobile.fragment.EventFragment;
 import org.openhds.mobile.fragment.SelectionFragment;
 import org.openhds.mobile.fragment.ValueFragment;
 import org.openhds.mobile.listener.OdkFormLoadListener;
@@ -27,36 +22,37 @@ import org.openhds.mobile.model.Visit;
 import org.openhds.mobile.task.OdkGeneratedFormLoadTask;
 
 import android.app.ActionBar;
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.LoaderManager.LoaderCallbacks;
+import android.app.ProgressDialog;
 import android.content.ContentResolver;
+import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
-public class UpdateActivity extends FragmentActivity implements OnClickListener, ValueFragment.ValueListener,
-        OdkFormLoadListener, FieldWorkerProvider, SelectionFragment.Listener {
+public class UpdateActivity extends Activity implements OnClickListener, ValueFragment.ValueListener,
+        OdkFormLoadListener, LoaderCallbacks<Cursor>, FieldWorkerProvider, SelectionFragment.Listener {
 	
 	private Button findLocationGeoPointBtn, createLocationBtn, createVisitBtn, clearLocationBtn, clearIndividualBtn,
 	 			   householdBtn, membershipBtn, relationshipBtn, inMigrationBtn, outMigrationBtn, pregRegBtn, birthRegBtn, deathBtn, 
 	 			   finishVisitBtn;
-	
-	// logged in fieldworker
-	private FieldWorker fieldWorker;
 		
 	// this activity manages three fragments
 	private SelectionFragment sf;
 	private ValueFragment vf;
-	private EventFragment ef;
 	
 	private final int SELECTED_XFORM = 1;
 	private final int FILTER = 2;
@@ -70,7 +66,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	private boolean xFormNotFound = false;
 	
 	// the workflow for this activity is arranged into multiple phases
-	private boolean REGION_PHASE = true;
 	private boolean SUB_REGION_PHASE = false;
 	private boolean VILLAGE_PHASE = false;
 	private boolean LOCATION_PHASE = false;
@@ -78,6 +73,9 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	private boolean VISIT_PHASE = false;
 	private boolean INDIVIDUAL_PHASE = false;
 	private boolean XFORMS_PHASE = false;
+
+    private ProgressDialog progDialog;
+    private AlertDialog householdDialog;
 				
     @Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -126,9 +124,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
         deathBtn = (Button) findViewById(R.id.deathBtn);
         deathBtn.setOnClickListener(this);
 
-    	sf = (SelectionFragment)getSupportFragmentManager().findFragmentById(R.id.selectionFragment);
-		vf = (ValueFragment)getSupportFragmentManager().findFragmentById(R.id.valueFragment);
-		ef = (EventFragment)getSupportFragmentManager().findFragmentById(R.id.eventFragment);
+    	sf = (SelectionFragment)getFragmentManager().findFragmentById(R.id.selectionFragment);
+		vf = (ValueFragment)getFragmentManager().findFragmentById(R.id.valueFragment);
 		
 	    ActionBar actionBar = getActionBar();
 	    actionBar.show();
@@ -219,16 +216,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 						loadForm(UpdateEvent.LOCATION);
 					}
 					else if (type.equals(UpdateEvent.INMIGRATION)) {
-						String extId = data.getExtras().getString("extId");
-						Cursor cursor = Queries.getIndividualByExtId(getContentResolver(), extId);
-						Individual individual = Converter.toIndividual(cursor);
+						Individual individual = (Individual) data.getExtras().getSerializable("individual");
 						sf.setIndividual(individual);
-						boolean result = determineSocialGroupForIndividual();
-						
-						if (result)
-							createHouseholdSelectionDialog(UpdateEvent.INMIGRATION);
-						else
-							loadForm(UpdateEvent.INMIGRATION);
+					    showSocialGroupLoadingDialog();
+						getLoaderManager().restartLoader(0, null, this);
 					}
 				}
 				break;
@@ -263,6 +254,10 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 			}
 		}
 	}
+
+    private void showSocialGroupLoadingDialog() {
+        progDialog = ProgressDialog.show(this, "Loading Social Groups...", "Loading Social Groups for this Location");
+    }
     
     /**
      * At any given point in time, the screen can be rotated.
@@ -418,36 +413,15 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		});	
 		alertDialogBuilder.setNegativeButton("External", new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
-				sf.setExternalInMigration(true);	
-				HouseholdListDialog householdDialog = new HouseholdListDialog(UpdateActivity.this, sf, UpdateEvent.INMIGRATION);
-				householdDialog.show();
+				sf.setExternalInMigration(true);
+				showSocialGroupLoadingDialog();
+				getLoaderManager().restartLoader(0, null, UpdateActivity.this);
 			}
 		});
 		AlertDialog alertDialog = alertDialogBuilder.create();
 		alertDialog.show();
     } 
     
-    /**
-     * This is specific for Cross River.
-     * A dialog displaying a selection of multiple Households for an Individual.
-     */
-    private void createHouseholdSelectionDialog(final String event) {
-		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-		alertDialogBuilder.setTitle("Select the Household to be used for this Individual.");
-		alertDialogBuilder.setSingleChoiceItems(sf.getSocialGroupsForDialog(), -1, new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int clicked) {
-				sf.setSocialGroupDialogSelection(clicked);
-				dialog.dismiss();
-				
-				if (event != null)
-					loadForm(event);
-			}
-		});
-	
-		AlertDialog alertDialog = alertDialogBuilder.create();
-		alertDialog.show();
-    }
-                
     /**
      * A dialog indicating that an Xform instance could not be found.
      */
@@ -548,25 +522,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 */
 	public void onOdkFormLoadFailure() {
 		createXFormNotFoundDialog();
-	}
-	
-	private boolean determineSocialGroupForIndividual() {
-		// get the socialgroups the individual is a part of
-	    Cursor cursor = Queries.getSocialGroupsByIndividualExtId(getContentResolver(), sf.getIndividual().getExtId());
-		List<SocialGroup> list = Converter.toSocialGroupList(cursor);	
-
-		sf.setSocialgroups(list);
-	
-		// if the individual is in more that one social group then the socialgroup must be specified
-		if (list.size() > 1) 
-			return true;
-		else if (list.size() == 1) 
-			sf.setSocialGroupDialogSelection(0);
-		else {
-			Toast.makeText(getApplicationContext(),	getString(R.string.household_not_found), Toast.LENGTH_SHORT).show();
-			sf.setSocialgroup(new SocialGroup());
-		}
-		return false;
 	}
 		
 	/**
@@ -781,7 +736,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateRegion() {
-		REGION_PHASE = true;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
 		ROUND_PHASE = false;
@@ -801,7 +755,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateSubRegion() {
-		REGION_PHASE = false;
 		SUB_REGION_PHASE = true;
 		VILLAGE_PHASE = false;
 		ROUND_PHASE = false;
@@ -821,7 +774,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateVillage() {
-		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = true;
 		ROUND_PHASE = false;
@@ -841,7 +793,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 		
 	private void setStateLocation() {
-		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
 		ROUND_PHASE = false;
@@ -862,7 +813,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateRound() {
-		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
 		ROUND_PHASE = true;
@@ -883,7 +833,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateVisit() { 
-		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
 		ROUND_PHASE = false;
@@ -904,7 +853,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateIndividual() {
-		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
 		ROUND_PHASE = false;
@@ -925,7 +873,6 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateFinish() {
-		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
 		ROUND_PHASE = false;
@@ -1000,11 +947,49 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 
     public void onIndividualSelected(Individual individual) {
         sf.setIndividual(individual);
-        
-        boolean result = determineSocialGroupForIndividual();
-        if (result)
-            createHouseholdSelectionDialog(null);
-        
         setPhase(UpdateEvent.XFORMS);
     }
+
+    public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+        Loader<Cursor> loader = null;
+        switch (arg0) {
+        case 0:
+            Uri uri = OpenHDS.SocialGroups.CONTENT_LOCATION_ID_URI_BASE.buildUpon()
+                    .appendPath(sf.getLocation().getExtId()).build();
+            loader = new CursorLoader(this, uri, null, null, null, null);
+            break;
+        }
+
+        return loader;
+    }
+
+    public void onLoadFinished(Loader<Cursor> arg0, Cursor arg1) {
+        progDialog.dismiss();
+        progDialog = null;
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select a Household for the Individual");
+        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_2, arg1,
+                new String[] { OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_GROUPNAME,
+                        OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_EXTID }, new int[] { android.R.id.text1,
+                        android.R.id.text2 }, 0);
+        builder.setAdapter(adapter, new DialogInterface.OnClickListener() {
+            
+            public void onClick(DialogInterface dialog, int which) {
+                Cursor cursor = (Cursor)householdDialog.getListView().getItemAtPosition(which);
+                SocialGroup sg = Converter.convertToSocialGroup(cursor);
+                sf.setSocialgroup(sg);
+                loadForm(UpdateEvent.INMIGRATION);
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        householdDialog = builder.create();
+        householdDialog.show();
+    }
+
+    public void onLoaderReset(Loader<Cursor> arg0) {
+        householdDialog.dismiss();
+        householdDialog = null;
+    }
+
 }

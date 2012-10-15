@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.List;
 
 public class Individual implements Serializable {
 
@@ -18,6 +19,7 @@ public class Individual implements Serializable {
 	private String father;
 	private String currentResidence;
 	private String status;
+	private List<SocialGroup> socialGroups;
 
 	public String getUuid() {
 		return uuid;
@@ -107,4 +109,12 @@ public class Individual implements Serializable {
 	public void setStatus(String status) {
 		this.status = status;
 	}
+
+    public List<SocialGroup> getSocialGroups() {
+        return socialGroups;
+    }
+
+    public void setSocialGroups(List<SocialGroup> socialGroups) {
+        this.socialGroups = socialGroups;
+    }
 }

@@ -12,14 +12,13 @@ import org.openhds.mobile.model.Round;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 
 /**
  * This activity is only used in searching for an Individual.
  * This activity is launched before creating Relationship and Internal In Migration events.
  * It's also launched before creating a new Location.
  */
-public class FilterActivity extends FragmentActivity implements ValueListener, SelectionFilterFragment.Listener {
+public class FilterActivity extends Activity implements ValueListener, SelectionFilterFragment.Listener {
 	
 	private SelectionFilterFragment selectionFilterFragment;
 	private ValueFragment valueFragment;
@@ -31,8 +30,8 @@ public class FilterActivity extends FragmentActivity implements ValueListener, S
 		super.onCreate(savedInstanceState);
 	    setContentView(R.layout.filter); 
 	    
-	    selectionFilterFragment = (SelectionFilterFragment)getSupportFragmentManager().findFragmentById(R.id.selectionFilterFragment);
-		valueFragment = (ValueFragment)getSupportFragmentManager().findFragmentById(R.id.valueFragment);
+	    selectionFilterFragment = (SelectionFilterFragment)getFragmentManager().findFragmentById(R.id.selectionFilterFragment);
+		valueFragment = (ValueFragment)getFragmentManager().findFragmentById(R.id.valueFragment);
 
 		processExtras();
 	}
@@ -52,8 +51,7 @@ public class FilterActivity extends FragmentActivity implements ValueListener, S
 	   
     public void onIndividualSelected(Individual individual) {
         Intent i = new Intent();
-        i.putExtra("name", individual.getFirstName() + " " + individual.getLastName());
-        i.putExtra("extId", individual.getExtId());
+        i.putExtra("individual", individual);
         i.putExtra("type", type);
         setResult(Activity.RESULT_OK, i);
         finish();

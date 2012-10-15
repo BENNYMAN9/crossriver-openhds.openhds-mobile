@@ -1,6 +1,8 @@
 package org.openhds.mobile.provider;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.openhds.mobile.OpenHDS;
 
@@ -56,6 +58,7 @@ public class OpenHDSProvider extends ContentProvider {
     private static final int FIELDWORKERS = 13;
     private static final int FIELDWORKER_ID = 14;
     private static final int SOCIALGROUPS = 15;
+    private static final int SOCIALGROUPS_BY_LOCATION = 20;
     private static final int SOCIALGROUP_ID = 16;
     private static final int INDIVIDUALGROUPS = 17;
     private static final int INDIVIDUALGROUP_ID = 18;
@@ -82,6 +85,7 @@ public class OpenHDSProvider extends ContentProvider {
         sUriMatcher.addURI(OpenHDS.AUTHORITY, "fieldworkers", FIELDWORKERS);
         sUriMatcher.addURI(OpenHDS.AUTHORITY, "fieldworkers/#", FIELDWORKER_ID);
         sUriMatcher.addURI(OpenHDS.AUTHORITY, "socialgroups", SOCIALGROUPS);
+        sUriMatcher.addURI(OpenHDS.AUTHORITY, "socialgroups/location/*", SOCIALGROUPS_BY_LOCATION);
         sUriMatcher.addURI(OpenHDS.AUTHORITY, "socialgroups/#", SOCIALGROUP_ID);
         sUriMatcher.addURI(OpenHDS.AUTHORITY, "individualgroups", INDIVIDUALGROUPS);
         sUriMatcher.addURI(OpenHDS.AUTHORITY, "individualgroups/#", INDIVIDUALGROUP_ID);
@@ -432,6 +436,12 @@ public class OpenHDSProvider extends ContentProvider {
             qb.setTables(OpenHDS.SocialGroups.TABLE_NAME);
             qb.setProjectionMap(socialgroupsProjectionMap);
             break;
+        case SOCIALGROUPS_BY_LOCATION:
+            qb.setTables(OpenHDS.SocialGroups.TABLE_NAME);
+            qb.setProjectionMap(socialgroupsProjectionMap);
+            selectionArgs = addSocialGroupExtIds(qb,
+                    uri.getPathSegments().get(OpenHDS.SocialGroups.LOCATION_PATH_POSITION));
+            break;
         case SOCIALGROUP_ID:
             qb.setTables(OpenHDS.SocialGroups.TABLE_NAME);
             qb.setProjectionMap(socialgroupsProjectionMap);
@@ -472,6 +482,42 @@ public class OpenHDSProvider extends ContentProvider {
 
         c.setNotificationUri(getContext().getContentResolver(), uri);
         return c;
+    }
+
+    private String[] addSocialGroupExtIds(SQLiteQueryBuilder qb, String string) {
+        SQLiteDatabase db = mOpenHelper.getReadableDatabase();
+        // get all individuals at location
+        Cursor c = db.query(OpenHDS.Individuals.TABLE_NAME,
+                new String[] { OpenHDS.Individuals.COLUMN_INDIVIDUAL_EXTID },
+                OpenHDS.Individuals.COLUMN_INDIVIDUAL_RESIDENCE + " = ?", new String[] { string }, null, null, null);
+        
+        // iterate over all individuals and collect their memberships
+        // this results in a subset of households at the location
+        Set<String> socialGroupExtIds = new HashSet<String>();
+        while (c.moveToNext()) {
+            Cursor c2 = db.query(OpenHDS.IndividualGroups.TABLE_NAME,
+                    new String[] { OpenHDS.IndividualGroups.COLUMN_SOCIALGROUPUUID },
+                    OpenHDS.IndividualGroups.COLUMN_INDIVIDUALUUID + " = ?", new String[] { c.getString(0) }, null,
+                    null, null);
+            while(c2.moveToNext()) {
+                socialGroupExtIds.add(c2.getString(0));
+            }
+            c2.close();
+        }
+        c.close();
+
+        // generate the SQL IN clause with the subset of social group ids
+        StringBuilder placeholders = new StringBuilder();
+        if (socialGroupExtIds.size() > 0) {
+            placeholders.append("?");
+        }
+        
+        for(int i = 1; i < socialGroupExtIds.size(); i++) {
+            placeholders.append(",?");
+        }
+        
+        qb.appendWhere(OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_EXTID + " IN (" + placeholders.toString() + ")");
+        return socialGroupExtIds.toArray(new String[]{});
     }
 
     @Override

@@ -11,7 +11,6 @@ import org.openhds.mobile.FieldWorkerProvider;
 import org.openhds.mobile.OpenHDS;
 import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
-import org.openhds.mobile.database.DatabaseAdapter;
 import org.openhds.mobile.model.FieldWorker;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
@@ -23,10 +22,10 @@ import org.openhds.mobile.model.SocialGroup;
 import org.openhds.mobile.model.Visit;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -50,7 +49,6 @@ public class SelectionFragment extends Fragment implements OnClickListener {
         void onIndividual();
     }
 	
-	private DatabaseAdapter databaseAdapter;
 	private Listener listener;
 	
 	private FieldWorker fieldWorker;
@@ -64,14 +62,6 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 	private Visit visit;
 	private PregnancyOutcome pregnancyOutcome;
 	private Relationship relationship;
-	
-	private List<LocationHierarchy> regions;
-	private List<LocationHierarchy> subRegions;
-	private List<LocationHierarchy> villages;
-	private List<Round> rounds;
-	private List<Location> locations;
-	private List<Individual> individuals;
-	private List<SocialGroup> socialgroups;
 	
 	private boolean isExternalInMigration = false;
 	
@@ -107,7 +97,6 @@ public class SelectionFragment extends Fragment implements OnClickListener {
         pregnancyOutcome = new PregnancyOutcome();
         relationship = new Relationship();
 
-        databaseAdapter = new DatabaseAdapter(getActivity().getBaseContext());
         View view = inflater.inflate(R.layout.selection, container, false);
         bindViews(view);
         setFieldWorkerText(view);
@@ -174,13 +163,6 @@ public class SelectionFragment extends Fragment implements OnClickListener {
         individualLastName = (TextView) view.findViewById(R.id.individualLastName);
         individualDob = (TextView) view.findViewById(R.id.individualDob);
 		
-	}
-	
-	// called when the household_dialog is displayed and is used for external inmigrations
-	public void setSocialGroup(String groupName) {
-		Cursor cursor = Queries.getSocialGroupByName(getActivity().getContentResolver(), groupName);
-	    SocialGroup group = Converter.toSocialGroup(cursor);
-		this.socialgroup = group;
 	}
 	
 	// an option to create a new location rather than to reference an existing one
@@ -361,28 +343,6 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 		}
 	}
 	
-	public CharSequence[] getSocialGroupsForDialog() {
-		CharSequence[] names = new CharSequence[socialgroups.size()];
-		for (int i = 0; i < socialgroups.size(); i++) 
-			names[i] = socialgroups.get(i).getGroupName();
-		
-		return names;
-	}
-	
-	public String[] getAllSocialGroupsForDialog() {
-	    Cursor cursor = Queries.allSocialGroups(getActivity().getContentResolver());
-		List<SocialGroup> groups = Converter.toSocialGroupList(cursor);
-		String[] names = new String[groups.size()];
-		for (int i = 0; i < groups.size(); i++) 
-			names[i] = groups.get(i).getGroupName();
-		
-		return names;
-	}
-	
-	public void setSocialGroupDialogSelection(int index) {
-		this.socialgroup = socialgroups.get(index);
-	}
-	
 	public FieldWorker getFieldWorker() {
 		return fieldWorker;
 	}
@@ -413,30 +373,6 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 
 	public Individual getIndividual() {
 		return individual;
-	}
-
-	public List<LocationHierarchy> getRegions() {
-		return regions;
-	}
-
-	public List<LocationHierarchy> getSubRegions() {
-		return subRegions;
-	}
-
-	public List<LocationHierarchy> getVillages() {
-		return villages;
-	}
-
-	public List<Round> getRounds() {
-		return rounds;
-	}
-
-	public List<Location> getLocations() {
-		return locations;
-	}
-
-	public List<Individual> getIndividuals() {
-		return individuals;
 	}
 	
 	public void setRegion(LocationHierarchy region) {
@@ -606,30 +542,6 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 	public void setVisit(Visit visit) {
 		this.visit = visit;
 	}
-
-	public void setRegions(List<LocationHierarchy> regions) {
-		this.regions = regions;
-	}
-
-	public void setSubRegions(List<LocationHierarchy> subRegions) {
-		this.subRegions = subRegions;
-	}
-
-	public void setVillages(List<LocationHierarchy> villages) {
-		this.villages = villages;
-	}
-
-	public void setRounds(List<Round> rounds) {
-		this.rounds = rounds;
-	}
-
-	public void setLocations(List<Location> locations) {
-		this.locations = locations;
-	}
-
-	public void setIndividuals(List<Individual> individuals) {
-		this.individuals = individuals;
-	}
 	
 	public SocialGroup getSocialgroup() {
 		return socialgroup;
@@ -637,14 +549,6 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 
 	public void setSocialgroup(SocialGroup socialgroup) {
 		this.socialgroup = socialgroup;
-	}
-
-	public List<SocialGroup> getSocialgroups() {
-		return socialgroups;
-	}
-
-	public void setSocialgroups(List<SocialGroup> socialgroups) {
-		this.socialgroups = socialgroups;
 	}
 	
 	public PregnancyOutcome getPregnancyOutcome() {

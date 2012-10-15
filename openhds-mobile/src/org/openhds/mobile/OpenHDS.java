@@ -190,12 +190,16 @@ public class OpenHDS {
         private static final String SCHEME = "content://";
 
         private static final String PATH_NOTES = "/socialgroups";
+        private static final String PATH_LOCATION_ID = "/socialgroups/location/";
         private static final String PATH_NOTE_ID = "/socialgroups/";
 
         public static final int ID_PATH_POSITION = 1;
+        public static final int LOCATION_PATH_POSITION = 2;
 
         public static final Uri CONTENT_URI = Uri.parse(SCHEME + AUTHORITY + PATH_NOTES);
         public static final Uri CONTENT_ID_URI_BASE = Uri.parse(SCHEME + AUTHORITY + PATH_NOTE_ID);
+        public static final Uri CONTENT_LOCATION_ID_URI_BASE = Uri.parse(SCHEME + AUTHORITY + PATH_LOCATION_ID);
+        public static final Uri CONTENT_LOCATION_ID_URI_PATTERN = Uri.parse(SCHEME + AUTHORITY + PATH_LOCATION_ID + "/*");
         public static final Uri CONTENT_ID_URI_PATTERN = Uri.parse(SCHEME + AUTHORITY + PATH_NOTE_ID + "/#");
 
         public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.openhds.socialgroups";
