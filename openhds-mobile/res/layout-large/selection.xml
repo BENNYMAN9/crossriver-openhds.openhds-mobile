@@ -35,7 +35,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="Region:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 	
 		    	<TextView
@@ -53,7 +52,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="ExtId:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 		    
 		     	<TextView
@@ -72,8 +70,7 @@
 	        android:layout_width="150dp"
 	        android:layout_height="wrap_content"
 	        android:layout_marginLeft="20dp"
-	        android:text="Select SubRegion"
-	        android:enabled="false" />
+	        android:text="Select SubRegion" />
 	    
 	     <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	            android:layout_width="fill_parent"
@@ -85,7 +82,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="Sub Region:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 	
 		    	<TextView
@@ -103,7 +99,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="ExtId:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 		    
 		     	<TextView
@@ -122,8 +117,7 @@
 	        android:layout_width="150dp"
 	        android:layout_height="wrap_content"
 	        android:layout_marginLeft="20dp"
-	        android:text="Select Village"
-	        android:enabled="false" />
+	        android:text="Select Village" />
 	    
 	     <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	            android:layout_width="fill_parent"
@@ -135,7 +129,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="Village:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 	
 		    	<TextView
@@ -153,7 +146,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="ExtId:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 		    
 		     	<TextView
@@ -185,7 +177,6 @@
               android:layout_height="wrap_content"
               android:layout_marginLeft="20dp"
               android:text="Round Number:"
-              android:visibility="invisible"
               android:textAppearance="?android:attr/textAppearanceSmall"  />
   
           <TextView
@@ -203,7 +194,6 @@
               android:layout_height="wrap_content"
               android:layout_marginLeft="20dp"
               android:text="Start Date:"
-              android:visibility="invisible"
               android:textAppearance="?android:attr/textAppearanceSmall"  />
         
           <TextView
@@ -221,7 +211,6 @@
               android:layout_height="wrap_content"
               android:layout_marginLeft="20dp"
               android:text="End Date:"
-              android:visibility="invisible"
               android:textAppearance="?android:attr/textAppearanceSmall"  />
         
           <TextView
@@ -240,8 +229,7 @@
 	        android:layout_width="150dp"
 	        android:layout_height="wrap_content"
 	        android:layout_marginLeft="20dp"
-	        android:text="Select Location"
-	        android:enabled="false" />
+	        android:text="Select Location" />
 	     
 	      <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	           android:layout_width="fill_parent"
@@ -253,7 +241,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="ExtId:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 	
 		    	<TextView
@@ -271,7 +258,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="Name:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 		    
 		     	<TextView
@@ -289,7 +275,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="Latitude:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 		    
 		     	<TextView
@@ -307,7 +292,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="Longitude:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 		    
 		     	<TextView
@@ -326,8 +310,7 @@
 	        android:layout_width="150dp"
 	        android:layout_height="wrap_content"
 	        android:layout_marginLeft="20dp"
-	        android:text="Select Individual"
-	        android:enabled="false" />
+	        android:text="Select Individual" />
 	    
 		      <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	           android:layout_width="fill_parent"
@@ -339,7 +322,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="ExtId:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 	
 		    	<TextView
@@ -357,7 +339,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="First Name:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 		    
 		     	<TextView
@@ -375,7 +356,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="Last Name:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 		    
 		     	<TextView
@@ -393,7 +373,6 @@
 			        android:layout_height="wrap_content"
 			        android:layout_marginLeft="20dp"
 			        android:text="Dob:"
-			        android:visibility="invisible"
 			        android:textAppearance="?android:attr/textAppearanceSmall"  />
 		    
 		     	<TextView

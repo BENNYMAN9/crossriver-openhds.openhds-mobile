@@ -16,7 +16,7 @@
 	        android:layout_marginLeft="20dp"
 	        android:layout_gravity="center"
 	        android:text="Find Location with GeoPoint"
-	        android:enabled="true" />
+	        android:enabled="false" />
 	    
 	    <Button
 	        android:id="@+id/createLocationBtn"
@@ -36,26 +36,6 @@
 	        android:layout_marginLeft="20dp"
 	        android:layout_gravity="center"
 	        android:text="Create Visit"
-	        android:enabled="false" />
-	    
-	    <Button
-	        android:id="@+id/clearLocationBtn"
-	        android:layout_width="150dp"
-	        android:layout_height="wrap_content"
-	        android:layout_marginTop="10dp"
-	        android:layout_marginLeft="20dp"
-	        android:layout_gravity="center"
-	        android:text="Clear Location"
-	        android:enabled="false" />
-	    
-	    <Button
-	        android:id="@+id/clearIndividualBtn"
-	        android:layout_width="150dp"
-	        android:layout_height="wrap_content"
-	        android:layout_marginTop="10dp"
-	        android:layout_marginLeft="20dp"
-	        android:layout_gravity="center"
-	        android:text="Clear Individual"
 	        android:enabled="false" />
 	    
 	     <Button

@@ -1,31 +1,34 @@
 package org.openhds.mobile.activity;
 
 import org.openhds.mobile.Converter;
-import org.openhds.mobile.FieldWorkerProvider;
 import org.openhds.mobile.InstanceProviderAPI;
 import org.openhds.mobile.OpenHDS;
 import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
+import org.openhds.mobile.fragment.EventFragment;
+import org.openhds.mobile.fragment.ProgressFragment;
 import org.openhds.mobile.fragment.SelectionFragment;
 import org.openhds.mobile.fragment.ValueFragment;
 import org.openhds.mobile.listener.OdkFormLoadListener;
 import org.openhds.mobile.model.FieldWorker;
+import org.openhds.mobile.model.FilledForm;
+import org.openhds.mobile.model.FormFiller;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.Location;
 import org.openhds.mobile.model.LocationHierarchy;
+import org.openhds.mobile.model.LocationVisit;
 import org.openhds.mobile.model.PregnancyOutcome;
-import org.openhds.mobile.model.Relationship;
 import org.openhds.mobile.model.Round;
 import org.openhds.mobile.model.SocialGroup;
-import org.openhds.mobile.model.UpdateEvent;
-import org.openhds.mobile.model.Visit;
+import org.openhds.mobile.model.StateMachine;
+import org.openhds.mobile.model.StateMachine.State;
 import org.openhds.mobile.task.OdkGeneratedFormLoadTask;
 
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.FragmentTransaction;
 import android.app.LoaderManager.LoaderCallbacks;
-import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.CursorLoader;
 import android.content.DialogInterface;
@@ -33,283 +36,363 @@ import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
-public class UpdateActivity extends Activity implements OnClickListener, ValueFragment.ValueListener,
-        OdkFormLoadListener, LoaderCallbacks<Cursor>, FieldWorkerProvider, SelectionFragment.Listener {
-	
-	private Button findLocationGeoPointBtn, createLocationBtn, createVisitBtn, clearLocationBtn, clearIndividualBtn,
-	 			   householdBtn, membershipBtn, relationshipBtn, inMigrationBtn, outMigrationBtn, pregRegBtn, birthRegBtn, deathBtn, 
-	 			   finishVisitBtn;
-		
-	// this activity manages three fragments
-	private SelectionFragment sf;
-	private ValueFragment vf;
-	
-	private final int SELECTED_XFORM = 1;
-	private final int FILTER = 2;
-	private final int LOCATION_GEOPOINT = 3;
-	
-	// the uri of the last viewed xform
-	private Uri contentUri;
-	
-	// status flags indicating a dialog, used for restoring the activity
-	private boolean formUnFinished = false;
-	private boolean xFormNotFound = false;
-	
-	// the workflow for this activity is arranged into multiple phases
-	private boolean SUB_REGION_PHASE = false;
-	private boolean VILLAGE_PHASE = false;
-	private boolean LOCATION_PHASE = false;
-	private boolean ROUND_PHASE = false;
-	private boolean VISIT_PHASE = false;
-	private boolean INDIVIDUAL_PHASE = false;
-	private boolean XFORMS_PHASE = false;
+/**
+ * UpdateActivity mediates the interaction between the 3 column fragments. The
+ * buttons in the left most column drive a state machine while the user
+ * interacts with the application.
+ */
+public class UpdateActivity extends Activity implements ValueFragment.ValueListener, LoaderCallbacks<Cursor>,
+        EventFragment.Listener, SelectionFragment.Listener {
 
-    private ProgressDialog progDialog;
+    private SelectionFragment sf;
+    private ValueFragment vf;
+    private EventFragment ef;
+    private ProgressFragment progressFragment;
+    
+    // loader ids
+    private static final int SOCIAL_GROUP_AT_LOCATION = 0;
+    private static final int SOCIAL_GROUP_FOR_INDIVIDUAL = 10;
+    private static final int SOCIAL_GROUP_FOR_EXT_INMIGRATION = 20;
+
+    // activity request codes for onActivityResult
+    private static final int SELECTED_XFORM = 1;
+    private static final int CREATE_LOCATION = 10;
+    private static final int FILTER_RELATIONSHIP = 20;
+    private static final int FILTER_LOCATION = 30;
+    private static final int FILTER_INMIGRATION = 40;
+    private static final int FILTER_BIRTH_FATHER = 45;
+    private static final int LOCATION_GEOPOINT = 50;
+
+    // the uri of the last viewed xform
+    private Uri contentUri;
+
+    // status flags indicating a dialog, used for restoring the activity
+    private boolean formUnFinished = false;
+    private boolean xFormNotFound = false;
+
     private AlertDialog householdDialog;
-				
-    @Override
-	public void onCreate(Bundle savedInstanceState) {
-	    super.onCreate(savedInstanceState);
-	    setContentView(R.layout.main);    	   
-	   
-        finishVisitBtn = (Button) findViewById(R.id.finishVisitBtn);
-        finishVisitBtn.setOnClickListener(this);
-        
-        clearLocationBtn = (Button) findViewById(R.id.clearLocationBtn);
-        clearLocationBtn.setOnClickListener(this);
-        
-        clearIndividualBtn = (Button) findViewById(R.id.clearIndividualBtn);
-        clearIndividualBtn.setOnClickListener(this);
-        
-        findLocationGeoPointBtn = (Button) findViewById(R.id.findLocationGeoPointBtn);
-        findLocationGeoPointBtn.setOnClickListener(this);
-        
-        createLocationBtn = (Button) findViewById(R.id.createLocationBtn);
-        createLocationBtn.setOnClickListener(this);
-        
-        createVisitBtn = (Button) findViewById(R.id.createVisitBtn);
-        createVisitBtn.setOnClickListener(this);
-        
-        householdBtn = (Button) findViewById(R.id.householdBtn);
-        householdBtn.setOnClickListener(this);
-        
-        membershipBtn = (Button) findViewById(R.id.membershipBtn);
-        membershipBtn.setOnClickListener(this);
-        
-        relationshipBtn = (Button) findViewById(R.id.relationshipBtn);
-        relationshipBtn.setOnClickListener(this);
-        
-        inMigrationBtn = (Button) findViewById(R.id.inMigrationBtn);
-        inMigrationBtn.setOnClickListener(this);
-        
-        outMigrationBtn = (Button) findViewById(R.id.outMigrationBtn);
-        outMigrationBtn.setOnClickListener(this);
-        
-        pregRegBtn = (Button) findViewById(R.id.pregRegBtn);
-        pregRegBtn.setOnClickListener(this);
-        
-        birthRegBtn = (Button) findViewById(R.id.birthRegBtn);
-        birthRegBtn.setOnClickListener(this);
-        
-        deathBtn = (Button) findViewById(R.id.deathBtn);
-        deathBtn.setOnClickListener(this);
 
-    	sf = (SelectionFragment)getFragmentManager().findFragmentById(R.id.selectionFragment);
-		vf = (ValueFragment)getFragmentManager().findFragmentById(R.id.valueFragment);
-		
-	    ActionBar actionBar = getActionBar();
-	    actionBar.show();
-	    
-	    restoreState(savedInstanceState);
-	}
-    		
+    private final FormFiller formFiller = new FormFiller();
+    private final StateMachine stateMachine = new StateMachine();
+
+    private LocationVisit locationVisit = new LocationVisit();
+    private FilledForm filledForm;
+    private AlertDialog xformUnfinishedDialog;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.main);
+        FieldWorker fw = (FieldWorker) getIntent().getExtras().getSerializable("fieldWorker");
+        locationVisit.setFieldWorker(fw);
+
+        vf = new ValueFragment();
+        FragmentTransaction txn = getFragmentManager().beginTransaction();
+        txn.add(R.id.middle_col, vf).commit();
+
+        sf = (SelectionFragment) getFragmentManager().findFragmentById(R.id.selectionFragment);
+        sf.setLocationVisit(locationVisit);
+
+        ef = (EventFragment) getFragmentManager().findFragmentById(R.id.eventFragment);
+        ef.setLocationVisit(locationVisit);
+
+        ActionBar actionBar = getActionBar();
+        actionBar.show();
+
+        restoreState(savedInstanceState);
+    }
+
     /**
      * The main menu, showing multiple options
      */
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {	
-    	MenuInflater inflater = getMenuInflater();
-    	inflater.inflate(R.menu.mainmenu, menu);
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.mainmenu, menu);
         return true;
     }
-    
+
     /**
      * Defining what happens when a main menu item is selected
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.configure_server:
-                createPreferencesMenu();
-                return true;
-            case R.id.sync_database:
-                createSyncDatabaseMenu();
-                return true;
+        case R.id.configure_server:
+            createPreferencesMenu();
+            return true;
+        case R.id.sync_database:
+            createSyncDatabaseMenu();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
-    
-    /**
-     * This is called after transitioning from any of the ODK xforms.
-     * It's used in determining if an xform instance is complete or not.
-     */
-    @Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		switch(requestCode) {
-			case SELECTED_XFORM: {
-			
-				if (resultCode == RESULT_OK) {
-					Cursor cursor = getContentResolver().query(contentUri, null, 
-							InstanceProviderAPI.InstanceColumns.STATUS + "=?", new String[] {InstanceProviderAPI.STATUS_COMPLETE}, null);
-					if (cursor.moveToNext()) {
-						
-						if (getPhase().equals(UpdateEvent.LOCATION)) {
-						    sf.displayLocationInfo();
-							setPhase(UpdateEvent.VISIT);
-						}
-						else {
-							setPhase(UpdateEvent.INDIVIDUAL);
-						}
-						formUnFinished = false;
-					}
-					else {
-						createUnfinishedFormDialog();
-					}
-				}
-				break;
-			}
-			case FILTER: {
-				if (resultCode == RESULT_OK) {
-					String type = data.getExtras().getString("type");
-					
-					if (type.equals(UpdateEvent.RELATIONSHIP)) {
-						Individual currentIndividual = sf.getIndividual();
-						String individualExtId = data.getExtras().getString("extId");
-						
-						if (sf.getIndividual().getGender().equals("Male")) {
-							sf.getRelationship().setMaleIndividual(currentIndividual.getExtId());
-							sf.getRelationship().setFemaleIndividual(individualExtId);
-						}
-						else {
-							sf.getRelationship().setMaleIndividual(individualExtId);
-							sf.getRelationship().setFemaleIndividual(currentIndividual.getExtId());
-						}
-						loadForm(UpdateEvent.RELATIONSHIP);
-					}
-					else if (type.equals(UpdateEvent.LOCATION)) {
-						String name = data.getExtras().getString("name");
-						String individualExtId = data.getExtras().getString("extId");
-						
-						sf.createLocation(individualExtId, name);
-						sf.getIndividual().setExtId(individualExtId);
-						
-						loadForm(UpdateEvent.LOCATION);
-					}
-					else if (type.equals(UpdateEvent.INMIGRATION)) {
-						Individual individual = (Individual) data.getExtras().getSerializable("individual");
-						sf.setIndividual(individual);
-					    showSocialGroupLoadingDialog();
-						getLoaderManager().restartLoader(0, null, this);
-					}
-				}
-				break;
-			}
-			case LOCATION_GEOPOINT: {
-				if (resultCode == RESULT_OK) {
-					String extId = data.getExtras().getString("extId");
-					ContentResolver resolver = getContentResolver();
-					// a few things need to happen here:
-					// * get the location by extId
-					Cursor cursor = Queries.getLocationByExtId(resolver, extId);
-					Location location = Converter.toLocation(cursor);
-					
-					// * figure out the parent location hierarchy
-					cursor = Queries.getHierarchyByExtId(resolver, location.getHierarchy());
-					LocationHierarchy village = Converter.toHierarhcy(cursor, true);
-					
-					cursor = Queries.getHierarchyByExtId(resolver, village.getParent());
-					LocationHierarchy subRegion = Converter.toHierarhcy(cursor, true);
-					
-					cursor = Queries.getHierarchyByExtId(resolver, subRegion.getParent());
-					LocationHierarchy region = Converter.toHierarhcy(cursor, true);
-										
-					// * set the location hierarchy region, district, and village in selectionFragment
-					sf.setRegion(region);
-					sf.setSubRegion(subRegion);
-					sf.setVillage(village);
-					sf.setLocation(location);
-	
-					restorePhase(UpdateEvent.ROUND);
-				}
-			}
-		}
-	}
 
-    private void showSocialGroupLoadingDialog() {
-        progDialog = ProgressDialog.show(this, "Loading Social Groups...", "Loading Social Groups for this Location");
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+        case SELECTED_XFORM:
+            handleXformResult(resultCode, data);
+            break;
+        case FILTER_BIRTH_FATHER:
+            handleFatherBirthResult(resultCode, data);
+            break;
+        case CREATE_LOCATION:
+            handleLocationCreateResult(resultCode, data);
+            break;
+        case FILTER_RELATIONSHIP:
+            handleFilterRelationshipResult(data);
+            break;
+        case FILTER_LOCATION:
+            handleFilterLocationResult(data);
+            break;
+        case FILTER_INMIGRATION:
+            handleFilterInMigrationResult(data);
+            break;
+        case LOCATION_GEOPOINT:
+            if (resultCode == RESULT_OK) {
+                String extId = data.getExtras().getString("extId");
+                ContentResolver resolver = getContentResolver();
+                // a few things need to happen here:
+                // * get the location by extId
+                Cursor cursor = Queries.getLocationByExtId(resolver, extId);
+                Location location = Converter.toLocation(cursor);
+
+                // * figure out the parent location hierarchy
+                cursor = Queries.getHierarchyByExtId(resolver, location.getHierarchy());
+                LocationHierarchy village = Converter.toHierarhcy(cursor, true);
+
+                cursor = Queries.getHierarchyByExtId(resolver, village.getParent());
+                LocationHierarchy subRegion = Converter.toHierarhcy(cursor, true);
+
+                cursor = Queries.getHierarchyByExtId(resolver, subRegion.getParent());
+            }
+        }
     }
-    
+
+    private void handleFatherBirthResult(int resultCode, Intent data) {
+        Individual individual = (Individual) data.getExtras().getSerializable("individual");
+        new CreatePregnancyOutcomeTask(individual).execute();
+    }
+
+    private void handleLocationCreateResult(int resultCode, Intent data) {
+        showProgressFragment();
+        if (resultCode == RESULT_OK) {
+            new CheckLocationFormStatus(getContentResolver(), contentUri).execute();
+        } else {
+            Toast.makeText(this, "There was a problem with ODK", Toast.LENGTH_LONG).show();
+        }
+    }
+
     /**
-     * At any given point in time, the screen can be rotated.
-     * This method is responsible for saving the screen state.
+     * This differs from {@link UpdateActivity.CheckFormStatus} in that, upon
+     * creating a new location, the user is automatically forwarded to creating
+     * a visit. This happens because the user could in theory create a location,
+     * and then skip the visit.
+     */
+    class CheckLocationFormStatus extends AsyncTask<Void, Void, Boolean> {
+
+        private ContentResolver resolver;
+        private Uri contentUri;
+
+        public CheckLocationFormStatus(ContentResolver resolver, Uri contentUri) {
+            this.resolver = resolver;
+            this.contentUri = contentUri;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... arg0) {
+            Cursor cursor = resolver.query(contentUri, null, InstanceProviderAPI.InstanceColumns.STATUS + "=?",
+                    new String[] { InstanceProviderAPI.STATUS_COMPLETE }, null);
+            if (cursor.moveToNext()) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            hideProgressFragment();
+
+            if (result) {
+                stateMachine.transitionTo(State.CREATE_VISIT);
+            } else {
+                createUnfinishedFormDialog();
+            }
+        }
+    }
+
+    private void handleFilterInMigrationResult(Intent data) {
+        showProgressFragment();
+        Individual individual = (Individual) data.getExtras().getSerializable("individual");
+        filledForm = formFiller.fillInMigrationForm(locationVisit, individual);
+        getLoaderManager().restartLoader(SOCIAL_GROUP_AT_LOCATION, null, this);
+    }
+
+    private void handleFilterLocationResult(Intent data) {
+        showProgressFragment();
+        Individual individual = (Individual) data.getExtras().getSerializable("individual");
+        new GenerateLocationTask(individual).execute();
+    }
+
+    private class GenerateLocationTask extends AsyncTask<Void, Void, Void> {
+
+        private Individual individual;
+
+        public GenerateLocationTask(Individual individual) {
+            this.individual = individual;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            locationVisit.createLocation(getContentResolver(), individual.getExtId(), individual.getFullName());
+            filledForm = formFiller.fillLocationForm(locationVisit);
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            hideProgressFragment();
+            loadForm(CREATE_LOCATION);
+        }
+
+    }
+
+    private void handleFilterRelationshipResult(Intent data) {
+        Individual individual = (Individual) data.getExtras().getSerializable("individual");
+
+        if (filledForm.getWomanId() == null) {
+            filledForm.setWomanId(individual.getExtId());
+        } else {
+            filledForm.setManId(individual.getExtId());
+        }
+
+        loadForm(SELECTED_XFORM);
+    }
+
+    private void handleXformResult(int resultCode, Intent data) {
+        showProgressFragment();
+        if (resultCode == RESULT_OK) {
+            new CheckFormStatus(getContentResolver(), contentUri).execute();
+        } else {
+            Toast.makeText(this, "There was a problem with ODK", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void showProgressFragment() {
+        if (progressFragment == null) {
+            progressFragment = ProgressFragment.newInstance();
+        }
+
+        FragmentTransaction txn = getFragmentManager().beginTransaction();
+        txn.replace(R.id.middle_col, progressFragment).commit();
+    }
+
+    void hideProgressFragment() {
+        FragmentTransaction txn = getFragmentManager().beginTransaction();
+        txn.replace(R.id.middle_col, vf).commitAllowingStateLoss();
+    }
+
+    /**
+     * AsyncTask that attempts to get the status of the form that the user just
+     * filled out. In ODK, when a form is saved and marked as complete, its
+     * status is set to {@link InstanceProviderAPI.STATUS_COMPLETE}. If the user
+     * leaves the form in ODK before saving it, the status will not be set to
+     * complete. Alternatively, the user could save the form, but not mark it as
+     * complete. Since there is no way to tell the difference between the user
+     * leaving the form without completing, or saving without marking as
+     * complete, we enforce that the form be marked as complete before the user
+     * can continue with update events. They have 2 options: go back to the form
+     * and save it as complete, or delete the previously filled form.
+     */
+    class CheckFormStatus extends AsyncTask<Void, Void, Boolean> {
+
+        private ContentResolver resolver;
+        private Uri contentUri;
+
+        public CheckFormStatus(ContentResolver resolver, Uri contentUri) {
+            this.resolver = resolver;
+            this.contentUri = contentUri;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... arg0) {
+            Cursor cursor = resolver.query(contentUri, null, InstanceProviderAPI.InstanceColumns.STATUS + "=?",
+                    new String[] { InstanceProviderAPI.STATUS_COMPLETE }, null);
+            if (cursor.moveToNext()) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            hideProgressFragment();
+
+            if (result) {
+                stateMachine.transitionTo(State.SELECT_INDIVIDUAL);
+            } else {
+                createUnfinishedFormDialog();
+            }
+        }
+    }
+
+    /**
+     * At any given point in time, the screen can be rotated. This method is
+     * responsible for saving the screen state.
      */
     @Override
-	protected void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
-		
-		outState.putSerializable("region", sf.getRegion());
-		outState.putSerializable("subRegion", sf.getSubRegion());
-		outState.putSerializable("village", sf.getVillage());
-		outState.putSerializable("round", sf.getRound());
-		outState.putSerializable("location", sf.getLocation());
-		outState.putSerializable("visit", sf.getVisit());
-		outState.putSerializable("individual", sf.getIndividual());
-		outState.putSerializable("socialgroup", sf.getSocialgroup());
-		outState.putString("phase", getPhase());
-		outState.putBoolean("unfinishedFormDialog", formUnFinished);
-		outState.putBoolean("xFormNotFound", xFormNotFound);
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
 
-		if (contentUri != null)
-			outState.putString("uri", contentUri.toString());
-	}
-    
+        outState.putSerializable("locationvisit", locationVisit);
+        outState.putString("currentState", stateMachine.getState().toString());
+        outState.putBoolean("unfinishedFormDialog", formUnFinished);
+        outState.putBoolean("xFormNotFound", xFormNotFound);
+
+        if (contentUri != null)
+            outState.putString("uri", contentUri.toString());
+    }
+
     /**
      * This method is responsible for restoring the screen state.
      */
-    private void restoreState(Bundle state) {
-    	
-    	if (state != null) {
-	    	sf.setRegion((LocationHierarchy)state.get("region"));
-	    	sf.setSubRegion((LocationHierarchy)state.get("subRegion"));
-	    	sf.setVillage((LocationHierarchy)state.get("village"));
-	    	sf.setRound((Round)state.get("round"));
-	    	sf.setLocation((Location)state.get("location"));
-	    	sf.setVisit((Visit)state.get("visit"));
-	    	sf.setIndividual((Individual)state.get("individual"));
-	    	sf.setSocialgroup((SocialGroup)state.get("socialgroup"));
-	    	restorePhase(state.getString("phase"));
-	    	
-	    	String uri = state.getString("uri");
-	    	if (uri != null)
-	    		contentUri = Uri.parse(uri);
-	    		    	
-	    	if (state.getBoolean("xFormNotFound"))
-	    		createXFormNotFoundDialog();
-	    	if (state.getBoolean("unfinishedFormDialog"))
-	    		createUnfinishedFormDialog();
-    	}
-	}
-    
+    private void restoreState(Bundle savedState) {
+        State state = State.SELECT_REGION;
+        if (savedState != null) {
+            locationVisit = (LocationVisit) savedState.getSerializable("locationvisit");
+
+            String uri = savedState.getString("uri");
+            if (uri != null)
+                contentUri = Uri.parse(uri);
+
+            if (savedState.getBoolean("xFormNotFound"))
+                createXFormNotFoundDialog();
+            if (savedState.getBoolean("unfinishedFormDialog"))
+                createUnfinishedFormDialog();
+
+            sf.setLocationVisit(locationVisit);
+            ef.setLocationVisit(locationVisit);
+            String currentState = savedState.getString("currentState");
+            state = State.valueOf(currentState);
+        }
+
+        registerTransitions();
+        stateMachine.transitionTo(state);
+    }
+
     /**
      * Creates the 'Configure Server' option in the action menu.
      */
@@ -317,7 +400,7 @@ public class UpdateActivity extends Activity implements OnClickListener, ValueFr
         Intent i = new Intent(this, ServerPreferencesActivity.class);
         startActivity(i);
     }
-    
+
     /**
      * Creates the 'Sync Database' option in the action menu.
      */
@@ -325,671 +408,447 @@ public class UpdateActivity extends Activity implements OnClickListener, ValueFr
         Intent i = new Intent(this, SyncDatabaseActivity.class);
         startActivity(i);
     }
-    
-	/**
-	 * Method used for starting the activity for filtering for individuals
-	 */
-	private void startFilterActivity(String type) {
-		Intent i = new Intent(this, FilterActivity.class);
-		i.putExtra("region", sf.getRegion());
-		i.putExtra("subRegion", sf.getSubRegion());
-		i.putExtra("village", sf.getVillage());
-		i.putExtra("location", sf.getLocation());
-		i.putExtra("type", type);
-		startActivityForResult(i, FILTER);
-	}
-    
+
+    /**
+     * Method used for starting the activity for filtering for individuals
+     */
+    private void startFilterActivity(int requestCode) {
+        Intent i = new Intent(this, FilterActivity.class);
+        i.putExtra("region", locationVisit.getRegion());
+        i.putExtra("subRegion", locationVisit.getSubRegion());
+        i.putExtra("village", locationVisit.getVillage());
+
+        Location loc = locationVisit.getLocation();
+        if (loc == null) {
+            loc = Location.emptyLocation();
+        }
+        i.putExtra("location", loc);
+
+        startActivityForResult(i, requestCode);
+    }
+
     private void loadRegionValueData() {
         vf.loadLocationHierarchy();
     }
-    
+
     private void loadSubRegionValueData() {
-        vf.loadSubRegion(sf.getRegion().getExtId());
+        vf.loadSubRegion(locationVisit.getRegion().getExtId());
     }
-    
+
     private void loadVillageValueData() {
-        vf.loadVillage(sf.getSubRegion().getExtId());
+        vf.loadVillage(locationVisit.getSubRegion().getExtId());
     }
 
     private void loadLocationValueData() {
-        vf.loadLocations(sf.getVillage().getExtId());
+        vf.loadLocations(locationVisit.getVillage().getExtId());
     }
-    
+
     private void loadRoundValueData() {
         vf.loadRounds();
     }
-    
+
     private void loadIndividualValueData() {
-        vf.loadIndividuals(sf.getLocation().getExtId());
+        vf.loadIndividuals(locationVisit.getLocation().getExtId());
     }
-    
-    /**
-     * A dialog indicating that an Xform instance was not completed.
-     */
+
     private void createUnfinishedFormDialog() {
-    	formUnFinished = true;
-		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-		alertDialogBuilder.setTitle("Warning");
-		alertDialogBuilder.setMessage("Form started but not saved. " +
-				"This form instance will be deleted. What do you want to do?");
-		alertDialogBuilder.setCancelable(true);
-		alertDialogBuilder.setPositiveButton("Delete form", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int which) {
-				formUnFinished = false;
-				getContentResolver().delete(contentUri, 
-						InstanceProviderAPI.InstanceColumns.STATUS + "=?", new String[] {InstanceProviderAPI.STATUS_INCOMPLETE});
-				
-				if (getPhase().equals(UpdateEvent.XFORMS))
-					setPhase(UpdateEvent.INDIVIDUAL);
-				
-				if (getPhase().equals(UpdateEvent.LOCATION)) {
-					setPhase(UpdateEvent.LOCATION);
-				}
-			}
-		});	
-		alertDialogBuilder.setNegativeButton("Edit form", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int which) {
-				formUnFinished = false;
-				startActivityForResult(new Intent(Intent.ACTION_EDIT, contentUri), SELECTED_XFORM);				
-			}
-		});
-		AlertDialog alertDialog = alertDialogBuilder.create();
-		alertDialog.show();
-    } 
-    
-    /**
-     * A dialog for selecting in an InMigration is Internal or External.
-     */
-    private void createInMigrationFormDialog() {
-		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-		alertDialogBuilder.setTitle("In Migration");
-		alertDialogBuilder.setMessage("Is this an Internal or External In Migration event?");
-		alertDialogBuilder.setCancelable(true);
-		alertDialogBuilder.setPositiveButton("Internal", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int which) {
-				sf.setExternalInMigration(false);	
-				startFilterActivity(UpdateEvent.INMIGRATION);
-			}
-		});	
-		alertDialogBuilder.setNegativeButton("External", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int which) {
-				sf.setExternalInMigration(true);
-				showSocialGroupLoadingDialog();
-				getLoaderManager().restartLoader(0, null, UpdateActivity.this);
-			}
-		});
-		AlertDialog alertDialog = alertDialogBuilder.create();
-		alertDialog.show();
-    } 
-    
-    /**
-     * A dialog indicating that an Xform instance could not be found.
-     */
-    private void createXFormNotFoundDialog() {
-    	xFormNotFound = true;
-		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-		alertDialogBuilder.setTitle("Warning");
-		alertDialogBuilder.setMessage("The XForm could not be found within Open Data Kit Collect. " +
-				"Please make sure that it exists and it's named correctly.");
-		alertDialogBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int which) {
-				xFormNotFound = false;
-			}
-		});	
-		AlertDialog alertDialog = alertDialogBuilder.create();
-		alertDialog.show();
-    } 
-        
-    /**
-     * Defining what happens when a button is pressed, each button corresponds to a phase.
-     */
-	public void onClick(View view) {
-		switch (view.getId()) {
-			case R.id.findLocationGeoPointBtn:
-				Intent intent = new Intent(getApplicationContext(), ShowMapActivity.class);
-				startActivityForResult(intent, LOCATION_GEOPOINT);
-				break;
-			case R.id.createLocationBtn:
-				startFilterActivity(UpdateEvent.LOCATION);
-				break;
-			case R.id.createVisitBtn: 
-				sf.createVisit();
-				loadForm(UpdateEvent.VISIT);	
-				break;
-			case R.id.clearLocationBtn: 
-				setPhase(UpdateEvent.LOCATION);
-				break;
-			case R.id.clearIndividualBtn:
-				setPhase(UpdateEvent.INDIVIDUAL);
-				break;
-			case R.id.finishVisitBtn: 
-				reset();
-				break;
-			case R.id.householdBtn:
-				sf.createSocialGroup();
-				loadForm(UpdateEvent.SOCIALGROUP);
-				break;
-			case R.id.membershipBtn:
-				loadForm(UpdateEvent.MEMBERSHIP);
-				break;
-			case R.id.relationshipBtn:
-				startFilterActivity(UpdateEvent.RELATIONSHIP);
-				break;
-			case R.id.inMigrationBtn:
-				createInMigrationFormDialog();
-				break;
-			case R.id.outMigrationBtn:
-				loadForm(UpdateEvent.OUTMIGRATION);
-				break;
-			case R.id.pregRegBtn:
-				loadForm(UpdateEvent.PREGNANCYOBSERVATION);
-				break;
-			case R.id.birthRegBtn:
-				boolean result = sf.createPregnancyOutcome();
-				if (sf.getPregnancyOutcome().getFather() == null) 
-					Toast.makeText(getApplicationContext(),	getString(R.string.fatherNotFound), Toast.LENGTH_SHORT).show();
+        formUnFinished = true;
+        if (xformUnfinishedDialog == null) {
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+            alertDialogBuilder.setTitle("Warning");
+            alertDialogBuilder.setMessage("Form started but not saved. "
+                    + "This form instance will be deleted. What do you want to do?");
+            alertDialogBuilder.setCancelable(true);
+            alertDialogBuilder.setPositiveButton("Delete form", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    formUnFinished = false;
+                    xformUnfinishedDialog.hide();
+                    getContentResolver().delete(contentUri, InstanceProviderAPI.InstanceColumns.STATUS + "=?",
+                            new String[] { InstanceProviderAPI.STATUS_INCOMPLETE });
+                }
+            });
+            alertDialogBuilder.setNegativeButton("Edit form", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    formUnFinished = false;
+                    xformUnfinishedDialog.hide();
+                    startActivityForResult(new Intent(Intent.ACTION_EDIT, contentUri), SELECTED_XFORM);
+                }
+            });
+            xformUnfinishedDialog = alertDialogBuilder.create();
+        }
 
-				sf.setPregnancyOutcome(sf.getPregnancyOutcome());
-				if (result == false)
-					Toast.makeText(getApplicationContext(),	getString(R.string.idGenerationFailure), Toast.LENGTH_SHORT).show();
-				
-				loadForm(UpdateEvent.BIRTH);
-				break;
-			case R.id.deathBtn: 
-				loadForm(UpdateEvent.DEATH);
-		}	
-	}
-	
-	/**
-	 * Launches the OdkFormLoadTask depending on the specified UpdateEvent
-	 */
-    public void loadForm(String event) {
-   		new OdkGeneratedFormLoadTask(this, getContentResolver(), sf, event).execute();
+        xformUnfinishedDialog.show();
     }
-		
-	/**
-	 * This is called after the OdkFormLoadTask has created an instance of the Xform.
-	 * It returns the content uri which is used to start the ODK Activity to load that Xform instance.
-	 */
-	public void onOdkFormLoadSuccess(Uri contentUri) {
-		this.contentUri = contentUri;
-		startActivityForResult(new Intent(Intent.ACTION_EDIT, contentUri), SELECTED_XFORM);
-	}
-	
-	/**
-	 * This is called when the OdkFormLoadTask is unable to locate an xform.
-	 * It's possible for this to happen if the form doesn't exist.
-	 */
-	public void onOdkFormLoadFailure() {
-		createXFormNotFoundDialog();
-	}
-		
-	/**
-	 * Clears all state and returns the phase to Location.
-	 */
-	public void reset() {
-		setPhase(UpdateEvent.LOCATION);	
-	}
-	
-	/**
-	 * Returns the phase you're currently in. 
-	 */
-	private String getPhase() {
-		if (XFORMS_PHASE)
-			return UpdateEvent.XFORMS;
-		else if (INDIVIDUAL_PHASE)
-			return UpdateEvent.INDIVIDUAL;
-		else if (VISIT_PHASE)
-			return UpdateEvent.VISIT;
-		else if (ROUND_PHASE)
-			return UpdateEvent.ROUND;
-		else if (LOCATION_PHASE)
-			return UpdateEvent.LOCATION;
-		else if (VILLAGE_PHASE)
-			return UpdateEvent.VILLAGE;
-		else if (SUB_REGION_PHASE)
-			return UpdateEvent.SUBREGION;
-		else
-			return UpdateEvent.REGION;
-	}
-	
-	/**
-	 * Restores the state to the phase specified.
-	 */
-	private void restorePhase(String phase) {
-		if (phase.equals(UpdateEvent.REGION)) {
-			setStateRegion();
-		}
-		else if (phase.equals(UpdateEvent.SUBREGION)) {
-			setStateSubRegion();
-			sf.restoreRegionTextFields();
-		}
-		else if (phase.equals(UpdateEvent.VILLAGE)) {
-			setStateVillage();
-			
-			sf.restoreRegionTextFields();
-			sf.restoreSubRegionTextFields();
-		}
-		else if (phase.equals(UpdateEvent.LOCATION)) {
-			setStateLocation();
-			
-			sf.restoreRegionTextFields();
-			sf.restoreSubRegionTextFields();
-			sf.restoreVillageTextFields();
-		}
-		else if (phase.equals(UpdateEvent.ROUND)) {
-			setStateRound();
-			
-			sf.restoreRegionTextFields();
-			sf.restoreSubRegionTextFields();
-			sf.restoreVillageTextFields();
-			sf.restoreLocationTextFields();
-		}
-		else if (phase.equals(UpdateEvent.VISIT)) {
-			setStateVisit();
-			
-			sf.restoreRegionTextFields();
-			sf.restoreSubRegionTextFields();
-			sf.restoreVillageTextFields();
-			sf.restoreLocationTextFields();
-			sf.restoreRoundTextFields();
-		}
-		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
-			setStateIndividual();
-			
-			sf.restoreRegionTextFields();
-			sf.restoreSubRegionTextFields();
-			sf.restoreVillageTextFields();
-			sf.restoreLocationTextFields();
-			sf.restoreRoundTextFields();
-		}
-		else if (phase.equals(UpdateEvent.XFORMS)) {
-			setStateFinish();
-			
-			sf.restoreRegionTextFields();
-			sf.restoreSubRegionTextFields();
-			sf.restoreVillageTextFields();
-			sf.restoreLocationTextFields();
-			sf.restoreRoundTextFields();
-			sf.restoreIndividualTextFields();
-		}
-	}
-	
-	/**
-	 * Sets the state to the phase specified.
-	 */
-	private void setPhase(String phase) {
-		if (phase.equals(UpdateEvent.REGION)) {
-			setStateRegion();
-			
-			sf.clearRegionTextFields();
-			sf.clearSubRegionTextFields();
-			sf.clearVillageTextFields();
-			sf.clearLocationTextFields();
-			sf.clearRoundTextFields();
-			sf.clearIndividualTextFields();
-		
-			sf.setRegion(new LocationHierarchy());
-			sf.setSubRegion(new LocationHierarchy());
-			sf.setVillage(new LocationHierarchy());
-			sf.setLocation(new Location());
-			sf.setRound(new Round());
-			sf.setIndividual(new Individual());
-			sf.setRelationship(new Relationship());
-			sf.setPregnancyOutcome(new PregnancyOutcome());
-		}
-		else if (phase.equals(UpdateEvent.SUBREGION)) {		
-			setStateSubRegion();
-			
-			sf.clearSubRegionTextFields();
-			sf.clearVillageTextFields();
-			sf.clearLocationTextFields();
-			sf.clearRoundTextFields();
-			sf.clearIndividualTextFields();
-			
-			sf.setSubRegion(new LocationHierarchy());
-			sf.setVillage(new LocationHierarchy());
-			sf.setLocation(new Location());
-			sf.setRound(new Round());
-			sf.setIndividual(new Individual());
-			sf.setRelationship(new Relationship());
-			sf.setPregnancyOutcome(new PregnancyOutcome());
-		}
-		else if (phase.equals(UpdateEvent.VILLAGE)) {
-			setStateVillage();
-			
-			sf.clearVillageTextFields();
-			sf.clearLocationTextFields();
-			sf.clearRoundTextFields();
-			sf.clearIndividualTextFields();
-			
-			sf.setVillage(new LocationHierarchy());
-			sf.setLocation(new Location());
-			sf.setRound(new Round());
-			sf.setIndividual(new Individual());
-			sf.setRelationship(new Relationship());
-			sf.setPregnancyOutcome(new PregnancyOutcome());
-		}
-		else if (phase.equals(UpdateEvent.LOCATION)) {
-			setStateLocation();
-			
-			sf.clearLocationTextFields();
-			sf.clearIndividualTextFields();
-			
-			sf.setLocation(new Location());
-			sf.setIndividual(new Individual());
-			sf.setRelationship(new Relationship());
-			sf.setPregnancyOutcome(new PregnancyOutcome());
-		}
-		else if (phase.equals(UpdateEvent.ROUND)) {
-			setStateRound();
-			
-			sf.clearRoundTextFields();
-			sf.clearIndividualTextFields();
-			
-			sf.setRound(new Round());
-			sf.setIndividual(new Individual());
-			sf.setRelationship(new Relationship());
-			sf.setPregnancyOutcome(new PregnancyOutcome());
-		}
-		else if (phase.equals(UpdateEvent.VISIT)) {
-			setStateVisit();
-			
-			sf.clearIndividualTextFields();
-			
-			sf.setIndividual(new Individual());
-			sf.setRelationship(new Relationship());
-			sf.setPregnancyOutcome(new PregnancyOutcome());
-		}
-		else if (phase.equals(UpdateEvent.INDIVIDUAL)) {
-			setStateIndividual();
-			
-			sf.clearIndividualTextFields();
-			
-			sf.setIndividual(new Individual());
-			sf.setRelationship(new Relationship());
-			sf.setPregnancyOutcome(new PregnancyOutcome());
-		}
-		else if (phase.equals(UpdateEvent.XFORMS)) {
-			setStateFinish();
-			sf.setRelationship(new Relationship());
-			sf.setPregnancyOutcome(new PregnancyOutcome());
-		}
-	}
-	
-	
-	private void toggleUpdateEventButtons(Boolean value) {
-		householdBtn.setEnabled(value); 
-		relationshipBtn.setEnabled(value);
-		membershipBtn.setEnabled(value);
-		outMigrationBtn.setEnabled(value);
-		deathBtn.setEnabled(value);
-		
-		if (value == true && sf.getIndividual().getGender().equalsIgnoreCase("Female")) {
-			pregRegBtn.setEnabled(true);
-			birthRegBtn.setEnabled(true);
-		}
-		else {
-			pregRegBtn.setEnabled(false);
-			birthRegBtn.setEnabled(false);
-		}
-	}
-	
-	private void setStateRegion() {
-		SUB_REGION_PHASE = false;
-		VILLAGE_PHASE = false;
-		ROUND_PHASE = false;
-		LOCATION_PHASE = false;
-		VISIT_PHASE = false;
-		INDIVIDUAL_PHASE = false;
-		XFORMS_PHASE = false;
-		
-		findLocationGeoPointBtn.setEnabled(true);
-		finishVisitBtn.setEnabled(false);
-		createVisitBtn.setEnabled(false);
-		clearLocationBtn.setEnabled(false);
-		clearIndividualBtn.setEnabled(false);
-		sf.setRegionState();
-		inMigrationBtn.setEnabled(false);
-		toggleUpdateEventButtons(false);
-	}
-	
-	private void setStateSubRegion() {
-		SUB_REGION_PHASE = true;
-		VILLAGE_PHASE = false;
-		ROUND_PHASE = false;
-		LOCATION_PHASE = false;
-		VISIT_PHASE = false;
-		INDIVIDUAL_PHASE = false;
-		XFORMS_PHASE = false;
-		
-		findLocationGeoPointBtn.setEnabled(false);
-		finishVisitBtn.setEnabled(false);
-		createVisitBtn.setEnabled(false);
-		clearLocationBtn.setEnabled(false);
-		clearIndividualBtn.setEnabled(false);
-		sf.setSubRegionState();
-		inMigrationBtn.setEnabled(false);
-		toggleUpdateEventButtons(false);
-	}
-	
-	private void setStateVillage() {
-		SUB_REGION_PHASE = false;
-		VILLAGE_PHASE = true;
-		ROUND_PHASE = false;
-		LOCATION_PHASE = false;
-		VISIT_PHASE = false;
-		INDIVIDUAL_PHASE = false;
-		XFORMS_PHASE = false;
-	
-		findLocationGeoPointBtn.setEnabled(false);
-		finishVisitBtn.setEnabled(false);
-		createVisitBtn.setEnabled(false);
-		clearLocationBtn.setEnabled(false);
-		clearIndividualBtn.setEnabled(false);
-		sf.setVillageState();
-		inMigrationBtn.setEnabled(false);
-		toggleUpdateEventButtons(false);
-	}
-		
-	private void setStateLocation() {
-		SUB_REGION_PHASE = false;
-		VILLAGE_PHASE = false;
-		ROUND_PHASE = false;
-		LOCATION_PHASE = true;
-		VISIT_PHASE = false;
-		INDIVIDUAL_PHASE = false;
-		XFORMS_PHASE = false;
-		
-		findLocationGeoPointBtn.setEnabled(false);
-		finishVisitBtn.setEnabled(false);
-		createLocationBtn.setEnabled(true);
-		createVisitBtn.setEnabled(false);
-		clearLocationBtn.setEnabled(false);
-		clearIndividualBtn.setEnabled(false);
-		sf.setLocationState();
-		inMigrationBtn.setEnabled(false);
-		toggleUpdateEventButtons(false);
-	}
-	
-	private void setStateRound() {
-		SUB_REGION_PHASE = false;
-		VILLAGE_PHASE = false;
-		ROUND_PHASE = true;
-		LOCATION_PHASE = false;
-		VISIT_PHASE = false;
-		INDIVIDUAL_PHASE = false;
-		XFORMS_PHASE = false;
-		
-		findLocationGeoPointBtn.setEnabled(false);
-		finishVisitBtn.setEnabled(false);
-		createLocationBtn.setEnabled(false);
-		createVisitBtn.setEnabled(false);
-		clearLocationBtn.setEnabled(false);
-		clearIndividualBtn.setEnabled(false);
-		sf.setRoundState();
-		inMigrationBtn.setEnabled(false);
-		toggleUpdateEventButtons(false);
-	}
-	
-	private void setStateVisit() { 
-		SUB_REGION_PHASE = false;
-		VILLAGE_PHASE = false;
-		ROUND_PHASE = false;
-		LOCATION_PHASE = false;
-		VISIT_PHASE = true;
-		INDIVIDUAL_PHASE = false;
-		XFORMS_PHASE = false;
-		
-		findLocationGeoPointBtn.setEnabled(false);
-		finishVisitBtn.setEnabled(false);
-		createLocationBtn.setEnabled(false);
-		createVisitBtn.setEnabled(true);
-		clearLocationBtn.setEnabled(true);
-		clearIndividualBtn.setEnabled(false);
-		sf.setVisitState();
-		inMigrationBtn.setEnabled(false);
-		toggleUpdateEventButtons(false);
-	}
-	
-	private void setStateIndividual() {
-		SUB_REGION_PHASE = false;
-		VILLAGE_PHASE = false;
-		ROUND_PHASE = false;
-		LOCATION_PHASE = false;
-		VISIT_PHASE = false;
-		INDIVIDUAL_PHASE = true;
-		XFORMS_PHASE = false;
-		
-		findLocationGeoPointBtn.setEnabled(false);
-		finishVisitBtn.setEnabled(true);
-		createLocationBtn.setEnabled(false);
-		createVisitBtn.setEnabled(false);
-		clearLocationBtn.setEnabled(false);
-		clearIndividualBtn.setEnabled(false);
-		sf.setIndividualState();
-		inMigrationBtn.setEnabled(true);
-		toggleUpdateEventButtons(false);
-	}
-	
-	private void setStateFinish() {
-		SUB_REGION_PHASE = false;
-		VILLAGE_PHASE = false;
-		ROUND_PHASE = false;
-		LOCATION_PHASE = false;
-		VISIT_PHASE = false;
-		INDIVIDUAL_PHASE = false;
-		XFORMS_PHASE = true;
-		
-		findLocationGeoPointBtn.setEnabled(false);
-		finishVisitBtn.setEnabled(true);
-		createLocationBtn.setEnabled(false);
-		createVisitBtn.setEnabled(false);
-		clearLocationBtn.setEnabled(false);
-		clearIndividualBtn.setEnabled(true);
-		sf.setFinishState();
-		inMigrationBtn.setEnabled(false);
-		toggleUpdateEventButtons(true);
-	}
 
-    public FieldWorker getFieldWorker() {
-        return (FieldWorker) getIntent().getExtras().getSerializable("fieldWorker");
+    private void createInMigrationFormDialog() {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        alertDialogBuilder.setTitle("In Migration");
+        alertDialogBuilder.setMessage("Is this an Internal or External In Migration event?");
+        alertDialogBuilder.setCancelable(true);
+        alertDialogBuilder.setPositiveButton("Internal", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                startFilterActivity(FILTER_INMIGRATION);
+            }
+        });
+        alertDialogBuilder.setNegativeButton("External", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                showProgressFragment();
+                getLoaderManager().restartLoader(SOCIAL_GROUP_FOR_EXT_INMIGRATION, null, UpdateActivity.this);
+            }
+        });
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
+    private void createXFormNotFoundDialog() {
+        xFormNotFound = true;
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        alertDialogBuilder.setTitle("Warning");
+        alertDialogBuilder.setMessage("The XForm could not be found within Open Data Kit Collect. "
+                + "Please make sure that it exists and it's named correctly.");
+        alertDialogBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                xFormNotFound = false;
+            }
+        });
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
+    private class PregnancyOutcomeTask extends AsyncTask<Void, Void, Individual> {
+
+        @Override
+        protected Individual doInBackground(Void... params) {
+            final Individual father = locationVisit.determinePregnancyOutcomeFather(getContentResolver());
+            return father;
+        }
+
+        @Override
+        protected void onPostExecute(final Individual father) {
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(UpdateActivity.this);
+            alertDialogBuilder.setTitle("Choose Father");
+            alertDialogBuilder.setCancelable(true);
+
+            if (father != null) {
+                String fatherName = father.getFullName() + " (" + father.getExtId() + ")";
+                String items[] = { fatherName, "Search HDSS", "Father not within HDSS" };
+                alertDialogBuilder.setItems(items, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int choice) {
+                        if (choice == 0) {
+                            new CreatePregnancyOutcomeTask(father).execute();
+                        } else if (choice == 1) {
+                            // choose father
+                            startFilterActivity(FILTER_BIRTH_FATHER);
+                        } else if (choice == 2) {
+                            new CreatePregnancyOutcomeTask(null).execute();
+                        }
+                    }
+                });
+            } else {
+                Toast.makeText(getApplicationContext(), getString(R.string.fatherNotFound), Toast.LENGTH_LONG).show();
+                String items[] = { "Search HDSS", "Not within HDSS" };
+                alertDialogBuilder.setItems(items, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int choice) {
+                        if (choice == 0) {
+                            startFilterActivity(FILTER_BIRTH_FATHER);
+                        } else if (choice == 1) {
+                            new CreatePregnancyOutcomeTask(null).execute();
+                        }
+                    }
+                });
+            }
+
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+        }
+    }
+
+    private class CreatePregnancyOutcomeTask extends AsyncTask<Void, Void, Void> {
+
+        private Individual father;
+
+        public CreatePregnancyOutcomeTask(Individual father) {
+            this.father = father;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            PregnancyOutcome po = locationVisit.createPregnancyOutcome(getContentResolver(), father);
+            filledForm = formFiller.fillPregnancyOutcome(locationVisit, po);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            hideProgressFragment();
+            loadForm(SELECTED_XFORM);
+        }
+    }
+
+    public void onLocationGeoPoint() {
+        Intent intent = new Intent(getApplicationContext(), ShowMapActivity.class);
+        startActivityForResult(intent, LOCATION_GEOPOINT);
+    }
+
+    public void onCreateLocation() {
+        // not creating a filled form here
+        // it's created after the user has returned from selecting
+        // a head of location
+        startFilterActivity(FILTER_LOCATION);
+    }
+
+    public void onCreateVisit() {
+        locationVisit.createVisit(getContentResolver());
+        filledForm = formFiller.fillVisitForm(locationVisit);
+        loadForm(SELECTED_XFORM);
+    }
+
+    public void onFinishVisit() {
+        locationVisit = locationVisit.completeVisit();
+        sf.setLocationVisit(locationVisit);
+        ef.setLocationVisit(locationVisit);
+        stateMachine.transitionTo(State.FINISH_VISIT);
+        stateMachine.transitionTo(State.SELECT_LOCATION);
+    }
+
+    public void onHousehold() {
+        SocialGroup sg = locationVisit.createSocialGroup(getContentResolver());
+        filledForm = formFiller.fillSocialGroupForm(locationVisit, sg);
+        loadForm(SELECTED_XFORM);
+    }
+
+    public void onMembership() {
+        filledForm = formFiller.filMembershipForm(locationVisit);
+        showProgressFragment();
+        getLoaderManager().restartLoader(SOCIAL_GROUP_AT_LOCATION, null, this);
+    }
+
+    public void onRelationship() {
+        filledForm = formFiller.fillRelationships(locationVisit);
+        startFilterActivity(FILTER_RELATIONSHIP);
+    }
+
+    public void onInMigration() {
+        createInMigrationFormDialog();
+    }
+
+    public void onOutMigration() {
+        filledForm = formFiller.fillOutMigrationForm(locationVisit);
+        loadSocialGroupsForIndividual();
+    }
+
+    public void onPregnancyRegistration() {
+        filledForm = formFiller.fillPregnancyRegistrationForm(locationVisit);
+        loadSocialGroupsForIndividual();
+    }
+
+    public void onPregnancyOutcome() {
+        showProgressFragment();
+        new PregnancyOutcomeTask().execute();
+    }
+
+    public void onDeath() {
+        filledForm = formFiller.fillDeathForm(locationVisit);
+        loadSocialGroupsForIndividual();
+    }
+
+    private void loadSocialGroupsForIndividual() {
+        showProgressFragment();
+        getLoaderManager().restartLoader(SOCIAL_GROUP_FOR_INDIVIDUAL, null, this);
+    }
+
+    public void onClearIndividual() {
+        locationVisit.setSelectedIndividual(null);
+        stateMachine.transitionTo(State.SELECT_INDIVIDUAL);
+    }
+
+    public void loadForm(final int requestCode) {
+        new OdkGeneratedFormLoadTask(getContentResolver(), filledForm, new OdkFormLoadListener() {
+            public void onOdkFormLoadSuccess(Uri contentUri) {
+                UpdateActivity.this.contentUri = contentUri;
+                startActivityForResult(new Intent(Intent.ACTION_EDIT, contentUri), requestCode);
+            }
+
+            public void onOdkFormLoadFailure() {
+                createXFormNotFoundDialog();
+            }
+        }).execute();
     }
 
     public void onRegion() {
+        locationVisit.clearLevelsBelow(0);
+        stateMachine.transitionTo(State.SELECT_REGION);
         loadRegionValueData();
     }
 
     public void onSubRegion() {
+        locationVisit.clearLevelsBelow(1);
+        stateMachine.transitionTo(State.SELECT_SUBREGION);
         loadSubRegionValueData();
     }
 
     public void onVillage() {
+        locationVisit.clearLevelsBelow(2);
+        stateMachine.transitionTo(State.SELECT_VILLAGE);
         loadVillageValueData();
     }
 
     public void onLocation() {
+        locationVisit.clearLevelsBelow(4);
+        stateMachine.transitionTo(State.SELECT_LOCATION);
         loadLocationValueData();
     }
 
     public void onRound() {
+        locationVisit.clearLevelsBelow(3);
+        stateMachine.transitionTo(State.SELECT_ROUND);
         loadRoundValueData();
     }
 
     public void onIndividual() {
+        locationVisit.clearLevelsBelow(5);
         loadIndividualValueData();
     }
 
     public void onHierarchySelected(LocationHierarchy hierarchy) {
-        sf.setRegion(hierarchy);
-        setPhase(UpdateEvent.SUBREGION);
+        locationVisit.setRegion(hierarchy);
+        stateMachine.transitionTo(State.SELECT_SUBREGION);
+    }
+
+    private void registerTransitions() {
+        sf.registerTransitions(stateMachine);
+        ef.registerTransitions(stateMachine);
     }
 
     public void onSubRegionSelected(LocationHierarchy subregion) {
-        sf.setSubRegion(subregion);
-        setPhase(UpdateEvent.VILLAGE);
+        locationVisit.setSubRegion(subregion);
+        stateMachine.transitionTo(State.SELECT_VILLAGE);
     }
 
     public void onVillageSelected(LocationHierarchy village) {
-        sf.setVillage(village);
-        setPhase(UpdateEvent.ROUND);        
+        locationVisit.setVillage(village);
+        stateMachine.transitionTo(State.SELECT_ROUND);
     }
 
     public void onRoundSelected(Round round) {
-        sf.setRound(round);
-        setPhase(UpdateEvent.LOCATION);
+        locationVisit.setRound(round);
+        stateMachine.transitionTo(State.SELECT_LOCATION);
     }
 
     public void onLocationSelected(Location location) {
-        sf.setLocation(location);
-        setPhase(UpdateEvent.VISIT);        
+        locationVisit.setLocation(location);
+        stateMachine.transitionTo(State.CREATE_VISIT);
     }
 
     public void onIndividualSelected(Individual individual) {
-        sf.setIndividual(individual);
-        setPhase(UpdateEvent.XFORMS);
+        locationVisit.setSelectedIndividual(individual);
+        stateMachine.transitionTo(State.SELECT_EVENT);
     }
 
-    public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
-        Loader<Cursor> loader = null;
-        switch (arg0) {
-        case 0:
-            Uri uri = OpenHDS.SocialGroups.CONTENT_LOCATION_ID_URI_BASE.buildUpon()
-                    .appendPath(sf.getLocation().getExtId()).build();
-            loader = new CursorLoader(this, uri, null, null, null, null);
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Uri uri = null;
+        switch (id) {
+        case SOCIAL_GROUP_AT_LOCATION:
+        case SOCIAL_GROUP_FOR_EXT_INMIGRATION:
+            uri = OpenHDS.SocialGroups.CONTENT_LOCATION_ID_URI_BASE.buildUpon()
+                    .appendPath(locationVisit.getLocation().getExtId()).build();
+            break;
+        case SOCIAL_GROUP_FOR_INDIVIDUAL:
+            uri = OpenHDS.SocialGroups.CONTENT_INDIVIDUAL_ID_URI_BASE.buildUpon()
+                    .appendPath(locationVisit.getSelectedIndividual().getExtId()).build();
             break;
         }
 
-        return loader;
+        return new CursorLoader(this, uri, null, null, null, null);
     }
 
-    public void onLoadFinished(Loader<Cursor> arg0, Cursor arg1) {
-        progDialog.dismiss();
-        progDialog = null;
-        
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Select a Household for the Individual");
-        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_2, arg1,
-                new String[] { OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_GROUPNAME,
-                        OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_EXTID }, new int[] { android.R.id.text1,
-                        android.R.id.text2 }, 0);
-        builder.setAdapter(adapter, new DialogInterface.OnClickListener() {
-            
-            public void onClick(DialogInterface dialog, int which) {
-                Cursor cursor = (Cursor)householdDialog.getListView().getItemAtPosition(which);
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        if (loader.getId() == SOCIAL_GROUP_FOR_EXT_INMIGRATION) {
+            if (cursor.getCount() == 1) {
+                cursor.moveToFirst();
                 SocialGroup sg = Converter.convertToSocialGroup(cursor);
-                sf.setSocialgroup(sg);
-                loadForm(UpdateEvent.INMIGRATION);
+                new GenerateIndividualIdTask(sg).execute();
+                return;
             }
-        });
-        builder.setNegativeButton("Cancel", null);
-        householdDialog = builder.create();
-        householdDialog.show();
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Select a Household for the Individual");
+            SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_2, cursor,
+                    new String[] { OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_GROUPNAME,
+                            OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_EXTID }, new int[] { android.R.id.text1,
+                            android.R.id.text2 }, 0);
+            builder.setAdapter(adapter, new DialogInterface.OnClickListener() {
+
+                public void onClick(DialogInterface dialog, int which) {
+                    Cursor cursor = (Cursor) householdDialog.getListView().getItemAtPosition(which);
+                    new GenerateIndividualIdTask(Converter.convertToSocialGroup(cursor)).execute();
+                }
+            });
+
+            builder.setNegativeButton("Cancel", null);
+            householdDialog = builder.create();
+            householdDialog.show();
+        } else {
+            hideProgressFragment();
+            if (cursor.getCount() == 1 && loader.getId() == SOCIAL_GROUP_FOR_INDIVIDUAL) {
+                cursor.moveToFirst();
+                appendSocialGroupFromCursor(cursor);
+                return;
+            }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Select a Household for the Individual");
+            SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_2, cursor,
+                    new String[] { OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_GROUPNAME,
+                            OpenHDS.SocialGroups.COLUMN_SOCIALGROUP_EXTID }, new int[] { android.R.id.text1,
+                            android.R.id.text2 }, 0);
+            builder.setAdapter(adapter, new DialogInterface.OnClickListener() {
+
+                public void onClick(DialogInterface dialog, int which) {
+                    Cursor cursor = (Cursor) householdDialog.getListView().getItemAtPosition(which);
+                    appendSocialGroupFromCursor(cursor);
+                }
+            });
+            builder.setNegativeButton("Cancel", null);
+            householdDialog = builder.create();
+            householdDialog.show();
+        }
+    }
+
+    private class GenerateIndividualIdTask extends AsyncTask<Void, Void, Void> {
+
+        private SocialGroup sg;
+
+        public GenerateIndividualIdTask(SocialGroup sg) {
+            this.sg = sg;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            String id = locationVisit.generateIndividualId(getContentResolver(), 1, sg.getExtId());
+            Individual indiv = new Individual();
+            indiv.setExtId(id);
+            filledForm = formFiller.fillInMigrationForm(locationVisit, indiv);
+            formFiller.appendSocialGroup(sg, filledForm);
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            hideProgressFragment();
+            loadForm(SELECTED_XFORM);
+        }
+    }
+
+    private void appendSocialGroupFromCursor(Cursor cursor) {
+        SocialGroup sg = Converter.convertToSocialGroup(cursor);
+        filledForm = formFiller.appendSocialGroup(sg, filledForm);
+        loadForm(SELECTED_XFORM);
     }
 
     public void onLoaderReset(Loader<Cursor> arg0) {
         householdDialog.dismiss();
         householdDialog = null;
     }
-
 }

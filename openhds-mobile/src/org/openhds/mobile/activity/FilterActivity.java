@@ -14,49 +14,46 @@ import android.content.Intent;
 import android.os.Bundle;
 
 /**
- * This activity is only used in searching for an Individual.
- * This activity is launched before creating Relationship and Internal In Migration events.
- * It's also launched before creating a new Location.
+ * This activity is only used in searching for an Individual. This activity is
+ * launched before creating Relationship and Internal In Migration events. It's
+ * also launched before creating a new Location.
  */
 public class FilterActivity extends Activity implements ValueListener, SelectionFilterFragment.Listener {
-	
-	private SelectionFilterFragment selectionFilterFragment;
-	private ValueFragment valueFragment;
-	
-	private String type;
-			
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-	    setContentView(R.layout.filter); 
-	    
-	    selectionFilterFragment = (SelectionFilterFragment)getFragmentManager().findFragmentById(R.id.selectionFilterFragment);
-		valueFragment = (ValueFragment)getFragmentManager().findFragmentById(R.id.valueFragment);
 
-		processExtras();
-	}
-	
-	private void processExtras() {	
-		LocationHierarchy region = (LocationHierarchy) getIntent().getExtras().getSerializable("region");
-		LocationHierarchy subRegion = (LocationHierarchy) getIntent().getExtras().getSerializable("subRegion");
-		LocationHierarchy village = (LocationHierarchy) getIntent().getExtras().getSerializable("village");
-		Location location = (Location) getIntent().getExtras().getSerializable("location");
-		type = getIntent().getExtras().getString("type");
-		
-		selectionFilterFragment.setRegion(region.getExtId());
-		selectionFilterFragment.setSubregion(subRegion.getExtId());
-		selectionFilterFragment.setVillage(village.getExtId());
-		selectionFilterFragment.setLocation(location.getExtId());
-	}
-	   
+    private SelectionFilterFragment selectionFilterFragment;
+    private ValueFragment valueFragment;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.filter);
+
+        selectionFilterFragment = (SelectionFilterFragment) getFragmentManager().findFragmentById(
+                R.id.selectionFilterFragment);
+        valueFragment = (ValueFragment) getFragmentManager().findFragmentById(R.id.valueFragment);
+
+        processExtras();
+    }
+
+    private void processExtras() {
+        LocationHierarchy region = (LocationHierarchy) getIntent().getExtras().getSerializable("region");
+        LocationHierarchy subRegion = (LocationHierarchy) getIntent().getExtras().getSerializable("subRegion");
+        LocationHierarchy village = (LocationHierarchy) getIntent().getExtras().getSerializable("village");
+        Location location = (Location) getIntent().getExtras().getSerializable("location");
+
+        selectionFilterFragment.setRegion(region.getExtId());
+        selectionFilterFragment.setSubregion(subRegion.getExtId());
+        selectionFilterFragment.setVillage(village.getExtId());
+        selectionFilterFragment.setLocation(location.getExtId());
+    }
+
     public void onIndividualSelected(Individual individual) {
         Intent i = new Intent();
         i.putExtra("individual", individual);
-        i.putExtra("type", type);
         setResult(Activity.RESULT_OK, i);
         finish();
     }
-	
+
     public void onHierarchySelected(LocationHierarchy hierarchy) {
         selectionFilterFragment.updateRegionText(hierarchy.getExtId());
     }
@@ -70,31 +67,30 @@ public class FilterActivity extends Activity implements ValueListener, Selection
     }
 
     public void onRoundSelected(Round round) {
-    	// not implemented
+        // not implemented
     }
 
     public void onLocationSelected(Location location) {
         selectionFilterFragment.updateLocationText(location.getExtId());
     }
 
-	public void onSeeListRegion() {
-		valueFragment.loadLocationHierarchy();
-	}
+    public void onSeeListRegion() {
+        valueFragment.loadLocationHierarchy();
+    }
 
-	public void onSeeListSubRegion(String region) {
-		valueFragment.loadSubRegion(region);
-	}
+    public void onSeeListSubRegion(String region) {
+        valueFragment.loadSubRegion(region);
+    }
 
-	public void onSeeListVillage(String subregion) {
-		valueFragment.loadVillage(subregion);
-	}
+    public void onSeeListVillage(String subregion) {
+        valueFragment.loadVillage(subregion);
+    }
 
-	public void onSeeListLocation(String village) {
-		valueFragment.loadLocations(village);
-	}
+    public void onSeeListLocation(String village) {
+        valueFragment.loadLocations(village);
+    }
 
-	public void onSearch(String location, String firstName, String lastName,
-			String gender) {
-		valueFragment.loadFilteredIndividuals(location, firstName, lastName, gender);
-	}
+    public void onSearch(String location, String firstName, String lastName, String gender) {
+        valueFragment.loadFilteredIndividuals(location, firstName, lastName, gender);
+    }
 }
