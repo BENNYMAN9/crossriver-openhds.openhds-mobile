@@ -1,7 +1,9 @@
 package org.openhds.mobile.activity;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import org.openhds.mobile.Converter;
 import org.openhds.mobile.FieldWorkerProvider;
@@ -771,9 +773,20 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 		deathBtn.setEnabled(value);
 		
 		if (value == true && sf.getIndividual().getGender().equalsIgnoreCase("Female")) {
-			pregRegBtn.setEnabled(true);
-			birthRegBtn.setEnabled(true);
-		}
+            try {
+                DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                Date dob = formatter.parse(sf.getIndividual().getDob());
+                Calendar cal=Calendar.getInstance();
+                cal.setTime(dob);
+                if (( new GregorianCalendar().get(Calendar.YEAR) - cal.get(Calendar.YEAR)) > 12 ) {
+                    pregRegBtn.setEnabled(true);
+                    birthRegBtn.setEnabled(true);
+                }
+            } catch (ParseException e) {
+
+            }
+
+        }
 		else {
 			pregRegBtn.setEnabled(false);
 			birthRegBtn.setEnabled(false);
