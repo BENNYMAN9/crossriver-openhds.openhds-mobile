@@ -248,9 +248,8 @@ public class SelectionFragment extends Fragment implements OnClickListener {
     }
 
     // this logic is specific for the Cross River birth registration
-	public boolean createPregnancyOutcome() {
+	public boolean createPregnancyOutcome(Individual father) {
 		
-		Individual father = determinePregnancyOutcomeFather(individual);
 		this.getPregnancyOutcome().setMother(individual);
 		this.getPregnancyOutcome().setFather(father);
 
@@ -329,7 +328,7 @@ public class SelectionFragment extends Fragment implements OnClickListener {
 		return baseString;
 	}
 	
-	private Individual determinePregnancyOutcomeFather(Individual mother) {
+	public Individual determinePregnancyOutcomeFather(Individual mother) {
 		Cursor cursor = Queries.getRelationshipByFemale(getActivity().getContentResolver(), mother.getExtId());
 		List<Relationship> rels = Converter.toRelationshipList(cursor);
 		DateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
