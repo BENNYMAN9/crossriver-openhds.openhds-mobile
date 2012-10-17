@@ -44,6 +44,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.Toast;
+import org.openhds.mobile.utilities.L;
 
 public class UpdateActivity extends FragmentActivity implements OnClickListener, ValueFragment.ValueListener,
         OdkFormLoadListener, FieldWorkerProvider, SelectionFragment.Listener {
@@ -83,6 +84,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				
     @Override
 	public void onCreate(Bundle savedInstanceState) {
+        L.w();
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.main);    	   
 	   
@@ -142,7 +144,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * The main menu, showing multiple options
      */
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {	
+    public boolean onCreateOptionsMenu(Menu menu) {
+        L.w();
     	MenuInflater inflater = getMenuInflater();
     	inflater.inflate(R.menu.mainmenu, menu);
         return true;
@@ -153,6 +156,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        L.w();
         switch (item.getItemId()) {
             case R.id.configure_server:
                 createPreferencesMenu();
@@ -170,6 +174,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      */
     @Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        L.w();
 		switch(requestCode) {
 			case SELECTED_XFORM: {
 			
@@ -232,6 +237,14 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 						else
 							loadForm(UpdateEvent.INMIGRATION);
 					}
+                    else if (type.equals(UpdateEvent.BIRTH)) {
+                        String extId = data.getExtras().getString("extId");
+                        Cursor cursor = Queries.getIndividualByExtId(getContentResolver(), extId);
+                        Individual individual = Converter.toIndividual(cursor);
+
+                        createPregnancyOutcome(individual);
+                        loadForm(UpdateEvent.BIRTH);
+                    }
 				}
 				break;
 			}
@@ -272,6 +285,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      */
     @Override
 	protected void onSaveInstanceState(Bundle outState) {
+        L.w();
 		super.onSaveInstanceState(outState);
 		
 		outState.putSerializable("region", sf.getRegion());
@@ -294,6 +308,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * This method is responsible for restoring the screen state.
      */
     private void restoreState(Bundle state) {
+        L.w();
     	
     	if (state != null) {
 	    	sf.setRegion((LocationHierarchy)state.get("region"));
@@ -321,6 +336,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Creates the 'Configure Server' option in the action menu.
      */
     private void createPreferencesMenu() {
+        L.w();
         Intent i = new Intent(this, ServerPreferencesActivity.class);
         startActivity(i);
     }
@@ -329,6 +345,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Creates the 'Sync Database' option in the action menu.
      */
     private void createSyncDatabaseMenu() {
+        L.w();
         Intent i = new Intent(this, SyncDatabaseActivity.class);
         startActivity(i);
     }
@@ -337,6 +354,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 * Method used for starting the activity for filtering for individuals
 	 */
 	private void startFilterActivity(String type) {
+        L.w();
 		Intent i = new Intent(this, FilterActivity.class);
 		i.putExtra("region", sf.getRegion());
 		i.putExtra("subRegion", sf.getSubRegion());
@@ -347,26 +365,32 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
     
     private void loadRegionValueData() {
+        L.w();
         vf.loadLocationHierarchy();
     }
     
     private void loadSubRegionValueData() {
+        L.w();
         vf.loadSubRegion(sf.getRegion().getExtId());
     }
     
     private void loadVillageValueData() {
+        L.w();
         vf.loadVillage(sf.getSubRegion().getExtId());
     }
 
     private void loadLocationValueData() {
+        L.w();
         vf.loadLocations(sf.getVillage().getExtId());
     }
     
     private void loadRoundValueData() {
+        L.w();
         vf.loadRounds();
     }
     
     private void loadIndividualValueData() {
+        L.w();
         vf.loadIndividuals(sf.getLocation().getExtId());
     }
     
@@ -374,6 +398,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * A dialog indicating that an Xform instance was not completed.
      */
     private void createUnfinishedFormDialog() {
+        L.w();
     	formUnFinished = true;
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 		alertDialogBuilder.setTitle("Warning");
@@ -408,6 +433,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * A dialog for selecting in an InMigration is Internal or External.
      */
     private void createInMigrationFormDialog() {
+        L.w();
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 		alertDialogBuilder.setTitle("In Migration");
 		alertDialogBuilder.setMessage("Is this an Internal or External In Migration event?");
@@ -434,6 +460,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * A dialog displaying a selection of multiple Households for an Individual.
      */
     private void createHouseholdSelectionDialog(final String event) {
+        L.w();
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 		alertDialogBuilder.setTitle("Select the Household to be used for this Individual.");
 		alertDialogBuilder.setSingleChoiceItems(sf.getSocialGroupsForDialog(), -1, new DialogInterface.OnClickListener() {
@@ -454,6 +481,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * A dialog indicating that an Xform instance could not be found.
      */
     private void createXFormNotFoundDialog() {
+        L.w();
     	xFormNotFound = true;
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 		alertDialogBuilder.setTitle("Warning");
@@ -472,6 +500,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
      * Defining what happens when a button is pressed, each button corresponds to a phase.
      */
 	public void onClick(View view) {
+        L.w();
 		switch (view.getId()) {
 			case R.id.findLocationGeoPointBtn:
 				Intent intent = new Intent(getApplicationContext(), ShowMapActivity.class);
@@ -513,25 +542,79 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 				loadForm(UpdateEvent.PREGNANCYOBSERVATION);
 				break;
 			case R.id.birthRegBtn:
-				boolean result = sf.createPregnancyOutcome();
-				if (sf.getPregnancyOutcome().getFather() == null) 
-					Toast.makeText(getApplicationContext(),	getString(R.string.fatherNotFound), Toast.LENGTH_SHORT).show();
-
-				sf.setPregnancyOutcome(sf.getPregnancyOutcome());
-				if (result == false)
-					Toast.makeText(getApplicationContext(),	getString(R.string.idGenerationFailure), Toast.LENGTH_SHORT).show();
-				
-				loadForm(UpdateEvent.BIRTH);
+               // ask question here about father
+                createBirthBtnDialog();
 				break;
 			case R.id.deathBtn: 
 				loadForm(UpdateEvent.DEATH);
 		}	
 	}
-	
-	/**
+
+     private void createPregnancyOutcome(Individual f){
+         boolean result = sf.createPregnancyOutcome(f);
+         // sf.setPregnancyOutcome(sf.getPregnancyOutcome());
+         if (result == false)
+             Toast.makeText(getApplicationContext(),getString(R.string.idGenerationFailure), Toast.LENGTH_SHORT).show();
+     }
+    /**
+     * A dialog indicating present choices after birth event button is clicked.
+     */
+    private void createBirthBtnDialog() {
+
+        L.w();
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        alertDialogBuilder.setTitle("Choose Father");
+        //alertDialogBuilder.setMessage("Father of new birth(s)");
+        alertDialogBuilder.setCancelable(true);
+        final Individual father = sf.determinePregnancyOutcomeFather(sf.getIndividual());
+
+        if (father != null) {
+            String fatherName = father.getFirstName() + " " + father.getLastName() + " (" + father.getExtId() + ")";
+            String items[] = {fatherName, "Search HDSS", "Father not within HDSS"};
+            alertDialogBuilder.setItems(items, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int choice) {
+                    if(choice == 0) {
+                        //father known
+                        createPregnancyOutcome(father);
+                        loadForm(UpdateEvent.BIRTH);
+                    }
+                    else if(choice == 1) {
+                        // choose father
+                        startFilterActivity(UpdateEvent.BIRTH);
+                    }
+                    else if(choice == 2) {
+                        createPregnancyOutcome(null);
+                        loadForm(UpdateEvent.BIRTH);
+                    }
+                }
+            });
+        } else {
+            Toast.makeText(getApplicationContext(),	getString(R.string.fatherNotFound), Toast.LENGTH_LONG).show();
+            String items[] = {"Search HDSS", "Not within HDSS"};
+            alertDialogBuilder.setItems(items, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int choice) {
+                    if(choice == 0) {
+                        //choose father
+                        startFilterActivity(UpdateEvent.BIRTH);
+                        loadForm(UpdateEvent.BIRTH);
+                    }
+                    else if(choice == 1) {
+                        createPregnancyOutcome(null);
+                        loadForm(UpdateEvent.BIRTH);
+                    }
+                }
+            });
+        }
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
+    /**
 	 * Launches the OdkFormLoadTask depending on the specified UpdateEvent
 	 */
     public void loadForm(String event) {
+        L.w();
    		new OdkGeneratedFormLoadTask(this, getContentResolver(), sf, event).execute();
     }
 		
@@ -540,6 +623,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 * It returns the content uri which is used to start the ODK Activity to load that Xform instance.
 	 */
 	public void onOdkFormLoadSuccess(Uri contentUri) {
+        L.w();
 		this.contentUri = contentUri;
 		startActivityForResult(new Intent(Intent.ACTION_EDIT, contentUri), SELECTED_XFORM);
 	}
@@ -549,10 +633,12 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 * It's possible for this to happen if the form doesn't exist.
 	 */
 	public void onOdkFormLoadFailure() {
+        L.w();
 		createXFormNotFoundDialog();
 	}
 	
 	private boolean determineSocialGroupForIndividual() {
+        L.w();
 		// get the socialgroups the individual is a part of
 	    Cursor cursor = Queries.getSocialGroupsByIndividualExtId(getContentResolver(), sf.getIndividual().getExtId());
 		List<SocialGroup> list = Converter.toSocialGroupList(cursor);	
@@ -575,6 +661,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 * Clears all state and returns the phase to Location.
 	 */
 	public void reset() {
+        L.w();
 		setPhase(UpdateEvent.LOCATION);	
 	}
 	
@@ -582,28 +669,48 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 * Returns the phase you're currently in. 
 	 */
 	private String getPhase() {
-		if (XFORMS_PHASE)
+        L.w();
+		if (XFORMS_PHASE){
+            L.w();
 			return UpdateEvent.XFORMS;
-		else if (INDIVIDUAL_PHASE)
+        }
+		else if (INDIVIDUAL_PHASE){
+            L.w();
 			return UpdateEvent.INDIVIDUAL;
-		else if (VISIT_PHASE)
-			return UpdateEvent.VISIT;
-		else if (ROUND_PHASE)
-			return UpdateEvent.ROUND;
+        }
+		else if (VISIT_PHASE){
+            L.w();
+            return UpdateEvent.VISIT;
+        }
+		else if (ROUND_PHASE){
+            L.w();
+            return UpdateEvent.ROUND;
+        }
 		else if (LOCATION_PHASE)
-			return UpdateEvent.LOCATION;
-		else if (VILLAGE_PHASE)
-			return UpdateEvent.VILLAGE;
-		else if (SUB_REGION_PHASE)
-			return UpdateEvent.SUBREGION;
+        {
+            L.w();
+            return UpdateEvent.LOCATION;
+        }
+		else if (VILLAGE_PHASE){
+            L.w();
+        	return UpdateEvent.VILLAGE;
+        }
+		else if (SUB_REGION_PHASE){
+            L.w();
+            return UpdateEvent.SUBREGION;
+        }
 		else
-			return UpdateEvent.REGION;
+        {
+            L.w();
+            return UpdateEvent.REGION;
+        }
 	}
 	
 	/**
 	 * Restores the state to the phase specified.
 	 */
 	private void restorePhase(String phase) {
+        L.w();
 		if (phase.equals(UpdateEvent.REGION)) {
 			setStateRegion();
 		}
@@ -666,6 +773,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	 * Sets the state to the phase specified.
 	 */
 	private void setPhase(String phase) {
+        L.w();
 		if (phase.equals(UpdateEvent.REGION)) {
 			setStateRegion();
 			
@@ -766,6 +874,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	
 	
 	private void toggleUpdateEventButtons(Boolean value) {
+        L.w();
 		householdBtn.setEnabled(value); 
 		relationshipBtn.setEnabled(value);
 		membershipBtn.setEnabled(value);
@@ -778,7 +887,8 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
                 Date dob = formatter.parse(sf.getIndividual().getDob());
                 Calendar cal=Calendar.getInstance();
                 cal.setTime(dob);
-                if (( new GregorianCalendar().get(Calendar.YEAR) - cal.get(Calendar.YEAR)) > 12 ) {
+                final int i = new GregorianCalendar().get(Calendar.YEAR) - cal.get(Calendar.YEAR);
+                if (i > 12 ) {
                     pregRegBtn.setEnabled(true);
                     birthRegBtn.setEnabled(true);
                 }
@@ -794,6 +904,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateRegion() {
+        L.w();
 		REGION_PHASE = true;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
@@ -814,6 +925,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateSubRegion() {
+        L.w();
 		REGION_PHASE = false;
 		SUB_REGION_PHASE = true;
 		VILLAGE_PHASE = false;
@@ -834,6 +946,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateVillage() {
+        L.w();
 		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = true;
@@ -854,6 +967,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 		
 	private void setStateLocation() {
+        L.w();
 		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
@@ -875,6 +989,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateRound() {
+        L.w();
 		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
@@ -917,6 +1032,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateIndividual() {
+        L.w();
 		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
@@ -938,6 +1054,7 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	private void setStateFinish() {
+        L.w();
 		REGION_PHASE = false;
 		SUB_REGION_PHASE = false;
 		VILLAGE_PHASE = false;
@@ -959,59 +1076,72 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
 	}
 
     public FieldWorker getFieldWorker() {
+        L.w();
         return (FieldWorker) getIntent().getExtras().getSerializable("fieldWorker");
     }
 
     public void onRegion() {
+        L.w();
         loadRegionValueData();
     }
 
     public void onSubRegion() {
+        L.w();
         loadSubRegionValueData();
     }
 
     public void onVillage() {
+        L.w();
         loadVillageValueData();
     }
 
     public void onLocation() {
+        L.w();
         loadLocationValueData();
     }
 
     public void onRound() {
+        L.w();
         loadRoundValueData();
     }
 
     public void onIndividual() {
+        L.w();
         loadIndividualValueData();
     }
 
     public void onHierarchySelected(LocationHierarchy hierarchy) {
+        L.w();
         sf.setRegion(hierarchy);
         setPhase(UpdateEvent.SUBREGION);
     }
 
     public void onSubRegionSelected(LocationHierarchy subregion) {
+        L.w();
         sf.setSubRegion(subregion);
         setPhase(UpdateEvent.VILLAGE);
     }
 
     public void onVillageSelected(LocationHierarchy village) {
+        L.w();
         sf.setVillage(village);
         setPhase(UpdateEvent.ROUND);        
     }
 
     public void onRoundSelected(Round round) {
+        L.w();
         sf.setRound(round);
         setPhase(UpdateEvent.LOCATION);
     }
 
     public void onLocationSelected(Location location) {
+        L.w();
         sf.setLocation(location);
         setPhase(UpdateEvent.VISIT);        
     }
 
     public void onIndividualSelected(Individual individual) {
+        L.w();
         sf.setIndividual(individual);
         
         boolean result = determineSocialGroupForIndividual();

@@ -1,13 +1,11 @@
 package org.openhds.mobile.activity;
 
+import android.widget.Toast;
 import org.openhds.mobile.R;
 import org.openhds.mobile.fragment.SelectionFilterFragment;
 import org.openhds.mobile.fragment.ValueFragment;
 import org.openhds.mobile.fragment.ValueFragment.ValueListener;
-import org.openhds.mobile.model.Individual;
-import org.openhds.mobile.model.Location;
-import org.openhds.mobile.model.LocationHierarchy;
-import org.openhds.mobile.model.Round;
+import org.openhds.mobile.model.*;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -55,8 +53,15 @@ public class FilterActivity extends FragmentActivity implements ValueListener, S
         i.putExtra("name", individual.getFirstName() + " " + individual.getLastName());
         i.putExtra("extId", individual.getExtId());
         i.putExtra("type", type);
+
+        if(type.equals("BIRTH") && individual.getGender().equals("Female")){
+            Toast.makeText(getApplicationContext(), "Please choose Male", Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "Please choose Male", Toast.LENGTH_LONG).show();
+
+        }else {
         setResult(Activity.RESULT_OK, i);
         finish();
+        }
     }
 	
     public void onHierarchySelected(LocationHierarchy hierarchy) {
