@@ -568,13 +568,13 @@ public class UpdateActivity extends FragmentActivity implements OnClickListener,
             });
         } else {
             Toast.makeText(getApplicationContext(),	getString(R.string.fatherNotFound), Toast.LENGTH_LONG).show();
-            String items[] = {"Search HDSS", "Not within HDSS"};
+            String items[] = {"Search HDSS", "Father not within HDSS"};
             alertDialogBuilder.setItems(items, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int choice) {
                     if(choice == 0) {
                         //choose father
                         startFilterActivity(UpdateEvent.BIRTH);
-                        loadForm(UpdateEvent.BIRTH);
+                        
                     }
                     else if(choice == 1) {
                         createPregnancyOutcome(null);
