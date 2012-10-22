@@ -5,6 +5,9 @@ import org.openhds.mobile.InstanceProviderAPI;
 import org.openhds.mobile.OpenHDS;
 import org.openhds.mobile.Queries;
 import org.openhds.mobile.R;
+import org.openhds.mobile.database.LocationUpdate;
+import org.openhds.mobile.database.Updatable;
+import org.openhds.mobile.database.VisitUpdate;
 import org.openhds.mobile.fragment.EventFragment;
 import org.openhds.mobile.fragment.ProgressFragment;
 import org.openhds.mobile.fragment.SelectionFragment;
@@ -87,6 +90,7 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
     private FilledForm filledForm;
     private AlertDialog xformUnfinishedDialog;
     private boolean showingProgress;
+    private Updatable updatable;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -218,6 +222,7 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
             Cursor cursor = resolver.query(contentUri, null, InstanceProviderAPI.InstanceColumns.STATUS + "=?",
                     new String[] { InstanceProviderAPI.STATUS_COMPLETE }, null);
             if (cursor.moveToNext()) {
+                updatable.updateDatabase(resolver);
                 return true;
             } else {
                 return false;
@@ -269,6 +274,7 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
         protected Void doInBackground(Void... params) {
             locationVisit.createLocation(getContentResolver(), individual.getExtId(), individual.getFullName());
             filledForm = formFiller.fillLocationForm(locationVisit);
+            updatable = new LocationUpdate(locationVisit.getLocation());
             return null;
         }
 
@@ -356,6 +362,7 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
             Cursor cursor = resolver.query(contentUri, null, InstanceProviderAPI.InstanceColumns.STATUS + "=?",
                     new String[] { InstanceProviderAPI.STATUS_COMPLETE }, null);
             if (cursor.moveToNext()) {
+                updatable.updateDatabase(getContentResolver());
                 return true;
             } else {
                 return false;
@@ -640,6 +647,7 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
         protected Void doInBackground(Void... params) {
             locationVisit.createVisit(getContentResolver());
             filledForm = formFiller.fillVisitForm(locationVisit);
+            updatable = new VisitUpdate(locationVisit);
             return null;
         }
 
