@@ -1,5 +1,11 @@
 package org.openhds.mobile.fragment;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
 import org.openhds.mobile.R;
 import org.openhds.mobile.model.Individual;
 import org.openhds.mobile.model.LocationVisit;
@@ -22,6 +28,8 @@ import android.widget.Button;
  * events it publishes can be handled by implementing the listener interface.
  */
 public class EventFragment extends Fragment implements OnClickListener {
+    private static final int FEMALE_MINIMUM_PREGNANCY_AGE = 12;
+
     private Button findLocationGeoPointBtn, createLocationBtn, createVisitBtn, householdBtn, membershipBtn,
             relationshipBtn, inMigrationBtn, outMigrationBtn, pregRegBtn, birthRegBtn, deathBtn, finishVisitBtn,
             clearIndividualBtn;
@@ -190,7 +198,7 @@ public class EventFragment extends Fragment implements OnClickListener {
                 clearIndividualBtn.setEnabled(true);
 
                 Individual indiv = locationVisit.getSelectedIndividual();
-                if ("female".equalsIgnoreCase(indiv.getGender())) {
+                if ("female".equalsIgnoreCase(indiv.getGender()) && individualMeetsMinimumAge(indiv)) {
                     pregRegBtn.setEnabled(true);
                     birthRegBtn.setEnabled(true);
                 }
@@ -208,6 +216,23 @@ public class EventFragment extends Fragment implements OnClickListener {
                 householdBtn.setEnabled(false);
             }
         });
+    }
+
+    private boolean individualMeetsMinimumAge(Individual indiv) {
+        try {
+            DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            Date dob = formatter.parse(indiv.getDob());
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(dob);
+            if ((new GregorianCalendar().get(Calendar.YEAR) - cal.get(Calendar.YEAR)) > FEMALE_MINIMUM_PREGNANCY_AGE) {
+                return true;
+            }
+        } catch (Exception e) {
+            // no dob or malformed
+            return true;
+        }
+
+        return false;
     }
 
     private void registerIndividualListeners(StateMachine machine) {
