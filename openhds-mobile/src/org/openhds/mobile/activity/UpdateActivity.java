@@ -56,7 +56,7 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
     private ValueFragment vf;
     private EventFragment ef;
     private ProgressFragment progressFragment;
-    
+
     // loader ids
     private static final int SOCIAL_GROUP_AT_LOCATION = 0;
     private static final int SOCIAL_GROUP_FOR_INDIVIDUAL = 10;
@@ -86,6 +86,7 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
     private LocationVisit locationVisit = new LocationVisit();
     private FilledForm filledForm;
     private AlertDialog xformUnfinishedDialog;
+    private boolean showingProgress;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -179,13 +180,15 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
     }
 
     private void handleFatherBirthResult(int resultCode, Intent data) {
-        Individual individual = (Individual) data.getExtras().getSerializable("individual");
-        new CreatePregnancyOutcomeTask(individual).execute();
+        if (resultCode == RESULT_OK) {
+            Individual individual = (Individual) data.getExtras().getSerializable("individual");
+            new CreatePregnancyOutcomeTask(individual).execute();
+        }
     }
 
     private void handleLocationCreateResult(int resultCode, Intent data) {
-        showProgressFragment();
         if (resultCode == RESULT_OK) {
+            showProgressFragment();
             new CheckLocationFormStatus(getContentResolver(), contentUri).execute();
         } else {
             Toast.makeText(this, "There was a problem with ODK", Toast.LENGTH_LONG).show();
@@ -290,15 +293,25 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
     }
 
     private void showProgressFragment() {
+        if (showingProgress) {
+            return;
+        }
+
         if (progressFragment == null) {
             progressFragment = ProgressFragment.newInstance();
         }
 
+        showingProgress = true;
         FragmentTransaction txn = getFragmentManager().beginTransaction();
         txn.replace(R.id.middle_col, progressFragment).commit();
     }
 
     void hideProgressFragment() {
+        if (!showingProgress) {
+            return;
+        }
+        
+        showingProgress = false;
         FragmentTransaction txn = getFragmentManager().beginTransaction();
         txn.replace(R.id.middle_col, vf).commitAllowingStateLoss();
     }
@@ -423,6 +436,10 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
         }
         i.putExtra("location", loc);
 
+        if (requestCode == FILTER_BIRTH_FATHER) {
+            i.putExtra("isBirth", true);
+        }
+
         startActivityForResult(i, requestCode);
     }
 
@@ -524,6 +541,8 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
 
         @Override
         protected void onPostExecute(final Individual father) {
+            hideProgressFragment();
+
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(UpdateActivity.this);
             alertDialogBuilder.setTitle("Choose Father");
             alertDialogBuilder.setCancelable(true);

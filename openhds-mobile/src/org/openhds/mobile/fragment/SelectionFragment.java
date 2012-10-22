@@ -174,6 +174,38 @@ public class SelectionFragment extends Fragment implements OnClickListener {
         registerVillageListener(stateMachine);
         registerRoundListener(stateMachine);
         registerLocationListener(stateMachine);
+        registerVisitListener(stateMachine);
+        registerIndividualListener(stateMachine);
+        registerEventListener(stateMachine);
+        registerFinishVisitListener(stateMachine);
+    }
+
+    private void registerFinishVisitListener(StateMachine stateMachine) {
+        stateMachine.registerListener(State.FINISH_VISIT, new StateListener() {
+            public void onEnterState() {
+            }
+
+            public void onLeaveState() {
+                regionBtn.setEnabled(true);
+                subRegionBtn.setEnabled(true);
+                villageBtn.setEnabled(true);
+                roundBtn.setEnabled(true);
+            }
+        });
+    }
+
+    private void registerEventListener(StateMachine stateMachine) {
+        stateMachine.registerListener(State.SELECT_EVENT, new StateListener() {
+            public void onEnterState() {
+                setIndividual();
+            }
+
+            public void onLeaveState() {
+            }
+        });
+    }
+
+    private void registerVisitListener(StateMachine stateMachine) {
         stateMachine.registerListener(State.CREATE_VISIT, new StateListener() {
             public void onEnterState() {
             }
@@ -184,27 +216,6 @@ public class SelectionFragment extends Fragment implements OnClickListener {
                 villageBtn.setEnabled(false);
                 roundBtn.setEnabled(false);
                 locationBtn.setEnabled(false);
-            }
-        });
-        registerIndividualListener(stateMachine);
-        stateMachine.registerListener(State.SELECT_EVENT, new StateListener() {
-            public void onEnterState() {
-                setIndividual();
-            }
-
-            public void onLeaveState() {
-            }
-        });
-        stateMachine.registerListener(State.FINISH_VISIT, new StateListener() {
-
-            public void onEnterState() {
-            }
-
-            public void onLeaveState() {
-                regionBtn.setEnabled(true);
-                subRegionBtn.setEnabled(true);
-                villageBtn.setEnabled(true);
-                roundBtn.setEnabled(true);
             }
         });
     }

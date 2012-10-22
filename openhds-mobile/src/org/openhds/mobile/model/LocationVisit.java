@@ -125,30 +125,6 @@ public class LocationVisit implements Serializable {
         return location;
     }
 
-    public boolean isRegionCurrentActive() {
-        return region == null;
-    }
-
-    public boolean isSubRegionActive() {
-        return !isRegionCurrentActive() && subRegion == null;
-    }
-
-    public boolean isVillageActive() {
-        return !isSubRegionActive() && village == null;
-    }
-
-    public boolean isRoundActive() {
-        return !isVillageActive() && round == null;
-    }
-
-    public boolean isLocked() {
-        return false;
-    }
-
-    public boolean isHierarchySelectionComplete() {
-        return region != null && subRegion != null && village != null && round != null;
-    }
-
     public int getLevelOfHierarchySelected() {
         if (region == null) {
             return 0;

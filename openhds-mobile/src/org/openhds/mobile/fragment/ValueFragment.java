@@ -39,7 +39,8 @@ public class ValueFragment extends ListFragment implements LoaderCallbacks<Curso
     private static final int INDIVIDUAL_LOADER = 4;
     private static final int INDIVIDUAL_FILTER_LOADER = 5;
 
-    // create the column mappings so they don't need to be recreated on every load
+    // create the column mappings so they don't need to be recreated on every
+    // load
     private static final String[] REGION_COLUMNS = new String[] { OpenHDS.HierarchyItems.COLUMN_HIERARCHY_NAME,
             OpenHDS.HierarchyItems.COLUMN_HIERARCHY_EXTID };
     private static final String[] ROUNDS_COLUMNS = new String[] { OpenHDS.Rounds.COLUMN_ROUND_NUMBER,
@@ -143,7 +144,9 @@ public class ValueFragment extends ListFragment implements LoaderCallbacks<Curso
 
     /**
      * Load a village optionally filtered by a parent external id
-     * @param parentExtId the parent ext it to filter on, or null to list all villages
+     * 
+     * @param parentExtId
+     *            the parent ext it to filter on, or null to list all villages
      */
     public void loadVillage(String parentExtId) {
         listCurrentlyDisplayed = Displayed.VILLAGE;
@@ -206,7 +209,9 @@ public class ValueFragment extends ListFragment implements LoaderCallbacks<Curso
     }
 
     /**
-     * Builds an array of strings that will be used as the arguments to an SQL query
+     * Builds an array of strings that will be used as the arguments to an SQL
+     * query
+     * 
      * @param arg1
      * @return
      */
@@ -231,7 +236,9 @@ public class ValueFragment extends ListFragment implements LoaderCallbacks<Curso
 
     /**
      * Constructs the filtering SQL clause for getting a list of individuals
-     * @param arg1 bundle which contains possible filtering options
+     * 
+     * @param arg1
+     *            bundle which contains possible filtering options
      * @return
      */
     private String buildFitler(Bundle arg1) {
@@ -276,8 +283,12 @@ public class ValueFragment extends ListFragment implements LoaderCallbacks<Curso
     }
 
     /**
-     * Loads a list of locations that can optionally be filtered by a hierarchy ext id
-     * @param hierarchyExtId the hierarchy to filter, or null to get a list of all locations
+     * Loads a list of locations that can optionally be filtered by a hierarchy
+     * ext id
+     * 
+     * @param hierarchyExtId
+     *            the hierarchy to filter, or null to get a list of all
+     *            locations
      */
     public void loadLocations(String hierarchyExtId) {
         listCurrentlyDisplayed = Displayed.LOCATION;
@@ -288,7 +299,10 @@ public class ValueFragment extends ListFragment implements LoaderCallbacks<Curso
 
     /**
      * Load a list of individuals based on their current residency
-     * @param extId filter by the location ext id (current residency) of the individual
+     * 
+     * @param extId
+     *            filter by the location ext id (current residency) of the
+     *            individual
      */
     public void loadIndividuals(String extId) {
         listCurrentlyDisplayed = Displayed.INDIVIDUAL;
@@ -299,10 +313,18 @@ public class ValueFragment extends ListFragment implements LoaderCallbacks<Curso
 
     /**
      * Loads a list of individuals that are filtered by the arguments
-     * @param location the location id to filter, or null to ignore filtering on location
-     * @param firstName matches on first name of individual (using SQL LIKE), null to ignore first name matching
-     * @param lastName matches on last name of individual (using SQL LIKE), null to ignore last name matching
-     * @param gender filters by individual gender, null to ignore gender filtering
+     * 
+     * @param location
+     *            the location id to filter, or null to ignore filtering on
+     *            location
+     * @param firstName
+     *            matches on first name of individual (using SQL LIKE), null to
+     *            ignore first name matching
+     * @param lastName
+     *            matches on last name of individual (using SQL LIKE), null to
+     *            ignore last name matching
+     * @param gender
+     *            filters by individual gender, null to ignore gender filtering
      */
     public void loadFilteredIndividuals(String location, String firstName, String lastName, String gender) {
         listCurrentlyDisplayed = Displayed.INDIVIDUAL;

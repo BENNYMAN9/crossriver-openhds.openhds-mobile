@@ -8,6 +8,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+/**
+ * A simple fragment that displays a progress bar
+ */
 public class ProgressFragment extends Fragment {
 
     public static ProgressFragment newInstance() {

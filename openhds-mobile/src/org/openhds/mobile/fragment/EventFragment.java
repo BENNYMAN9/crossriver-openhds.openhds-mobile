@@ -20,7 +20,6 @@ import android.widget.Button;
  * EventFragment is the right most column in the update activity and displays a
  * column of buttons for letting the user perform actions during the update. The
  * events it publishes can be handled by implementing the listener interface.
- * Also, this class will render itself according to the a location visit object.
  */
 public class EventFragment extends Fragment implements OnClickListener {
     private Button findLocationGeoPointBtn, createLocationBtn, createVisitBtn, householdBtn, membershipBtn,
@@ -30,6 +29,9 @@ public class EventFragment extends Fragment implements OnClickListener {
     private Listener listener;
     private LocationVisit locationVisit;
 
+    /**
+     * Listener interface for activities using this fragment
+     */
     public interface Listener {
 
         void onLocationGeoPoint();
@@ -66,7 +68,7 @@ public class EventFragment extends Fragment implements OnClickListener {
         try {
             listener = (Listener) activity;
         } catch (ClassCastException e) {
-
+            throw new ClassCastException("Activity must implement: " + Listener.class.getName());
         }
     }
 
@@ -257,5 +259,4 @@ public class EventFragment extends Fragment implements OnClickListener {
             }
         });
     }
-
 }
