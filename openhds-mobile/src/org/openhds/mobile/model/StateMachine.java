@@ -24,6 +24,20 @@ public class StateMachine {
         SELECT_REGION, SELECT_SUBREGION, SELECT_VILLAGE, SELECT_ROUND, SELECT_LOCATION, CREATE_VISIT, SELECT_INDIVIDUAL, SELECT_EVENT, FINISH_VISIT
     }
 
+    private static final List<State> STATE_SEQUENCE = new ArrayList<State>();
+
+    static {
+        STATE_SEQUENCE.add(State.SELECT_REGION);
+        STATE_SEQUENCE.add(State.SELECT_SUBREGION);
+        STATE_SEQUENCE.add(State.SELECT_VILLAGE);
+        STATE_SEQUENCE.add(State.SELECT_ROUND);
+        STATE_SEQUENCE.add(State.SELECT_LOCATION);
+        STATE_SEQUENCE.add(State.CREATE_VISIT);
+        STATE_SEQUENCE.add(State.SELECT_INDIVIDUAL);
+        STATE_SEQUENCE.add(State.SELECT_EVENT);
+        STATE_SEQUENCE.add(State.FINISH_VISIT);
+    }
+
     public interface StateListener {
         void onEnterState();
 
@@ -75,6 +89,19 @@ public class StateMachine {
         }
 
         listeners.get(state).add(stateListener);
+    }
+
+    public void transitionInSequence(State toState) {
+        for (int i = 0; i < STATE_SEQUENCE.size(); i++) {
+            State state = STATE_SEQUENCE.get(i);
+            if (state.equals(toState)) {
+                break;
+            }
+
+            transitionTo(state);
+        }
+
+        transitionTo(toState);
     }
 
 }

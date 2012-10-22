@@ -284,8 +284,8 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
     }
 
     private void handleXformResult(int resultCode, Intent data) {
-        showProgressFragment();
         if (resultCode == RESULT_OK) {
+            showProgressFragment();
             new CheckFormStatus(getContentResolver(), contentUri).execute();
         } else {
             Toast.makeText(this, "There was a problem with ODK", Toast.LENGTH_LONG).show();
@@ -310,7 +310,7 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
         if (!showingProgress) {
             return;
         }
-        
+
         showingProgress = false;
         FragmentTransaction txn = getFragmentManager().beginTransaction();
         txn.replace(R.id.middle_col, vf).commitAllowingStateLoss();
@@ -397,12 +397,13 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
 
             sf.setLocationVisit(locationVisit);
             ef.setLocationVisit(locationVisit);
+
             String currentState = savedState.getString("currentState");
             state = State.valueOf(currentState);
         }
 
         registerTransitions();
-        stateMachine.transitionTo(state);
+        stateMachine.transitionInSequence(state);
     }
 
     /**
@@ -599,7 +600,7 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
         @Override
         protected void onPostExecute(Void result) {
             hideProgressFragment();
-            loadForm(SELECTED_XFORM);
+            loadSocialGroupsForIndividual();
         }
     }
 
