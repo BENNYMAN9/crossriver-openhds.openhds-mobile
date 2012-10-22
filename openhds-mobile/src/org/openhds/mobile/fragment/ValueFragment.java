@@ -11,13 +11,13 @@ import org.openhds.mobile.model.LocationHierarchy;
 import org.openhds.mobile.model.Round;
 
 import android.app.Activity;
+import android.app.ListFragment;
+import android.app.LoaderManager.LoaderCallbacks;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.ListFragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.ListView;
@@ -29,7 +29,7 @@ import android.widget.SimpleCursorAdapter;
  * entity can be defined as: Region, Sub Region, Village, Round, Location and
  * Individual
  */
-public class ValueFragment extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class ValueFragment extends ListFragment implements LoaderCallbacks<Cursor> {
 
     // loader identifiers
     private static final int HIERARCHY_LOADER = 0;

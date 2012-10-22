@@ -248,4 +248,10 @@ public class Converter {
 
         return individual;
     }
+
+    public static SocialGroup convertToSocialGroup(Cursor cursor) {
+        SocialGroup sg = new SocialGroup();
+        populateSocialGroup(cursor, sg);
+        return sg;
+    }
 }

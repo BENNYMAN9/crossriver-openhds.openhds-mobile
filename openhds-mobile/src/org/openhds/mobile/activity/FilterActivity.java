@@ -10,60 +10,55 @@ import org.openhds.mobile.model.*;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 
 /**
- * This activity is only used in searching for an Individual.
- * This activity is launched before creating Relationship and Internal In Migration events.
- * It's also launched before creating a new Location.
+ * This activity is only used in searching for an Individual. This activity is
+ * launched before creating Relationship and Internal In Migration events. It's
+ * also launched before creating a new Location.
  */
-public class FilterActivity extends FragmentActivity implements ValueListener, SelectionFilterFragment.Listener {
-	
-	private SelectionFilterFragment selectionFilterFragment;
-	private ValueFragment valueFragment;
-	
-	private String type;
-			
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-	    setContentView(R.layout.filter); 
-	    
-	    selectionFilterFragment = (SelectionFilterFragment)getSupportFragmentManager().findFragmentById(R.id.selectionFilterFragment);
-		valueFragment = (ValueFragment)getSupportFragmentManager().findFragmentById(R.id.valueFragment);
+public class FilterActivity extends Activity implements ValueListener, SelectionFilterFragment.Listener {
 
-		processExtras();
-	}
-	
-	private void processExtras() {	
-		LocationHierarchy region = (LocationHierarchy) getIntent().getExtras().getSerializable("region");
-		LocationHierarchy subRegion = (LocationHierarchy) getIntent().getExtras().getSerializable("subRegion");
-		LocationHierarchy village = (LocationHierarchy) getIntent().getExtras().getSerializable("village");
-		Location location = (Location) getIntent().getExtras().getSerializable("location");
-		type = getIntent().getExtras().getString("type");
-		
-		selectionFilterFragment.setRegion(region.getExtId());
-		selectionFilterFragment.setSubregion(subRegion.getExtId());
-		selectionFilterFragment.setVillage(village.getExtId());
-		selectionFilterFragment.setLocation(location.getExtId());
-	}
-	   
+    private SelectionFilterFragment selectionFilterFragment;
+    private ValueFragment valueFragment;
+    private boolean isBirth = false;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.filter);
+
+        selectionFilterFragment = (SelectionFilterFragment) getFragmentManager().findFragmentById(
+                R.id.selectionFilterFragment);
+        valueFragment = (ValueFragment) getFragmentManager().findFragmentById(R.id.valueFragment);
+
+        processExtras();
+    }
+
+    private void processExtras() {
+        LocationHierarchy region = (LocationHierarchy) getIntent().getExtras().getSerializable("region");
+        LocationHierarchy subRegion = (LocationHierarchy) getIntent().getExtras().getSerializable("subRegion");
+        LocationHierarchy village = (LocationHierarchy) getIntent().getExtras().getSerializable("village");
+        Location location = (Location) getIntent().getExtras().getSerializable("location");
+        isBirth = getIntent().getExtras().getBoolean("isBirth");
+
+        selectionFilterFragment.setRegion(region.getExtId());
+        selectionFilterFragment.setSubregion(subRegion.getExtId());
+        selectionFilterFragment.setVillage(village.getExtId());
+        selectionFilterFragment.setLocation(location.getExtId());
+    }
+
     public void onIndividualSelected(Individual individual) {
+        if (isBirth && individual.getGender().equals("Female")) {
+            Toast.makeText(getApplicationContext(), "Please choose Male", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         Intent i = new Intent();
-        i.putExtra("name", individual.getFirstName() + " " + individual.getLastName());
-        i.putExtra("extId", individual.getExtId());
-        i.putExtra("type", type);
-
-        if(type.equals("BIRTH") && individual.getGender().equals("Female")){
-            Toast.makeText(getApplicationContext(), "Please choose Male", Toast.LENGTH_LONG).show();
-            Toast.makeText(getApplicationContext(), "Please choose Male", Toast.LENGTH_LONG).show();
-
-        }else {
+        i.putExtra("individual", individual);
         setResult(Activity.RESULT_OK, i);
         finish();
-        }
     }
-	
+
     public void onHierarchySelected(LocationHierarchy hierarchy) {
         selectionFilterFragment.updateRegionText(hierarchy.getExtId());
     }
@@ -77,31 +72,30 @@ public class FilterActivity extends FragmentActivity implements ValueListener, S
     }
 
     public void onRoundSelected(Round round) {
-    	// not implemented
+        // not implemented
     }
 
     public void onLocationSelected(Location location) {
         selectionFilterFragment.updateLocationText(location.getExtId());
     }
 
-	public void onSeeListRegion() {
-		valueFragment.loadLocationHierarchy();
-	}
+    public void onSeeListRegion() {
+        valueFragment.loadLocationHierarchy();
+    }
 
-	public void onSeeListSubRegion(String region) {
-		valueFragment.loadSubRegion(region);
-	}
+    public void onSeeListSubRegion(String region) {
+        valueFragment.loadSubRegion(region);
+    }
 
-	public void onSeeListVillage(String subregion) {
-		valueFragment.loadVillage(subregion);
-	}
+    public void onSeeListVillage(String subregion) {
+        valueFragment.loadVillage(subregion);
+    }
 
-	public void onSeeListLocation(String village) {
-		valueFragment.loadLocations(village);
-	}
+    public void onSeeListLocation(String village) {
+        valueFragment.loadLocations(village);
+    }
 
-	public void onSearch(String location, String firstName, String lastName,
-			String gender) {
-		valueFragment.loadFilteredIndividuals(location, firstName, lastName, gender);
-	}
+    public void onSearch(String location, String firstName, String lastName, String gender) {
+        valueFragment.loadFilteredIndividuals(location, firstName, lastName, gender);
+    }
 }
