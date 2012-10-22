@@ -150,13 +150,13 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
             handleLocationCreateResult(resultCode, data);
             break;
         case FILTER_RELATIONSHIP:
-            handleFilterRelationshipResult(data);
+            handleFilterRelationshipResult(resultCode, data);
             break;
         case FILTER_LOCATION:
-            handleFilterLocationResult(data);
+            handleFilterLocationResult(resultCode, data);
             break;
         case FILTER_INMIGRATION:
-            handleFilterInMigrationResult(data);
+            handleFilterInMigrationResult(resultCode, data);
             break;
         case LOCATION_GEOPOINT:
             if (resultCode == RESULT_OK) {
@@ -180,10 +180,12 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
     }
 
     private void handleFatherBirthResult(int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
-            Individual individual = (Individual) data.getExtras().getSerializable("individual");
-            new CreatePregnancyOutcomeTask(individual).execute();
+        if (resultCode != RESULT_OK) {
+            return;
         }
+
+        Individual individual = (Individual) data.getExtras().getSerializable("individual");
+        new CreatePregnancyOutcomeTask(individual).execute();
     }
 
     private void handleLocationCreateResult(int resultCode, Intent data) {
@@ -234,14 +236,22 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
         }
     }
 
-    private void handleFilterInMigrationResult(Intent data) {
+    private void handleFilterInMigrationResult(int resultCode, Intent data) {
+        if (resultCode != RESULT_OK) {
+            return;
+        }
+
         showProgressFragment();
         Individual individual = (Individual) data.getExtras().getSerializable("individual");
         filledForm = formFiller.fillInMigrationForm(locationVisit, individual);
         getLoaderManager().restartLoader(SOCIAL_GROUP_AT_LOCATION, null, this);
     }
 
-    private void handleFilterLocationResult(Intent data) {
+    private void handleFilterLocationResult(int requestCode, Intent data) {
+        if (RESULT_OK != requestCode) {
+            return;
+        }
+
         showProgressFragment();
         Individual individual = (Individual) data.getExtras().getSerializable("individual");
         new GenerateLocationTask(individual).execute();
@@ -259,7 +269,6 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
         protected Void doInBackground(Void... params) {
             locationVisit.createLocation(getContentResolver(), individual.getExtId(), individual.getFullName());
             filledForm = formFiller.fillLocationForm(locationVisit);
-
             return null;
         }
 
@@ -271,7 +280,11 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
 
     }
 
-    private void handleFilterRelationshipResult(Intent data) {
+    private void handleFilterRelationshipResult(int resultCode, Intent data) {
+        if (resultCode != RESULT_OK) {
+            return;
+        }
+
         Individual individual = (Individual) data.getExtras().getSerializable("individual");
 
         if (filledForm.getWomanId() == null) {
@@ -617,9 +630,24 @@ public class UpdateActivity extends Activity implements ValueFragment.ValueListe
     }
 
     public void onCreateVisit() {
-        locationVisit.createVisit(getContentResolver());
-        filledForm = formFiller.fillVisitForm(locationVisit);
-        loadForm(SELECTED_XFORM);
+        showProgressFragment();
+        new CreateVisitTask().execute();
+    }
+
+    private class CreateVisitTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            locationVisit.createVisit(getContentResolver());
+            filledForm = formFiller.fillVisitForm(locationVisit);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            hideProgressFragment();
+            loadForm(SELECTED_XFORM);
+        }
     }
 
     public void onFinishVisit() {

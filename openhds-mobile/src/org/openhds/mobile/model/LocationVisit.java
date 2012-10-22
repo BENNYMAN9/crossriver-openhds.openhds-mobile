@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import org.openhds.mobile.Converter;
 import org.openhds.mobile.OpenHDS;
@@ -162,6 +163,7 @@ public class LocationVisit implements Serializable {
         location.setHierarchy(village.getExtId());
         location.setName(groupName);
         location.setHead(headId);
+        location.setUuid(UUID.randomUUID().toString());
     }
 
     public String generateLocationId(ContentResolver resolver, Integer partToIncrement, String baseString) {
