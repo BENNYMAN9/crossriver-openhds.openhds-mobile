@@ -54,6 +54,7 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
 	    
         extIdText = (TextView) findViewById(R.id.extIdText);
         passwordText = (TextView) findViewById(R.id.passwordText);
+       
         
 	    loginButton = (Button) findViewById(R.id.loginBtn);
 	    loginButton.setOnClickListener(this);
@@ -91,11 +92,11 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
 			else 
 				loginButton.setText("Login");
 			break;
-		case R.id.loginBtn: 
-			
+		case R.id.loginBtn:
+
 			String extId = extIdText.getText().toString();
-			String password = passwordText.getText().toString();
-			
+            String password = passwordText.getText().toString();
+
 			if (registerChkBox.isChecked()) {
 				dialog.show();
 				SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
@@ -116,7 +117,7 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
                             Toast.makeText(getApplicationContext(), getString(R.string.bad_authentication),
                                     Toast.LENGTH_LONG).show();
                         } else {
-                            startUpdateActivity(fw);
+                            startChooseActivity(fw);
                         }
                     }
 
@@ -161,8 +162,8 @@ public class FieldWorkerLoginActivity extends Activity implements OnClickListene
 	    
 	}
 
-    private void startUpdateActivity(FieldWorker fieldWorker) {
-		Intent intent = new Intent(getApplicationContext(), UpdateActivity.class);
+    private void startChooseActivity(FieldWorker fieldWorker) {
+		Intent intent = new Intent(getApplicationContext(), ChooseActivity.class);
         intent.putExtra("fieldWorker", fieldWorker);
         passwordText.setText("");
         startActivity(intent);
